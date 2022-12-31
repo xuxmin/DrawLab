@@ -2,10 +2,16 @@ cmake_minimum_required (VERSION 3.2)
 project(drawlab)
 
 # place binaries and libraries according to GNU standards
-# include(GNUInstallDirs)
-# set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
-# set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
-# set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR})
+# In windows, place binaries and libraries into specific directories, the zlib1.all
+# will be placed with drawlab.exe.
+# In Linux, skip this.
+if (WIN32) 
+    include(GNUInstallDirs)
+    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR})
+endif(WIN32)
+
 
 add_subdirectory(ext)
 
