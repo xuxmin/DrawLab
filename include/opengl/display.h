@@ -15,7 +15,7 @@ public:
                  const int32_t framebufResX, const int32_t framebuf_ResY,
                  const uint32_t pbo) const;
 
-    GLuint Display::getPBO(int width, int height, float* data);
+    GLuint getPBO(int width, int height, float* data);
 
 private:
     GLuint m_pbo = 0u;

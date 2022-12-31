@@ -340,4 +340,14 @@ public:
     }
 };
 
+typedef TPoint<2, float> Point2f;
+typedef TPoint<3, float> Point3f;
+typedef TPoint<4, float> Point4f;
+typedef TPoint<2, double> Point2d;
+typedef TPoint<3, double> Point3d;
+typedef TPoint<4, double> Point4d;
+typedef TPoint<2, int> Point2i;
+typedef TPoint<3, int> Point3i;
+typedef TPoint<4, int> Point4i;
+
 }  // namespace drawlab

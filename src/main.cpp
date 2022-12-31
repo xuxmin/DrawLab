@@ -10,6 +10,12 @@
 
 using namespace drawlab;
 
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+    #define SHOW_GUI
+#else
+#endif
+
+
 static void render(Scene* scene, const std::string& filename) {
     const Camera* camera = scene->getCamera();
     Vector2i outputSize = camera->getOutputSize();
@@ -18,8 +24,11 @@ static void render(Scene* scene, const std::string& filename) {
     int height = outputSize[1], width = outputSize[0];
     ImageBlock block(outputSize, camera->getReconstructionFilter());
 
+#ifdef SHOW_GUI
     GUI gui(block);
     gui.init();
+#endif
+
 
     std::thread render_thread([&] {
         /* Create a clone of the sampler for the current thread */
@@ -50,7 +59,10 @@ static void render(Scene* scene, const std::string& filename) {
         }
     });
 
+#ifdef SHOW_GUI
     gui.start();
+#endif
+
     render_thread.join();
 
     std::unique_ptr<Bitmap> bitmap(block.toBitmap());

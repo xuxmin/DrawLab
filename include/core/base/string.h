@@ -3,8 +3,6 @@
 #include <algorithm>
 #include <string>
 #include <vector>
-#include "core/math/math.h"
-#include "core/base/common.h"
 
 namespace drawlab {
 
@@ -26,14 +24,16 @@ unsigned int toUInt(const std::string &str);
 /// Convert a string into a floating point value
 float toFloat(const std::string &str);
 
+template <size_t N, typename T> struct TVector;
+typedef TVector<3, float>   Vector3f;
 /// Convert a string into a 3D vector
-Vector3f toVector3f(const std::string &str);
+extern Vector3f toVector3f(const std::string &str);
 
 /// Tokenize a string into a list by splitting at 'delim'
-std::vector<std::string> tokenize(const std::string &s, const std::string &delim = ", ", bool includeEmpty = false);
+extern std::vector<std::string> tokenize(const std::string &s, const std::string &delim = ", ", bool includeEmpty = false);
 
 /// Check if a string ends with another string
-bool endsWith(const std::string& value, const std::string &ending);
+extern bool endsWith(const std::string& value, const std::string &ending);
 
 /// Convert a time value in milliseconds into a human-readable string
 extern std::string timeString(double time, bool precise = false);

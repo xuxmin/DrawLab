@@ -27,7 +27,7 @@ public:
     const Matrix4f& getMatrix() const { return m_transform; }
 
     /// Return the inverse of the underlying matrix
-    const Matrix4f& getInverseMatrix() const { return m_transform.inv(); }
+    const Matrix4f getInverseMatrix() const { return m_transform.inv(); }
 
     /// Concatenate with another transform
     Transform operator*(const Transform& t) const {

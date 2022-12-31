@@ -2,6 +2,7 @@
 
 #include "core/base/common.h"
 #include <cmath>
+#include <assert.h>
 
 namespace drawlab {
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/base/common.h"
-#include "core/math/normal.h"
+#include <assert.h>
 #include <cmath>
 
 namespace drawlab {
@@ -69,7 +69,7 @@ public:
     T maxCoeff() const {
         T max_val = m[0];
         for (size_t i = 1; i < N; i++) {
-            max_val = max(max_val, m[i]);
+            max_val = std::max(max_val, m[i]);
         }
         return max_val;
     }
@@ -354,5 +354,15 @@ public:
         return "Vector: [" + result + "]";
     }
 };
+
+typedef TVector<2, float> Vector2f;
+typedef TVector<3, float> Vector3f;
+typedef TVector<4, float> Vector4f;
+typedef TVector<2, double> Vector2d;
+typedef TVector<3, double> Vector3d;
+typedef TVector<4, double> Vector4d;
+typedef TVector<2, int> Vector2i;
+typedef TVector<3, int> Vector3i;
+typedef TVector<4, int> Vector4i;
 
 }  // namespace drawlab

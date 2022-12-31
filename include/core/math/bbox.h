@@ -236,7 +236,7 @@ template <size_t N, typename T> struct TBoundingBox {
 
     /// Return the index of the largest axis
     int getLargestAxis() const {
-        VectorType extents = max - min;
+        VectorType extents = m_max - m_min;
 
         if (extents[0] >= extents[1] && extents[0] >= extents[2])
             return 0;

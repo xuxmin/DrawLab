@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/base/common.h"
+#include "core/math/vector.h"
 
 namespace drawlab {
 
@@ -91,7 +92,6 @@ public:
     }
 
     friend T dot(const TVector<3, T>& lhs, const TNormal3<T>& rhs) {
-        static_assert(N == 3);
         T sum = 0;
         for (size_t i = 0; i < 3; i++)
             sum += lhs[i] * rhs[i];
@@ -138,5 +138,8 @@ public:
         return "Normal: [" + result + "]";
     }
 };
+
+typedef TNormal3<float> Normal3f;
+typedef TNormal3<double> Normal3d;
 
 }  // namespace drawlab
