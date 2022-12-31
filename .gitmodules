@@ -1,0 +1,21 @@
+[submodule "ext/filesystem"]
+	path = ext/filesystem
+	url = https://github.com/wjakob/filesystem
+[submodule "ext/tinyformat"]
+	path = ext/tinyformat
+	url = https://github.com/wjakob/tinyformat
+[submodule "ext/glfw"]
+	path = ext/glfw
+	url = https://github.com/glfw/glfw
+[submodule "ext/openexr"]
+	path = ext/openexr
+	url = https://github.com/mitsuba-renderer/openexr/
+[submodule "ext/pugixml"]
+	path = ext/pugixml
+	url = http://github.com/zeux/pugixml
+[submodule "ext/pcg32"]
+	path = ext/pcg32
+	url = https://github.com/wjakob/pcg32
+[submodule "ext/tbb"]
+	path = ext/tbb
+	url = https://github.com/wjakob/tbb
