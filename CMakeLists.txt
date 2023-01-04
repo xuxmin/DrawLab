@@ -1,17 +1,35 @@
-cmake_minimum_required (VERSION 3.2)
 project(drawlab)
 
-# place binaries and libraries according to GNU standards
-# In windows, place binaries and libraries into specific directories, the zlib1.all
-# will be placed with drawlab.exe.
-# In Linux, skip this.
-if (WIN32) 
-    include(GNUInstallDirs)
-    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
-    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
-    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR})
-endif(WIN32)
+cmake_minimum_required(VERSION 3.7 FATAL_ERROR)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Add paths to our CMake code to the module path, so they can be found automatically by
+# CMake.
+set(CMAKE_MODULE_PATH
+  "${CMAKE_SOURCE_DIR}/cmake"
+  ${CMAKE_MODULE_PATH}
+)
+
+set(OptiX_INSTALL_DIR "${CMAKE_SOURCE_DIR}/../" CACHE PATH "Path to OptiX installed location.")
+
+# Set the default build to Release.  Note this doesn't do anything for the VS
+# default build target which defaults to Debug when you first start it.
+IF(NOT CMAKE_BUILD_TYPE)
+  SET(CMAKE_BUILD_TYPE "Release" CACHE STRING
+      "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel."
+      FORCE)
+ENDIF(NOT CMAKE_BUILD_TYPE)
+
+# Put all the runtime stuff in the same directory.  By default, CMake puts each targets'
+# output into their own directory.  We want all the targets to be put in the same
+# directory, and we can do this by setting these variables.
+if (WIN32)
+  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+  set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+  set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+endif()
 
 add_subdirectory(ext)
 
@@ -82,6 +100,8 @@ target_include_directories(drawlab
 )
 
 target_compile_features(drawlab PRIVATE cxx_std_17)
+
+add_subdirectory(src/optix)
 
 # Test
 # add_library(drawlab_lib ${sources})

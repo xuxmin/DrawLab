@@ -1,0 +1,11 @@
+#define SOURCE_DIR "@SOURCE_DIR@"
+#define PROJECT_PTX_DIR "@PROJECT_PTX_DIR@"
+
+// NVRTC absolute include paths to the headers used to build the projects
+#define NVRTC_ABSOLUTE_INCLUDE_DIRS @NVRTC_ABSOLUTE_INCLUDE_DIRS@
+
+// Signal whether to use NVRTC or not
+#cmakedefine01 CUDA_NVRTC_ENABLED
+
+// NVRTC compiler options
+#define CUDA_NVRTC_OPTIONS @CUDA_NVRTC_OPTIONS@
