@@ -8,12 +8,12 @@
 #endif
 
 #include "core/base/string.h"
+#include "core/base/exception.h"
 #include "core/math/math.h"
 #include "filesystem/path.h"
 #include "filesystem/resolver.h"
 #include <algorithm>
 #include <iostream>
-#include <tinyformat.h>
 #include <vector>
 
 namespace drawlab {
@@ -37,17 +37,6 @@ class ReconstructionFilter;
 class Sampler;
 class Scene;
 class AccelTree;
-
-/// Simple exception class, which stores a human-readable error description
-class Exception : public std::runtime_error {
-public:
-    /// Variadic template constructor to support printf-style arguments
-    template <typename... Args>
-    Exception(const char* fmt, const Args&... args)
-        : std::runtime_error(tfm::format(fmt, args...)) {}
-
-    Exception(std::string msg) : std::runtime_error(msg) {}
-};
 
 /**
  * \brief Return the global file resolver instance

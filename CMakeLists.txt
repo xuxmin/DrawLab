@@ -33,6 +33,7 @@ endif()
 
 add_subdirectory(ext)
 add_subdirectory(src/core)
+add_subdirectory(src/opengl)
 
 set(sources
     src/main.cpp
@@ -63,14 +64,12 @@ set(sources
 
 add_executable(drawlab ${sources})
 
-target_link_libraries(drawlab PUBLIC ${GLFW_LIB_NAME} imgui glad corelib pugixml tiny_obj_loader tbb_static)
+target_link_libraries(drawlab PUBLIC ${GLFW_LIB_NAME} imgui corelib gllib tiny_obj_loader tbb_static)
 
 target_include_directories(drawlab
     PUBLIC
     ext
     ${CMAKE_CURRENT_SOURCE_DIR}/include
-    # glad
-    ${GLAD_INCLUDE_DIRS}
     # glfw
     ${GLFW_INCLUDE_DIRS}
     # pcg32

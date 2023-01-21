@@ -154,9 +154,9 @@ Display::Display(BufferImageFormat format) : m_imageFormat(format) {
     GL_CHECK_ERRORS();
 }
 
-void Display::display(const int32_t screen_res_x, const int32_t screen_res_y,
-                      const int32_t framebuf_res_x,
-                      const int32_t framebuf_res_y, const uint32_t pbo) const {
+void Display::display(const int screen_res_x, const int screen_res_y,
+                      const int framebuf_res_x, const int framebuf_res_y,
+                      const unsigned int pbo) const {
     GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, 0));
     GL_CHECK(glViewport(0, 0, framebuf_res_x, framebuf_res_y));
     GL_CHECK(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));

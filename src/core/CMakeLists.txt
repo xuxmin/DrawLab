@@ -20,6 +20,7 @@ add_library(${TARGET_NAME} ${SOURCE_FILES})
 # Link dependencies
 target_link_libraries(${TARGET_NAME} stb_image)
 target_link_libraries(${TARGET_NAME} IlmImf)
+target_link_libraries(${TARGET_NAME} pugixml)
 
 
 target_include_directories(${TARGET_NAME} 

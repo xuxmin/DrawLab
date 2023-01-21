@@ -1,7 +1,8 @@
 #pragma once
 
-#include "core/base/common.h"
 #include "glad/glad.h"
+#include <string>
+
 
 namespace opengl {
 
@@ -11,9 +12,9 @@ public:
 
     Display(BufferImageFormat format = BufferImageFormat::FLOAT3);
 
-    void display(const int32_t screenResX, const int32_t screenResY,
-                 const int32_t framebufResX, const int32_t framebuf_ResY,
-                 const uint32_t pbo) const;
+    void display(const int screenResX, const int screenResY,
+                 const int framebufResX, const int framebuf_ResY,
+                 const unsigned int pbo) const;
 
     GLuint getPBO(int width, int height, float* data);
 

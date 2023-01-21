@@ -1,5 +1,7 @@
-#include "core/base/common.h"
 #include <glad/glad.h>
+#include <sstream>
+#include "core/base/exception.h"
+
 
 namespace opengl {
 
