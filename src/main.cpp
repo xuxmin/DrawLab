@@ -5,7 +5,7 @@
 #include "core/parser/parser.h"
 #include "editor/gui.h"
 #include "tracer/scene.h"
-#include "utils/pb.h"
+#include "core/utils/pb.h"
 #include <thread>
 
 using namespace drawlab;

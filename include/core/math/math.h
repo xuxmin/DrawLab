@@ -7,8 +7,6 @@
 
 #include <stdlib.h>
 #include "core/math/vector.h"
-#include "core/math/point.h"
-#include "core/math/normal.h"
 
 namespace drawlab {
 

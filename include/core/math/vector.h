@@ -1,8 +1,9 @@
 #pragma once
 
-#include "core/base/common.h"
 #include <assert.h>
 #include <cmath>
+#include <initializer_list>
+#include <string>
 
 namespace drawlab {
 

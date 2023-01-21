@@ -1,6 +1,6 @@
 #include "tiny_obj_loader.h"
 #include "tracer/mesh.h"
-#include "utils/timer.h"
+#include "core/utils/timer.h"
 #include <filesystem/resolver.h>
 #include <fstream>
 #include <unordered_map>

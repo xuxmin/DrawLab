@@ -1,4 +1,6 @@
 #include "core/math/matrix.h"
+#include <iostream>
+
 
 namespace drawlab {
 
@@ -79,10 +81,10 @@ Matrix4f Matrix4f::inv() const {
     det = mm[0] * inv[0] + mm[1] * inv[4] + mm[2] * inv[8] + mm[3] * inv[12];
 
     if (det == 0) {
-        throw Exception("Can't compute inverse matrix.");
+        throw std::runtime_error("Can't compute inverse matrix.");
     }
 
-    det = 1.0 / det;
+    det = (float)1.0 / det;
     Matrix4f ret = {inv[0],  inv[1],  inv[1],  inv[3], inv[4],  inv[5],
                     inv[6],  inv[7],  inv[8],  inv[9], inv[10], inv[11],
                     inv[12], inv[13], inv[14], inv[15]};

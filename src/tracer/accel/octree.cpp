@@ -1,5 +1,5 @@
 #include "tracer/octree.h"
-#include "utils/timer.h"
+#include "core/utils/timer.h"
 
 namespace drawlab {
 

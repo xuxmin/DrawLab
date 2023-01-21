@@ -1,6 +1,5 @@
 #pragma once
 
-#include "core/base/common.h"
 #include "core/math/ray.h"
 
 namespace drawlab {
@@ -317,5 +316,18 @@ template <size_t N, typename T> struct TBoundingBox {
     PointType m_min;  /// Component-wise minimum
     PointType m_max;  /// Component-wise maximum
 };
+
+typedef TBoundingBox<1, float> BoundingBox1f;
+typedef TBoundingBox<2, float> BoundingBox2f;
+typedef TBoundingBox<3, float> BoundingBox3f;
+typedef TBoundingBox<4, float> BoundingBox4f;
+typedef TBoundingBox<1, double> BoundingBox1d;
+typedef TBoundingBox<2, double> BoundingBox2d;
+typedef TBoundingBox<3, double> BoundingBox3d;
+typedef TBoundingBox<4, double> BoundingBox4d;
+typedef TBoundingBox<1, int> BoundingBox1i;
+typedef TBoundingBox<2, int> BoundingBox2i;
+typedef TBoundingBox<3, int> BoundingBox3i;
+typedef TBoundingBox<4, int> BoundingBox4i;
 
 };  // namespace drawlab

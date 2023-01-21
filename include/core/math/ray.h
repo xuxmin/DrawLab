@@ -79,4 +79,7 @@ template <size_t N, typename T> struct TRay {
     }
 };
 
+typedef TRay<2, float> Ray2f;
+typedef TRay<3, float> Ray3f;
+
 }  // namespace drawlab

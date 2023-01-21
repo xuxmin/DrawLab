@@ -32,18 +32,10 @@ if (WIN32)
 endif()
 
 add_subdirectory(ext)
+add_subdirectory(src/core)
 
 set(sources
     src/main.cpp
-    src/core/base/common.cpp
-    src/core/base/string.cpp
-    src/core/math/math.cpp
-    src/core/math/matrix.cpp
-    src/core/math/wrap.cpp
-    src/core/bitmap/bitmap.cpp
-    src/core/parser/proplist.cpp
-    src/core/parser/parser.cpp
-    src/core/parser/object.cpp
 
     src/editor/gui.cpp
     src/editor/block.cpp
@@ -71,26 +63,16 @@ set(sources
 
 add_executable(drawlab ${sources})
 
-target_link_libraries(drawlab PUBLIC ${GLFW_LIB_NAME} imgui glad IlmImf stb_image pugixml tiny_obj_loader tbb_static)
+target_link_libraries(drawlab PUBLIC ${GLFW_LIB_NAME} imgui glad corelib pugixml tiny_obj_loader tbb_static)
 
 target_include_directories(drawlab
     PUBLIC
     ext
     ${CMAKE_CURRENT_SOURCE_DIR}/include
-    # Portable filesystem API
-    ${FILESYSTEM_INCLUDE_DIR}
-    # tinyformat string formatting library
-    ${TFM_INCLUDE_DIR}
-    # OpenEXR high dynamic range bitmap library
-    ${OPENEXR_INCLUDE_DIRS}
-    # stb image
-    ${STB_IMAGE_INCLUDE_DIR}
     # glad
     ${GLAD_INCLUDE_DIRS}
     # glfw
     ${GLFW_INCLUDE_DIRS}
-    # pugixml
-    ${PUGIXML_INCLUDE_DIR}
     # pcg32
     ${PCG32_INCLUDE_DIR}
     # tiny obj loader
@@ -100,8 +82,6 @@ target_include_directories(drawlab
 )
 
 target_compile_features(drawlab PRIVATE cxx_std_17)
-
-add_subdirectory(src/optix)
 
 # Test
 # add_library(drawlab_lib ${sources})

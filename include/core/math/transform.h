@@ -1,6 +1,5 @@
 #pragma once
 
-#include "core/base/common.h"
 #include "core/math/math.h"
 #include "core/math/matrix.h"
 #include "core/math/normal.h"

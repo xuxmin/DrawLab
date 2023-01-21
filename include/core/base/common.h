@@ -18,24 +18,6 @@
 
 namespace drawlab {
 
-template <size_t N, typename T> struct TBoundingBox;
-template <size_t N, typename T> struct TRay;
-
-typedef TBoundingBox<1, float> BoundingBox1f;
-typedef TBoundingBox<2, float> BoundingBox2f;
-typedef TBoundingBox<3, float> BoundingBox3f;
-typedef TBoundingBox<4, float> BoundingBox4f;
-typedef TBoundingBox<1, double> BoundingBox1d;
-typedef TBoundingBox<2, double> BoundingBox2d;
-typedef TBoundingBox<3, double> BoundingBox3d;
-typedef TBoundingBox<4, double> BoundingBox4d;
-typedef TBoundingBox<1, int> BoundingBox1i;
-typedef TBoundingBox<2, int> BoundingBox2i;
-typedef TBoundingBox<3, int> BoundingBox3i;
-typedef TBoundingBox<4, int> BoundingBox4i;
-typedef TRay<2, float> Ray2f;
-typedef TRay<3, float> Ray3f;
-
 /// Import cout, cerr, endl for debugging purposes
 using std::cerr;
 using std::cout;

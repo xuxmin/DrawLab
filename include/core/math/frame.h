@@ -3,6 +3,7 @@
 #include "core/math/math.h"
 #include "core/math/normal.h"
 #include "core/math/vector.h"
+#include <tinyformat.h>
 
 namespace drawlab {
 

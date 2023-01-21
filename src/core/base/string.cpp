@@ -1,6 +1,9 @@
+#include "core/base/common.h"
 #include "core/base/string.h"
 #include "core/math/vector.h"
 #include <iomanip>
+#include <sstream>
+
 
 namespace drawlab {
 
