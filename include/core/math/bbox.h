@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/math/ray.h"
+#include <tinyformat.h>
 
 namespace drawlab {
 
