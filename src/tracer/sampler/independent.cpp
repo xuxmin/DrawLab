@@ -27,7 +27,12 @@ public:
         return std::move(cloned);
     }
 
-    void prepare() { m_random.seed(0, 0); }
+    void prepare(const ImageBlock &block) {
+        m_random.seed(
+            block.getOffset().x(),
+            block.getOffset().y()
+        );
+    }
 
     void generate() { /* No-op for this sampler */
     }

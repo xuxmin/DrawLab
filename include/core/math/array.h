@@ -65,6 +65,15 @@ public:
         return true;
     }
 
+    bool any() const {
+        for (size_t i = 0; i < N; i++) {
+            if ((float)m[i] != 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     std::string toString() const {
         std::string result;
         for (size_t i = 0; i < N; ++i) {

@@ -60,6 +60,7 @@ public:
     inline const int cols() const { return m_size[0] + 2 * m_borderSize; }
     inline const int rows() const { return m_size[1] + 2 * m_borderSize; }
 
+    /// Note that row, col should consider the m_borderSize
     Color4f& coeffRef(int row, int col);
     const Color4f& coeffRef(int row, int col) const;
 
@@ -84,7 +85,7 @@ public:
         }
     }
 
-    /// Record a sample with the given position and radiance value
+    /// Record a sample with the given position and radiance value, (w, h)
     void put(const Point2f& pos, const Color3f& value);
 
     /**
@@ -116,6 +117,51 @@ protected:
     float* m_weightsY = nullptr;
     float m_lookupFactor = 0;
     mutable tbb::mutex m_mutex;
+};
+
+/**
+ * \brief Spiraling block generator
+ *
+ * This class can be used to chop up an image into many small
+ * rectangular blocks suitable for parallel rendering. The blocks
+ * are ordered in spiraling pattern so that the center is
+ * rendered first.
+ */
+class BlockGenerator {
+
+public:
+    /**
+     * \brief Create a block generator with
+     * \param size
+     *      Size of the image that should be split into blocks
+     * \param blockSize
+     *      Maximum size of the individual blocks
+     */
+    BlockGenerator(const Vector2i &size, int blockSize);
+
+    /**
+     * \brief Return the next block to be rendered
+     *
+     * This function is thread-safe
+     *
+     * \return \c false if there were no more blocks
+     */
+    bool next(ImageBlock &block);
+
+    /// Return the total number of blocks
+    int getBlockCount() const { return m_blocksLeft; }
+protected:
+    enum EDirection { ERight = 0, EDown, ELeft, EUp };
+
+    Point2i m_block;
+    Vector2i m_numBlocks;
+    Vector2i m_size;
+    int m_blockSize;
+    int m_numSteps;
+    int m_blocksLeft;
+    int m_stepsLeft;
+    int m_direction;
+    tbb::mutex m_mutex;
 };
 
 }  // namespace drawlab

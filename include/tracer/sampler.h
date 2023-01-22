@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/base/common.h"
+#include "core/bitmap/block.h"
 #include "core/parser/object.h"
 #include <memory>
 
@@ -56,7 +56,7 @@ public:
      * initialize the sampler so that repeated program runs
      * always create the same image.
      */
-    virtual void prepare() = 0;
+    virtual void prepare(const ImageBlock &block) = 0;
 
     /**
      * \brief Prepare to generate new samples

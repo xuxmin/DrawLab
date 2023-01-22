@@ -166,7 +166,22 @@ public:
         return c;
     }
 
+    friend TVector<N, T> operator-(const TVector<N, T> lhs, const TPoint<N, T>& rhs) {
+        TVector<N, T> c;
+        for (size_t i = 0; i < N; i++)
+            c.m[i] = lhs[i] - rhs[i];
+        return c;
+    }
+
     TArray<N, bool> operator>(const TPoint<N, T>& rhs) const {
+        TArray<N, bool> c;
+        for (size_t i = 0; i < N; i++) {
+            c.m[i] = this->m[i] > rhs.m[i];
+        }
+        return c;
+    }
+
+    TArray<N, bool> operator>(const TVector<N, T>& rhs) const {
         TArray<N, bool> c;
         for (size_t i = 0; i < N; i++) {
             c.m[i] = this->m[i] > rhs.m[i];
@@ -178,6 +193,22 @@ public:
         TArray<N, bool> c;
         for (size_t i = 0; i < N; i++) {
             c.m[i] = this->m[i] >= rhs.m[i];
+        }
+        return c;
+    }
+
+    TArray<N, bool> operator>=(const TVector<N, T>& rhs) const {
+        TArray<N, bool> c;
+        for (size_t i = 0; i < N; i++) {
+            c.m[i] = this->m[i] >= rhs.m[i];
+        }
+        return c;
+    }
+
+    TArray<N, bool> operator>=(const T& rhs) const {
+        TArray<N, bool> c;
+        for (size_t i = 0; i < N; i++) {
+            c.m[i] = this->m[i] >= rhs;
         }
         return c;
     }

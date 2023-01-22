@@ -1,4 +1,5 @@
 #include "core/bitmap/bitmap.h"
+#include "core/base/exception.h"
 #include <ImfChannelList.h>
 #include <ImfIO.h>
 #include <ImfInputFile.h>
@@ -8,6 +9,9 @@
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
+
+using std::cout;
+using std::endl;
 
 namespace drawlab {
 

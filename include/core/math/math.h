@@ -22,6 +22,7 @@ static const float M_SQRT_TWO = 1.41421356237309504880f;
 static const float M_INV_SQRT_TWO = 0.70710678118654752440f;
 
 template <typename T> T max(T a, T b) { return a > b ? a : b; }
+template <typename T> T min(T a, T b) { return a < b ? a : b; }
 
 inline float clamp(float value, float min, float max) {
     if (value < min)

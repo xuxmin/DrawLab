@@ -36,10 +36,8 @@ add_subdirectory(src/core)
 add_subdirectory(src/opengl)
 
 set(sources
-    src/main.cpp
 
     src/editor/gui.cpp
-    src/editor/block.cpp
 
     src/opengl/texture.cpp
     src/opengl/display.cpp
@@ -60,11 +58,12 @@ set(sources
     src/tracer/sampler/independent.cpp
     src/tracer/camera/perspective.cpp
     src/tracer/rfilter/rfilter.cpp
+    src/tracer/main.cpp
 )
 
 add_executable(drawlab ${sources})
 
-target_link_libraries(drawlab PUBLIC ${GLFW_LIB_NAME} imgui corelib gllib tiny_obj_loader tbb_static)
+target_link_libraries(drawlab PUBLIC ${GLFW_LIB_NAME} imgui corelib gllib tiny_obj_loader)
 
 target_include_directories(drawlab
     PUBLIC
@@ -76,8 +75,6 @@ target_include_directories(drawlab
     ${PCG32_INCLUDE_DIR}
     # tiny obj loader
     ${TINY_OBJ_INCLUDE_DIR}
-    # tbb
-    ${TBB_INCLUDE_DIR}
 )
 
 target_compile_features(drawlab PRIVATE cxx_std_17)

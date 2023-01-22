@@ -10,6 +10,7 @@ set(SOURCE_FILES
     math/matrix.cpp
     math/wrap.cpp
     bitmap/bitmap.cpp
+    bitmap/block.cpp
     parser/proplist.cpp
     parser/parser.cpp
     parser/object.cpp
@@ -21,6 +22,7 @@ add_library(${TARGET_NAME} ${SOURCE_FILES})
 target_link_libraries(${TARGET_NAME} stb_image)
 target_link_libraries(${TARGET_NAME} IlmImf)
 target_link_libraries(${TARGET_NAME} pugixml)
+target_link_libraries(${TARGET_NAME} tbb_static)
 
 
 target_include_directories(${TARGET_NAME} 
@@ -30,4 +32,5 @@ target_include_directories(${TARGET_NAME}
     ${TFM_INCLUDE_DIR}          # tinyformat string formatting library
     ${FILESYSTEM_INCLUDE_DIR}   # Portable filesystem 
     ${PUGIXML_INCLUDE_DIR}      # pugixml
+    ${TBB_INCLUDE_DIR}          # tbb
 )

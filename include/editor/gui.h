@@ -2,7 +2,7 @@
 
 #include "core/base/common.h"
 #include "core/bitmap/bitmap.h"
-#include "editor/block.h"
+#include "core/bitmap/block.h"
 #include "opengl/display.h"
 
 #include <GLFW/glfw3.h>

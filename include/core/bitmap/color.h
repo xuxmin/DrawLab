@@ -1,6 +1,8 @@
 #pragma once
 
-#include "core/base/common.h"
+#include "core/math/math.h"
+#include "core/base/string.h"
+#include <tinyformat.h>
 
 namespace drawlab {
 

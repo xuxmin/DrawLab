@@ -37,6 +37,7 @@ class ReconstructionFilter;
 class Sampler;
 class Scene;
 class AccelTree;
+class ImageBlock;
 
 /**
  * \brief Return the global file resolver instance

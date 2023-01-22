@@ -1,6 +1,7 @@
-#include "editor/block.h"
+#include "core/bitmap/block.h"
 #include "core/bitmap/bitmap.h"
 #include "core/math/bbox.h"
+#include "core/math/math.h"
 #include "tracer/rfilter.h"
 #include <tbb/tbb.h>
 
@@ -58,7 +59,7 @@ Bitmap* ImageBlock::toBitmap() const {
     Bitmap* result = new Bitmap(m_size.y(), m_size.x());
     for (int y = 0; y < m_size.y(); ++y) {
         for (int x = 0; x < m_size.x(); ++x) {
-            result->setPixel(y, x, coeffRef(y, x).divideByFilterWeight());
+            result->setPixel(y, x, coeffRef(y + m_borderSize, x + m_borderSize).divideByFilterWeight());
         }
     }
     return result;
@@ -72,7 +73,6 @@ void ImageBlock::fromBitmap(const Bitmap& bitmap) {
 
     for (int y = 0; y < m_size.y(); ++y) {
         for (int x = 0; x < m_size.x(); ++x) {
-            int p = y * (m_borderSize + m_size.x()) + x + m_borderSize;
             coeffRef(y, x) = Color4f(bitmap.getPixel(y, x));
         }
     }
@@ -110,6 +110,70 @@ void ImageBlock::put(const Point2f& _pos, const Color3f& value) {
     for (int y = bbox.m_min.y(), yr = 0; y <= bbox.m_max.y(); ++y, ++yr)
         for (int x = bbox.m_min.x(), xr = 0; x <= bbox.m_max.x(); ++x, ++xr)
             coeffRef(y, x) += Color4f(value) * m_weightsX[xr] * m_weightsY[yr];
+}
+
+void ImageBlock::put(ImageBlock &b) {
+    Vector2i offset = b.getOffset() - m_offset +
+        Vector2i(m_borderSize - b.getBorderSize());
+    Vector2i size = b.getSize() + Vector2i(2*b.getBorderSize());
+
+    tbb::mutex::scoped_lock lock(m_mutex);
+
+    for (int i = 0; i < size.y(); i++) {
+        for (int j = 0; j < size.x(); j++) {
+            int y = offset.y() + i;
+            int x = offset.x() + j;
+            coeffRef(y, x) += b.coeffRef(i, j);
+        }
+    }
+}
+
+BlockGenerator::BlockGenerator(const Vector2i &size, int blockSize)
+        : m_size(size), m_blockSize(blockSize) {
+    m_numBlocks = Vector2i(
+        (int) std::ceil(size.x() / (float) blockSize),
+        (int) std::ceil(size.y() / (float) blockSize));
+    m_blocksLeft = m_numBlocks.x() * m_numBlocks.y();
+    m_direction = ERight;
+    m_block = Point2i(m_numBlocks[0] / 2, m_numBlocks[1] / 2);
+    m_stepsLeft = 1;
+    m_numSteps = 1;
+}
+
+bool BlockGenerator::next(ImageBlock &block) {
+    tbb::mutex::scoped_lock lock(m_mutex);
+
+    if (m_blocksLeft == 0)
+        return false;
+
+    Point2i pos = m_block * m_blockSize;
+    block.setOffset(pos);
+    Vector2i size = m_size - pos;
+    size[0] = min(size[0], m_blockSize);
+    size[1] = min(size[1], m_blockSize);
+    block.setSize(size);
+
+    if (--m_blocksLeft == 0)
+        return true;
+
+    do {
+        switch (m_direction) {
+            case ERight: ++m_block.x(); break;
+            case EDown:  ++m_block.y(); break;
+            case ELeft:  --m_block.x(); break;
+            case EUp:    --m_block.y(); break;
+        }
+
+        if (--m_stepsLeft == 0) {
+            m_direction = (m_direction + 1) % 4;
+            if (m_direction == ELeft || m_direction == ERight) 
+                ++m_numSteps;
+            m_stepsLeft = m_numSteps;
+        }
+    } while ((m_block < 0).any() ||
+             (m_block >= m_numBlocks).any());
+
+    return true;
 }
 
 }  // namespace drawlab
