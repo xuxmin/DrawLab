@@ -184,6 +184,12 @@ public:
     /// Return the vertex normal of the given triangle and index
     Normal3f getVertexNormal(size_t iface, size_t index) const;
 
+    /// @brief Return the all vertex position
+    const std::vector<float>& getVertexPosition() const;
+    
+    /// @brief Return the all vertex index
+    const std::vector<unsigned int>& getVertexIndex() const;
+
     /// @brief Return whether the mesh has texcoord
     bool hasTexCoord() const { return m_UV.size() > 0; }
 

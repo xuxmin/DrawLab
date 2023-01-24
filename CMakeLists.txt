@@ -35,7 +35,10 @@ add_subdirectory(ext)
 add_subdirectory(src/core)
 add_subdirectory(src/opengl)
 
-set(sources
+include(configure_optix)
+
+
+OPTIX_add_sample_executable(drawlab
 
     src/editor/gui.cpp
 
@@ -58,12 +61,21 @@ set(sources
     src/tracer/sampler/independent.cpp
     src/tracer/camera/perspective.cpp
     src/tracer/rfilter/rfilter.cpp
-    src/tracer/main.cpp
+    # src/tracer/main.cpp
+
+    src/optix/main.cpp
+    src/optix/optix_renderer.cpp
+    src/optix/sutil.cpp
+    src/optix/cuda/device_programs.cu
 )
 
-add_executable(drawlab ${sources})
-
-target_link_libraries(drawlab PUBLIC ${GLFW_LIB_NAME} imgui corelib gllib tiny_obj_loader)
+target_link_libraries(drawlab 
+    ${GLFW_LIB_NAME}
+    imgui
+    corelib
+    gllib
+    tiny_obj_loader
+)
 
 target_include_directories(drawlab
     PUBLIC

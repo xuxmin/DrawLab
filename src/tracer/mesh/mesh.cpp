@@ -125,6 +125,14 @@ Normal3f Mesh::getVertexNormal(size_t iface, size_t index) const {
     return Normal3f(m_N[3 * p], m_N[3 * p + 1], m_N[3 * p + 2]);
 }
 
+const std::vector<float>& Mesh::getVertexPosition() const {
+    return m_V;
+}
+
+const std::vector<unsigned int>& Mesh::getVertexIndex() const {
+    return m_F;
+}
+
 bool Mesh::rayIntersect(uint32_t index, const Ray3f& ray, float& u, float& v,
                         float& t) const {
     const Point3f p0 = getVertexPosition(index, 0);
