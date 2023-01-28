@@ -41,14 +41,14 @@ public:
             // Query the BSDF for that emitter-sampled direction
             const Vector3f wo = its.toLocal(ds.d);
             const Vector3f wi = its.toLocal(-ray.d.normalized());
-            BSDFQueryRecord bRec(wi, wo, ESolidAngle);
+            BSDFQueryRecord bRec(its, wi, wo, ESolidAngle);
             Color3f fr = its.mesh->getBSDF()->eval(bRec);
 
             Lr = spectrum * fr;
         } else {
             // Sample bsdf
             const Vector3f wi = its.toLocal(-ray.d.normalized());
-            BSDFQueryRecord bRec(wi);
+            BSDFQueryRecord bRec(its, wi);
             Color3f fr = its.mesh->getBSDF()->sample(bRec, sampler->next2D());
 
             Lr = Li(scene, sampler, Ray3f(its.p, its.toWorld(bRec.wo))) * fr;

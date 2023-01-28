@@ -1,6 +1,7 @@
 #include "core/base/common.h"
 #include "core/math/frame.h"
 #include "core/math/wrap.h"
+#include "tracer/texture.h"
 #include "tracer/bsdf.h"
 
 namespace drawlab {
@@ -11,7 +12,8 @@ namespace drawlab {
 class Diffuse : public BSDF {
 public:
     Diffuse(const PropertyList& propList) {
-        m_albedo = propList.getColor("albedo", Color3f(0.5f));
+        Color3f constant_albedo = propList.getColor("albedo", Color3f(0.5f));
+        m_albedo = new ConstantTexture(constant_albedo);
     }
 
     /// Evaluate the BRDF model
@@ -23,7 +25,7 @@ public:
             return Color3f(0.0f);
 
         /* The BRDF is simply the albedo / pi */
-        return m_albedo * M_INV_PI;
+        return m_albedo->eval(bRec.its) * M_INV_PI;
     }
 
     /// Compute the density of \ref sample() wrt. solid angles
@@ -59,7 +61,16 @@ public:
 
         /* eval() / pdf() * cos(theta) = albedo. There
            is no need to call these functions. */
-        return m_albedo;
+        return m_albedo->eval(bRec.its);
+    }
+
+    void addChild(Object* child) {
+        if (child->getClassType() == ETexture) {
+            m_albedo = static_cast<Texture*>(child);
+        }
+        else {
+            BSDF::addChild(child);
+        }
     }
 
     bool isDiffuse() const { return true; }
@@ -69,13 +80,14 @@ public:
         return tfm::format("Diffuse[\n"
                            "  albedo = %s\n"
                            "]",
-                           m_albedo.toString());
+                           m_albedo->toString());
     }
 
     EClassType getClassType() const { return EBSDF; }
 
 private:
-    Color3f m_albedo;
+    // Color3f m_albedo;
+    const Texture* m_albedo;
 };
 
 REGISTER_CLASS(Diffuse, "diffuse");

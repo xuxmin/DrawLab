@@ -121,4 +121,9 @@ const char* getInputData(const char* sample, const char* sampleDir,
 #define TERMINAL_DEFAULT TERMINAL_RESET
 #define TERMINAL_BOLD "\033[1;1m"
 
+#ifndef PRINT
+# define PRINT(var) std::cout << #var << "=" << var << std::endl;
+# define PING std::cout << __FILE__ << "::" << __LINE__ << ": " << __FUNCTION__ << std::endl;
+#endif
+
 }  // namespace sutil

@@ -38,6 +38,7 @@ class Sampler;
 class Scene;
 class AccelTree;
 class ImageBlock;
+class Intersection;
 
 /**
  * \brief Return the global file resolver instance

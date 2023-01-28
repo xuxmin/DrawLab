@@ -185,10 +185,15 @@ public:
     Normal3f getVertexNormal(size_t iface, size_t index) const;
 
     /// @brief Return the all vertex position
-    const std::vector<float>& getVertexPosition() const;
+    const std::vector<float>& getVertexPosition() const { return m_V; }
     
     /// @brief Return the all vertex index
-    const std::vector<unsigned int>& getVertexIndex() const;
+    const std::vector<unsigned int>& getVertexIndex() const { return m_F; }
+
+    /// @brief Return the all vertex normal
+    const std::vector<float>& getVertexNormal() const { return m_N; }
+
+    const std::vector<float> getVertexTexCoord() const { return m_UV; }
 
     /// @brief Return whether the mesh has texcoord
     bool hasTexCoord() const { return m_UV.size() > 0; }

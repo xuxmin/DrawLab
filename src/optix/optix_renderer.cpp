@@ -3,6 +3,8 @@
 #include "optix/vec_math.h"
 // this include may only appear in a single source file:
 #include <optix_function_table_definition.h>
+#include "tracer/camera.h"
+#include "core/bitmap/bitmap.h"
 
 namespace optix {
 
@@ -37,9 +39,7 @@ struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) MissRecord {
 struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) HitgroupRecord {
     __align__(
         OPTIX_SBT_RECORD_ALIGNMENT) char header[OPTIX_SBT_RECORD_HEADER_SIZE];
-    // just a dummy value - later examples will use more interesting
-    // data here
-    int objectID;
+    HitGroupData data;
 };
 
 OptixRenderer::OptixRenderer(drawlab::Scene* scene): m_scene(scene) {
@@ -61,6 +61,8 @@ OptixRenderer::OptixRenderer(drawlab::Scene* scene): m_scene(scene) {
 
     std::cout << "#optix: setting up optix pipeline ..." << std::endl;
     createPipeline();
+
+    createTextures();
 
     std::cout << "#optix: building SBT ..." << std::endl;
     buildSBT();
@@ -284,7 +286,14 @@ void OptixRenderer::buildSBT() {
         int objectType = 0;
         HitgroupRecord rec;
         OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[objectType], &rec));
-        rec.objectID = i;
+        rec.data.vertex = (float3*)vertexBuffers[i].d_pointer();
+        rec.data.index = (int3*)indexBuffers[i].d_pointer();
+        rec.data.normal   = (float3*)normalBuffer[i].d_pointer();
+        rec.data.texcoord = (float2*)texcoordBuffer[i].d_pointer();
+        rec.data.hasTexture = true;
+        rec.data.texture = textureObjects[0];
+        rec.data.color = make_float3(0.5, 0.5, 0.5);
+
         hitgroupRecords.push_back(rec);
     }
     hitgroupRecordsBuffer.allocAndUpload(hitgroupRecords);
@@ -294,7 +303,6 @@ void OptixRenderer::buildSBT() {
 }
 
 OptixTraversableHandle OptixRenderer::buildAccel() {
-
     // ------------------------------------------------------------
     // Primitive build inputs
     // ------------------------------------------------------------
@@ -305,11 +313,15 @@ OptixTraversableHandle OptixRenderer::buildAccel() {
      * Optionally, triangles can be indexed using an index buffer in
      * device memory.
      */
-
+    PING;
     const std::vector<drawlab::Mesh*> meshs = m_scene->getMeshes();
     int mesh_num = meshs.size();
+    PRINT(mesh_num);
+
     vertexBuffers.resize(mesh_num);
     indexBuffers.resize(mesh_num);
+    normalBuffer.resize(mesh_num);
+    texcoordBuffer.resize(mesh_num);
 
     std::vector<OptixBuildInput> buildInputs(mesh_num);
     std::vector<CUdeviceptr> d_vertices(mesh_num);
@@ -320,7 +332,11 @@ OptixTraversableHandle OptixRenderer::buildAccel() {
         // Upload triangle data to device
         vertexBuffers[i].allocAndUpload(meshs[i]->getVertexPosition());
         indexBuffers[i].allocAndUpload(meshs[i]->getVertexIndex());
-    
+        if (meshs[i]->hasVertexNormal())
+            normalBuffer[i].allocAndUpload(meshs[i]->getVertexNormal());
+        if (meshs[i]->hasTexCoord())
+            texcoordBuffer[i].allocAndUpload(meshs[i]->getVertexTexCoord());
+
         // Get the pointer to the device
         d_vertices[i] = vertexBuffers[i].d_pointer();
         d_indices[i]  = indexBuffers[i].d_pointer();
@@ -456,21 +472,18 @@ void OptixRenderer::render() {
 void OptixRenderer::updateCamera() {
     
 	const float aspect_ratio = launchParams.width / (float)launchParams.height;
-    const float fov = 15;
+    const float fov = 60;
 
-    // const Camera* camera = this->m_scene->getCamera();
-    float3 from = make_float3(0, 6, 27.5);
-    float3 at = make_float3(0, -1.5, 2.5);
-    float3 up = make_float3(0, 1, 0);
+    float3 from = make_float3(-8., 10.f, 0.f);
+    float3 at = make_float3(0, 4.f, 0);
+    float3 up = make_float3(0, -1, 0);
 
     float ulen, vlen, wlen;
     float3 W = at - from;       // Do not normalize W -- it implies focal length
 
     wlen = length(W);
-    float3 U = normalize(cross(up, W));
+    float3 U = normalize(cross(W, up));
     float3 V = normalize(cross(U, W));
-
-    U = -U;
 
     vlen = wlen * tanf( 0.5f * fov * M_PIf / 180.0f );
     V *= vlen;
@@ -502,6 +515,63 @@ void OptixRenderer::resize(const int height, const int width) {
 void OptixRenderer::downloadPixels(unsigned int h_pixels[]) {
     colorBuffer.download(h_pixels,
                          launchParams.height * launchParams.width);
+}
+
+void OptixRenderer::createTextures() {
+    int num_tex = 1;
+
+    textureArrays.resize(num_tex);
+    textureObjects.resize(num_tex);
+
+    for (int tex_id = 0; tex_id < num_tex; tex_id++) {
+        drawlab::Bitmap* bitmap = new drawlab::Bitmap("KAMEN.JPG");
+
+        bitmap->saveEXR("test");
+        cudaResourceDesc res_desc = {};
+
+        cudaChannelFormatDesc channel_desc;
+        int width = bitmap->getWidth();
+        int height = bitmap->getHeight();
+        int numComponents = 4;
+        int pitch = width * numComponents * sizeof(unsigned char);
+        channel_desc = cudaCreateChannelDesc<uchar4>();
+
+        cudaArray_t& pixelArray = textureArrays[tex_id];
+        CUDA_CHECK(cudaMallocArray(&pixelArray, &channel_desc, width, height));
+
+        std::vector<unsigned char> temp(width * height * 4);
+        for (int i = 0; i < width * height; i++) {
+            temp[4*i] = bitmap->getPtr()[3*i];
+            temp[4*i + 1] = bitmap->getPtr()[3*i + 1];
+            temp[4*i + 2] = bitmap->getPtr()[3*i + 2];
+            temp[4*i + 3] = bitmap->getPtr()[3*i + 2];
+        }
+
+        CUDA_CHECK(cudaMemcpy2DToArray(pixelArray,
+                                   /* offset */ 0, 0, temp.data(), pitch,
+                                   pitch, height, cudaMemcpyHostToDevice));
+
+        res_desc.resType = cudaResourceTypeArray;
+        res_desc.res.array.array = pixelArray;
+
+        cudaTextureDesc tex_desc = {};
+        tex_desc.addressMode[0] = cudaAddressModeWrap;
+        tex_desc.addressMode[1] = cudaAddressModeWrap;
+        tex_desc.filterMode = cudaFilterModeLinear;
+        tex_desc.readMode = cudaReadModeNormalizedFloat;
+        tex_desc.normalizedCoords = 1;
+        tex_desc.maxAnisotropy = 1;
+        tex_desc.maxMipmapLevelClamp = 99;
+        tex_desc.minMipmapLevelClamp = 0;
+        tex_desc.mipmapFilterMode = cudaFilterModePoint;
+        tex_desc.borderColor[0] = 1.0f;
+        tex_desc.sRGB = 0;
+
+        // Create texture object
+        cudaTextureObject_t cuda_tex = 0;
+        CUDA_CHECK(cudaCreateTextureObject(&cuda_tex, &res_desc, &tex_desc, nullptr));
+        textureObjects[tex_id] = cuda_tex;
+    }
 }
 
 }  // namespace optix

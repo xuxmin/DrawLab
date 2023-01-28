@@ -43,6 +43,9 @@ private:
     int m_width;
     int m_height;
     std::vector<float> m_data;
+
+    void loadEXR(const std::string& filename);
+    void loadLDR(const std::string& filename);
 };
 
 }  // namespace drawlab

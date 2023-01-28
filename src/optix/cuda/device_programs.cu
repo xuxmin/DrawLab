@@ -98,9 +98,62 @@ inline __device__ float3 randomColor(int i) {
 }
 
 extern "C" __global__ void __closesthit__radiance() {
-    const int primID = optixGetPrimitiveIndex();
+
+    const HitGroupData* rt_data = (HitGroupData*)optixGetSbtDataPointer();
+
+    // ------------------------------------------------------------------
+    // gather some basic hit information
+    // ------------------------------------------------------------------
+    const int prim_idx = optixGetPrimitiveIndex();
+    const int3 index  = rt_data->index[prim_idx];
+    const float3 ray_dir = optixGetWorldRayDirection();
+    const float u = optixGetTriangleBarycentrics().x;
+    const float v = optixGetTriangleBarycentrics().y;
+
+    // ------------------------------------------------------------------
+    // compute normal, using either shading normal (if avail), or
+    // geometry normal (fallback)
+    // ------------------------------------------------------------------
+    float3 N;
+    if (rt_data->normal) {
+        N = (1.f - u - v) * rt_data->normal[index.x] +
+            u * rt_data->normal[index.y] + v * rt_data->normal[index.z];
+    }
+    else {
+        const float3 v0   = rt_data->vertex[index.x];
+        const float3 v1   = rt_data->vertex[index.y];
+        const float3 v2   = rt_data->vertex[index.z];
+        N  = normalize(cross(v1-v0, v2-v0));
+    }
+    N = normalize(N);
+
+    // ------------------------------------------------------------------
+    // compute diffuse material color, including diffuse texture, if
+    // available
+    // ------------------------------------------------------------------
+    float3 diffuseColor = rt_data->color;
+    if (rt_data->hasTexture && rt_data->texcoord) {
+        const float2 tc
+            = (1.f-u-v) * rt_data->texcoord[index.x]
+            +         u * rt_data->texcoord[index.y]
+            +         v * rt_data->texcoord[index.z];
+      
+        float4 fromTexture = tex2D<float4>(rt_data->texture, tc.x, tc.y);
+
+        // printf("%lf %lf\n", tc.x, tc.y);
+        // printf("%lf %lf %lf %lf\n", fromTexture.x, fromTexture.y, fromTexture.z, fromTexture.w);
+      
+        diffuseColor *= make_float3(fromTexture);
+    }
+
+    // ------------------------------------------------------------------
+    // perform some simple "NdotD" shading
+    // ------------------------------------------------------------------
+
+    const float cosDN  = 0.2f + .8f * fabsf(dot(ray_dir, N));
     RadiancePRD* prd = getPRD();
-    prd->radiance = randomColor(primID);
+    prd->radiance = cosDN * diffuseColor;
+    // printf("%lf %lf %lf\n", prd->radiance.x, prd->radiance.y, prd->radiance.z);
 }
 
 extern "C" __global__ void

@@ -1,5 +1,5 @@
 #include "core/bitmap/bitmap.h"
-#include "core/base/exception.h"
+#include "core/base/common.h"
 #include <ImfChannelList.h>
 #include <ImfIO.h>
 #include <ImfInputFile.h>
@@ -9,6 +9,8 @@
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 using std::cout;
 using std::endl;
@@ -28,6 +30,17 @@ Bitmap::Bitmap(const Bitmap& bitmap) {
 }
 
 Bitmap::Bitmap(const std::string& filename) {
+    filesystem::path path = getFileResolver()->resolve(filename);
+
+    if (path.extension() == "exr") {
+        loadEXR(path.str());
+    }
+    else {
+        loadLDR(path.str());
+    }
+}
+
+void Bitmap::loadEXR(const std::string& filename) {
     Imf::InputFile file(filename.c_str());
     const Imf::Header& header = file.header();
     const Imf::ChannelList& channels = header.channels();
@@ -81,6 +94,32 @@ Bitmap::Bitmap(const std::string& filename) {
                        Imf::Slice(Imf::FLOAT, ptr, pixelStride, rowStride));
     file.setFrameBuffer(frameBuffer);
     file.readPixels(dw.min.y, dw.max.y);
+}
+
+void Bitmap::loadLDR(const std::string& filename) {
+    
+    stbi_set_flip_vertically_on_load(true);
+
+    int w, h, c;
+    int ok = stbi_info(filename.c_str(), &w, &h, &c);
+    if (!ok) {
+        std::cerr << "can't load file " << filename << "\n";
+        return;
+    }
+    unsigned char* tmp_data = stbi_load((filename).c_str(), &w, &h, &c, 0);
+
+    m_data.resize(w * h * 3);
+    for (int i = 0; i < w * h * 3; i++) {
+        if (c == 1) {
+            m_data[i] = tmp_data[i / 3];
+        }
+        else {
+            m_data[i] = tmp_data[i];
+        }
+    }
+
+    m_width = w;
+    m_height = h;
 }
 
 void Bitmap::saveEXR(const std::string& filename) {

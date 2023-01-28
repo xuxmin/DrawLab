@@ -13,6 +13,9 @@ enum EMeasure { EUnknownMeasure = 0, ESolidAngle, EDiscrete };
  * parameters to the evaluation and sampling routines in \ref BSDF
  */
 struct BSDFQueryRecord {
+    /// Reference to the underlying surface interaction
+    const Intersection& its;
+
     /// Incident direction (in the local frame)
     Vector3f wi;
 
@@ -26,12 +29,13 @@ struct BSDFQueryRecord {
     EMeasure measure;
 
     /// Create a new record for sampling the BSDF
-    BSDFQueryRecord(const Vector3f& wi)
-        : wi(wi), eta(1.f), measure(EUnknownMeasure) {}
+    BSDFQueryRecord(const Intersection& its, const Vector3f& wi)
+        : its(its), wi(wi), eta(1.f), measure(EUnknownMeasure) {}
 
     /// Create a new record for querying the BSDF
-    BSDFQueryRecord(const Vector3f& wi, const Vector3f& wo, EMeasure measure)
-        : wi(wi), wo(wo), eta(1.f), measure(measure) {}
+    BSDFQueryRecord(const Intersection& its, const Vector3f& wi,
+                    const Vector3f& wo, EMeasure measure)
+        : its(its), wi(wi), wo(wo), eta(1.f), measure(measure) {}
 };
 
 /**

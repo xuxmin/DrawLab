@@ -41,7 +41,7 @@ public:
             // Query the BSDF for that emitter-sampled direction
             const Vector3f wi = its.toLocal(-ray.d.normalized());
             const Vector3f wo = its.toLocal(ds.d);
-            BSDFQueryRecord bRec(wi, wo, ESolidAngle);
+            BSDFQueryRecord bRec(its, wi, wo, ESolidAngle);
 
             if (ds.pdf > 0) {
                 Color3f bsdf_val = bsdf->eval(bRec);
@@ -57,7 +57,7 @@ public:
 
             // ----------------------- BSDF sampling ----------------------
 
-            BSDFQueryRecord bsdf_bRec(wi);
+            BSDFQueryRecord bsdf_bRec(its, wi);
             Color3f fr = bsdf->sample(bsdf_bRec, sampler->next2D());
 
             // Update throughput, eta

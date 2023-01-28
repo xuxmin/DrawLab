@@ -19,4 +19,14 @@ struct LaunchParams {
     OptixTraversableHandle handle;
 };
 
+struct HitGroupData {
+    float3  color;
+    float3* vertex;
+    float3* normal;
+    float2* texcoord;
+    int3* index;
+    bool hasTexture;
+    cudaTextureObject_t texture;
+};
+
 }

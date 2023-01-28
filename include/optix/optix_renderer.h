@@ -65,6 +65,8 @@ protected:
     // Build an acceleration structure for the scene
     OptixTraversableHandle buildAccel();
 
+    void createTextures();
+
 protected:
     CUcontext cudaContext;
     CUstream stream;
@@ -124,8 +126,14 @@ protected:
     drawlab::Scene* m_scene;
     std::vector<CUDABuffer> vertexBuffers;
     std::vector<CUDABuffer> indexBuffers;
+    std::vector<CUDABuffer> normalBuffer;
+    std::vector<CUDABuffer> texcoordBuffer;
     //! buffer that keeps the (final, compacted) accel structure
     CUDABuffer asBuffer;
+
+    /*! @{ one texture object and pixel array per used texture */
+    std::vector<cudaArray_t>         textureArrays;
+    std::vector<cudaTextureObject_t> textureObjects;
 };
 
 };  // namespace optix

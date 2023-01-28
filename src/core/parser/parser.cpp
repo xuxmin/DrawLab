@@ -60,6 +60,7 @@ Object* loadFromXML(const std::string& filename) {
         ESampler = Object::ESampler,
         ETest = Object::ETest,
         EReconstructionFilter = Object::EReconstructionFilter,
+        ETexture = Object::ETexture,
 
         /* Properties */
         EBoolean = Object::EClassTypeCount,
@@ -92,6 +93,7 @@ Object* loadFromXML(const std::string& filename) {
     tags["sampler"] = ESampler;
     tags["rfilter"] = EReconstructionFilter;
     tags["test"] = ETest;
+    tags["texture"] = ETexture;
     tags["boolean"] = EBoolean;
     tags["integer"] = EInteger;
     tags["float"] = EFloat;
