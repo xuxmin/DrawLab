@@ -63,9 +63,11 @@ OPTIX_add_sample_executable(drawlab
     src/tracer/rfilter/rfilter.cpp
     src/tracer/texture/texture.cpp
     src/tracer/texture/bitmap.cpp
-    # src/tracer/main.cpp
 
-    src/optix/main.cpp
+    src/tracer/backend/cpu_renderer.cpp
+    src/tracer/main.cpp
+
+    # src/optix/main.cpp
     src/optix/optix_renderer.cpp
     src/optix/sutil.cpp
     src/optix/cuda/device_programs.cu
@@ -89,6 +91,8 @@ target_include_directories(drawlab
     ${PCG32_INCLUDE_DIR}
     # tiny obj loader
     ${TINY_OBJ_INCLUDE_DIR}
+    # cmdline
+    ${CMDLINE_INCLUDE_DIR}
 )
 
 target_compile_features(drawlab PRIVATE cxx_std_17)
