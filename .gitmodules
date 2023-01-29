@@ -19,3 +19,6 @@
 [submodule "ext/tbb"]
 	path = ext/tbb
 	url = https://github.com/wjakob/tbb
+[submodule "ext/cmdline"]
+	path = ext/cmdline
+	url = https://github.com/tanakh/cmdline.git
