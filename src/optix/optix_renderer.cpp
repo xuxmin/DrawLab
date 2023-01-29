@@ -174,7 +174,7 @@ void OptixRenderer::createRaygenPrograms() {
 }
 
 void OptixRenderer::createMissPrograms() {
-    missPGs.resize(1);
+    missPGs.resize(RAY_TYPE_COUNT);
 
     OptixProgramGroupOptions pgOptions = {};
     OptixProgramGroupDesc pgDesc = {};
@@ -187,18 +187,26 @@ void OptixRenderer::createMissPrograms() {
     OPTIX_CHECK_LOG(optixProgramGroupCreate(optixContext, &pgDesc,
                                             1,  // num program groups
                                             &pgOptions, log, &sizeof_log,
-                                            &missPGs[0]));
+                                            &missPGs[RAY_TYPE_RADIANCE]));
+    
+    // NULL miss program for occlusion rays
+    pgDesc.miss.module = module;
+    pgDesc.miss.entryFunctionName = "__miss__occlusion";
+    OPTIX_CHECK_LOG(optixProgramGroupCreate(optixContext, &pgDesc,
+                                            1,  // num program groups
+                                            &pgOptions, log, &sizeof_log,
+                                            &missPGs[RAY_TYPE_OCCLUSION]));
 }
 
 void OptixRenderer::createHitgroupPrograms() {
-    hitgroupPGs.resize(1);
+    hitgroupPGs.resize(RAY_TYPE_COUNT);
 
     OptixProgramGroupOptions pgOptions = {};
     OptixProgramGroupDesc pgDesc = {};
     pgDesc.kind = OPTIX_PROGRAM_GROUP_KIND_HITGROUP;
     pgDesc.hitgroup.moduleCH = module;
-    pgDesc.hitgroup.entryFunctionNameCH = "__closesthit__radiance";
     pgDesc.hitgroup.moduleAH = module;
+    pgDesc.hitgroup.entryFunctionNameCH = "__closesthit__radiance";
     pgDesc.hitgroup.entryFunctionNameAH = "__anyhit__radiance";
 
     char log[2048];  // For error reporting from OptiX creation functions
@@ -206,7 +214,14 @@ void OptixRenderer::createHitgroupPrograms() {
     OPTIX_CHECK_LOG(optixProgramGroupCreate(optixContext, &pgDesc,
                                             1,  // num program groups
                                             &pgOptions, log, &sizeof_log,
-                                            &hitgroupPGs[0]));
+                                            &hitgroupPGs[RAY_TYPE_RADIANCE]));
+
+    pgDesc.hitgroup.entryFunctionNameCH = "__closesthit__occlusion";
+    pgDesc.hitgroup.entryFunctionNameAH = "__anyhit__occlusion";
+    OPTIX_CHECK_LOG(optixProgramGroupCreate(optixContext, &pgDesc,
+                                            1,  // num program groups
+                                            &pgOptions, log, &sizeof_log,
+                                            &hitgroupPGs[RAY_TYPE_OCCLUSION]));
 }
 
 void OptixRenderer::createPipeline() {
@@ -225,7 +240,7 @@ void OptixRenderer::createPipeline() {
         programGroups.data(), (int)programGroups.size(), log, &sizeof_log,
         &pipeline));
 
-    OPTIX_CHECK(
+    OPTIX_CHECK_LOG(
         optixPipelineSetStackSize(/* [in] The pipeline to configure the stack
                                      size for */
                                   pipeline,
@@ -283,18 +298,18 @@ void OptixRenderer::buildSBT() {
     int numObjects = (int)meshs.size();
     std::vector<HitgroupRecord> hitgroupRecords;
     for (int i = 0; i < numObjects; i++) {
-        int objectType = 0;
-        HitgroupRecord rec;
-        OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[objectType], &rec));
-        rec.data.vertex = (float3*)vertexBuffers[i].d_pointer();
-        rec.data.index = (int3*)indexBuffers[i].d_pointer();
-        rec.data.normal   = (float3*)normalBuffer[i].d_pointer();
-        rec.data.texcoord = (float2*)texcoordBuffer[i].d_pointer();
-        rec.data.hasTexture = true;
-        rec.data.texture = textureObjects[0];
-        rec.data.color = make_float3(0.5, 0.5, 0.5);
-
-        hitgroupRecords.push_back(rec);
+        for (int ray_id = 0; ray_id < RAY_TYPE_COUNT; ray_id++) {
+            HitgroupRecord rec;
+            OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[ray_id], &rec));
+            rec.data.vertex = (float3*)vertexBuffers[i].d_pointer();
+            rec.data.index = (int3*)indexBuffers[i].d_pointer();
+            rec.data.normal   = (float3*)normalBuffer[i].d_pointer();
+            rec.data.texcoord = (float2*)texcoordBuffer[i].d_pointer();
+            rec.data.hasTexture = true;
+            rec.data.texture = textureObjects[0];
+            rec.data.color = make_float3(0.5, 0.5, 0.5);
+            hitgroupRecords.push_back(rec);
+        }
     }
     hitgroupRecordsBuffer.allocAndUpload(hitgroupRecords);
     sbt.hitgroupRecordBase = hitgroupRecordsBuffer.d_pointer();
@@ -526,7 +541,6 @@ void OptixRenderer::createTextures() {
     for (int tex_id = 0; tex_id < num_tex; tex_id++) {
         drawlab::Bitmap* bitmap = new drawlab::Bitmap("KAMEN.JPG");
 
-        bitmap->saveEXR("test");
         cudaResourceDesc res_desc = {};
 
         cudaChannelFormatDesc channel_desc;

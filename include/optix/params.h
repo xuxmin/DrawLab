@@ -2,6 +2,10 @@
 
 namespace optix {
 
+// for this simple example, we have a single ray type
+enum { RAY_TYPE_RADIANCE=0, RAY_TYPE_OCCLUSION, RAY_TYPE_COUNT };
+
+
 struct LaunchParams {
     int frameID{0};
 

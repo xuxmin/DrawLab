@@ -18,10 +18,6 @@ namespace optix {
 */
 extern "C"  __constant__ LaunchParams params;
 
-// for this simple example, we have a single ray type
-enum { RAY_TYPE_RADIANCE=0, RAY_TYPE_COUNT };
-
-
 /**
  * The payload is associated with each ray, and is passed to all 
  * the intersection, any-hit, closest-hit and miss programs that 
@@ -49,6 +45,10 @@ static __forceinline__ __device__ RadiancePRD* getPRD() {
     return reinterpret_cast<RadiancePRD*>(unpackPointer(u0, u1));
 }
 
+static __forceinline__ __device__ void setPayloadOcclusion(bool occluded) {
+    optixSetPayload_0(static_cast<unsigned int>(occluded));
+}
+
 static __forceinline__ __device__ void
 traceRadiance(OptixTraversableHandle handle, float3 ray_origin,
               float3 ray_direction, float tmin, float tmax, RadiancePRD* prd) {
@@ -62,6 +62,21 @@ traceRadiance(OptixTraversableHandle handle, float3 ray_origin,
                RAY_TYPE_COUNT,     // SBT stride
                RAY_TYPE_RADIANCE,  // missSBTIndex
                u0, u1);
+}
+
+static __forceinline__ __device__ bool
+traceOcclusion(OptixTraversableHandle handle, float3 ray_origin,
+               float3 ray_direction, float tmin, float tmax) {
+    unsigned int occluded = 0u;
+    optixTrace(handle, ray_origin, ray_direction, tmin, tmax,
+               0.0f,  // rayTime
+               OptixVisibilityMask(255),
+               OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT,
+               RAY_TYPE_OCCLUSION,  // SBT offset
+               RAY_TYPE_COUNT,      // SBT stride
+               RAY_TYPE_OCCLUSION,  // missSBTIndex
+               occluded);
+    return occluded;
 }
 
 //---------------------------------------------------------------------
@@ -89,12 +104,8 @@ traceRadiance(OptixTraversableHandle handle, float3 ray_origin,
 // one group of them to set up the SBT)
 //------------------------------------------------------------------------------
 
-/*! helper function that creates a semi-random color from an ID */
-inline __device__ float3 randomColor(int i) {
-    int r = unsigned(i)*13*17 + 0x234235;
-    int g = unsigned(i)*7*3*5 + 0x773477;
-    int b = unsigned(i)*11*19 + 0x223766;
-    return make_float3((r&255)/255.f, (g&255)/255.f, (b&255)/255.f);
+extern "C" __global__ void __closesthit__occlusion() {
+    setPayloadOcclusion(true);
 }
 
 extern "C" __global__ void __closesthit__radiance() {
@@ -114,18 +125,25 @@ extern "C" __global__ void __closesthit__radiance() {
     // compute normal, using either shading normal (if avail), or
     // geometry normal (fallback)
     // ------------------------------------------------------------------
-    float3 N;
+
+    const float3 v0   = rt_data->vertex[index.x];
+    const float3 v1   = rt_data->vertex[index.y];
+    const float3 v2   = rt_data->vertex[index.z];
+    float3 geometry_normal = normalize(cross(v1-v0, v2-v0));
+    float3 shading_normal = geometry_normal;
+
     if (rt_data->normal) {
-        N = (1.f - u - v) * rt_data->normal[index.x] +
+        shading_normal = (1.f - u - v) * rt_data->normal[index.x] +
             u * rt_data->normal[index.y] + v * rt_data->normal[index.z];
     }
-    else {
-        const float3 v0   = rt_data->vertex[index.x];
-        const float3 v1   = rt_data->vertex[index.y];
-        const float3 v2   = rt_data->vertex[index.z];
-        N  = normalize(cross(v1-v0, v2-v0));
-    }
-    N = normalize(N);
+
+    // ------------------------------------------------------------------
+    // face-forward and normalize normals
+    // ------------------------------------------------------------------
+    geometry_normal = faceforward(geometry_normal, -ray_dir, geometry_normal);
+    if (dot(geometry_normal, shading_normal) < 0.f)
+        shading_normal -= 2.f*dot(geometry_normal, shading_normal) * geometry_normal;
+    shading_normal = normalize(shading_normal);
 
     // ------------------------------------------------------------------
     // compute diffuse material color, including diffuse texture, if
@@ -139,26 +157,50 @@ extern "C" __global__ void __closesthit__radiance() {
             +         v * rt_data->texcoord[index.z];
       
         float4 fromTexture = tex2D<float4>(rt_data->texture, tc.x, tc.y);
-
-        // printf("%lf %lf\n", tc.x, tc.y);
-        // printf("%lf %lf %lf %lf\n", fromTexture.x, fromTexture.y, fromTexture.z, fromTexture.w);
-      
         diffuseColor *= make_float3(fromTexture);
     }
+
+    // ------------------------------------------------------------------
+    // compute shadow
+    // ------------------------------------------------------------------
+    const float3 surfPos = (1.f - u - v) * v0 + u * v1 + v * v2;
+    // printf("%lf %lf %lf\n", surfPos.x, surfPos.y, surfPos.z);
+    const float3 lightPos = make_float3(-9., 20.f, 0.f);
+    const float3 lightDir = lightPos - surfPos;
+    const float  Ldist = length(lightPos - surfPos);
+
+    // trace shadow ray:
+    const bool occluded = traceOcclusion(
+            params.handle,
+            surfPos + 1e-3f * geometry_normal,
+            lightDir,
+            0.01f,         // tmin
+            Ldist - 0.01f  // tmax
+            );
 
     // ------------------------------------------------------------------
     // perform some simple "NdotD" shading
     // ------------------------------------------------------------------
 
-    const float cosDN  = 0.2f + .8f * fabsf(dot(ray_dir, N));
+    const float cosDN  = 0.2f + .8f * fabsf(dot(ray_dir, shading_normal));
     RadiancePRD* prd = getPRD();
-    prd->radiance = cosDN * diffuseColor;
-    // printf("%lf %lf %lf\n", prd->radiance.x, prd->radiance.y, prd->radiance.z);
+
+    if (occluded) {
+        prd->radiance = make_float3(0.f);
+    }
+    else {
+        prd->radiance = cosDN * diffuseColor;
+    }
 }
 
 extern "C" __global__ void
 __anyhit__radiance() { /*! for this simple example, this will remain empty */
 }
+
+extern "C" __global__ void
+__anyhit__occlusion() { /*! for this simple example, this will remain empty */
+}
+
 
 //------------------------------------------------------------------------------
 // miss program that gets called for any ray that did not have a
@@ -172,6 +214,10 @@ extern "C" __global__ void __miss__radiance() {
     RadiancePRD* prd = getPRD();
     // set to constant white as background color
     prd->radiance = make_float3(1.f, 0.f, 0.f);
+}
+
+extern "C" __global__ void __miss__occlusion() {
+    // setPayloadOcclusion(true);
 }
 
 //------------------------------------------------------------------------------
