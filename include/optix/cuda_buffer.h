@@ -14,7 +14,7 @@ class CUDABuffer {
 public:
     CUDABuffer() : m_device_ptr(nullptr), m_size_in_bytes(0) {}
 
-    inline CUdeviceptr d_pointer() const { return (CUdeviceptr)m_device_ptr; }
+    inline CUdeviceptr devicePtr() const { return (CUdeviceptr)m_device_ptr; }
 
     /// @brief Resize buffer to a given number of bytes
     void resize(size_t s) {
@@ -46,8 +46,8 @@ public:
     template <typename T> void upload(const T* t, size_t count) {
         assert(m_device_ptr != nullptr);
         assert(m_size_in_bytes == count * sizeof(T));
-        CUDA_CHECK(cudaMemcpy(m_device_ptr, (void*)(t),
-                              count * sizeof(T), cudaMemcpyHostToDevice));
+        CUDA_CHECK(cudaMemcpy(m_device_ptr, (void*)(t), count * sizeof(T),
+                              cudaMemcpyHostToDevice));
     }
 
     template <typename T> void download(T* t, size_t count) {

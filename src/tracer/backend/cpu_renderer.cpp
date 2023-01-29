@@ -3,7 +3,7 @@
 #include "core/bitmap/block.h"
 #include "tracer/scene.h"
 #include "editor/gui.h"
-#include "tracer/backend/cpu/cpu_renderer.h"
+#include "tracer/backend/cpu_renderer.h"
 #include <thread>
 #include <tbb/task_scheduler_init.h>
 #include <tbb/blocked_range.h>

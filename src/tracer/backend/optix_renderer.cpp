@@ -1,4 +1,4 @@
-#include "optix/optix_renderer.h"
+#include "tracer/backend/optix_renderer.h"
 #include "optix/sutil.h"
 #include "optix/vec_math.h"
 // this include may only appear in a single source file:
@@ -270,7 +270,7 @@ void OptixRenderer::buildSBT() {
         raygenRecords.push_back(rec);
     }
     raygenRecordsBuffer.allocAndUpload(raygenRecords);
-    sbt.raygenRecord = raygenRecordsBuffer.d_pointer();
+    sbt.raygenRecord = raygenRecordsBuffer.devicePtr();
 
     // ------------------------------------------------------------------
     // build miss records
@@ -283,7 +283,7 @@ void OptixRenderer::buildSBT() {
         missRecords.push_back(rec);
     }
     missRecordsBuffer.allocAndUpload(missRecords);
-    sbt.missRecordBase = missRecordsBuffer.d_pointer();
+    sbt.missRecordBase = missRecordsBuffer.devicePtr();
     sbt.missRecordStrideInBytes = sizeof(MissRecord);
     sbt.missRecordCount = (int)missRecords.size();
 
@@ -301,10 +301,10 @@ void OptixRenderer::buildSBT() {
         for (int ray_id = 0; ray_id < RAY_TYPE_COUNT; ray_id++) {
             HitgroupRecord rec;
             OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[ray_id], &rec));
-            rec.data.vertex = (float3*)vertexBuffers[i].d_pointer();
-            rec.data.index = (int3*)indexBuffers[i].d_pointer();
-            rec.data.normal   = (float3*)normalBuffer[i].d_pointer();
-            rec.data.texcoord = (float2*)texcoordBuffer[i].d_pointer();
+            rec.data.vertex = (float3*)vertexBuffers[i].devicePtr();
+            rec.data.index = (int3*)indexBuffers[i].devicePtr();
+            rec.data.normal   = (float3*)normalBuffer[i].devicePtr();
+            rec.data.texcoord = (float2*)texcoordBuffer[i].devicePtr();
             rec.data.hasTexture = true;
             rec.data.texture = textureObjects[0];
             rec.data.color = make_float3(0.5, 0.5, 0.5);
@@ -312,7 +312,7 @@ void OptixRenderer::buildSBT() {
         }
     }
     hitgroupRecordsBuffer.allocAndUpload(hitgroupRecords);
-    sbt.hitgroupRecordBase = hitgroupRecordsBuffer.d_pointer();
+    sbt.hitgroupRecordBase = hitgroupRecordsBuffer.devicePtr();
     sbt.hitgroupRecordStrideInBytes = sizeof(HitgroupRecord);
     sbt.hitgroupRecordCount = (int)hitgroupRecords.size();
 }
@@ -353,8 +353,8 @@ OptixTraversableHandle OptixRenderer::buildAccel() {
             texcoordBuffer[i].allocAndUpload(meshs[i]->getVertexTexCoord());
 
         // Get the pointer to the device
-        d_vertices[i] = vertexBuffers[i].d_pointer();
-        d_indices[i]  = indexBuffers[i].d_pointer();
+        d_vertices[i] = vertexBuffers[i].devicePtr();
+        d_indices[i]  = indexBuffers[i].devicePtr();
 
         // Triangle inputs
         OptixBuildInputTriangleArray& buildInput = buildInputs[i].triangleArray;
@@ -409,7 +409,7 @@ OptixTraversableHandle OptixRenderer::buildAccel() {
     
     OptixAccelEmitDesc emitDesc;
     emitDesc.type   = OPTIX_PROPERTY_TYPE_COMPACTED_SIZE;
-    emitDesc.result = compactedSizeBuffer.d_pointer();
+    emitDesc.result = compactedSizeBuffer.devicePtr();
 
     // ------------------------------------------------------------
     // Build (main stage)
@@ -426,9 +426,9 @@ OptixTraversableHandle OptixRenderer::buildAccel() {
                                 &accelOptions,
                                 &buildInputs[0],
                                 mesh_num,
-                                tempBuffer.d_pointer(),
+                                tempBuffer.devicePtr(),
                                 tempBuffer.m_size_in_bytes,
-                                outputBuffer.d_pointer(),
+                                outputBuffer.devicePtr(),
                                 outputBuffer.m_size_in_bytes,
                                 &outputHandle,
                                 &emitDesc,
@@ -445,7 +445,7 @@ OptixTraversableHandle OptixRenderer::buildAccel() {
     OPTIX_CHECK(optixAccelCompact(optixContext,
                                   /*stream:*/0,
                                   outputHandle,
-                                  asBuffer.d_pointer(),
+                                  asBuffer.devicePtr(),
                                   asBuffer.m_size_in_bytes,
                                   &outputHandle));
     CUDA_SYNC_CHECK();
@@ -472,7 +472,7 @@ void OptixRenderer::render() {
     OPTIX_CHECK(optixLaunch(/*! pipeline we're launching launch: */
                             pipeline, stream,
                             /*! parameters and SBT */
-                            launchParamsBuffer.d_pointer(),
+                            launchParamsBuffer.devicePtr(),
                             launchParamsBuffer.m_size_in_bytes, &sbt,
                             /*! dimensions of the launch: */
                             launchParams.width, launchParams.height,

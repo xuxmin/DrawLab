@@ -1,5 +1,5 @@
 
-#include "optix/optix_renderer.h"
+#include "tracer/backend/optix_renderer.h"
 #include "optix/sutil.h"
 #include "tracer/mesh.h"
 #include <exception>

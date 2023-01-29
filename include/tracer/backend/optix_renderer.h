@@ -1,6 +1,6 @@
 #pragma once
 #include "optix/cuda_buffer.h"
-#include "optix/params.h"
+#include "tracer/backend/optix_params.h"
 #include "tracer/scene.h"
 
 

@@ -64,14 +64,14 @@ OPTIX_add_sample_executable(drawlab
     src/tracer/texture/texture.cpp
     src/tracer/texture/bitmap.cpp
 
+    src/tracer/backend/optix_renderer.cpp
     src/tracer/backend/cpu_renderer.cpp
-    src/tracer/main.cpp
-
-    # src/optix/main.cpp
-    src/optix/optix_renderer.cpp
-    src/optix/sutil.cpp
     src/optix/cuda/device_programs.cu
+    src/tracer/main.cpp
 )
+
+add_subdirectory(src/optix)
+
 
 target_link_libraries(drawlab 
     ${GLFW_LIB_NAME}
@@ -79,6 +79,7 @@ target_link_libraries(drawlab
     corelib
     gllib
     tiny_obj_loader
+    optixlib
 )
 
 target_include_directories(drawlab

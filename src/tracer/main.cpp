@@ -1,8 +1,10 @@
+#include "cmdline.h"
 #include "core/base/common.h"
 #include "core/parser/parser.h"
-#include "tracer/backend/cpu/cpu_renderer.h"
+#include "tracer/backend/cpu_renderer.h"
+#include "tracer/backend/optix_renderer.h"
 #include "tracer/scene.h"
-#include "cmdline.h"
+#include "stb_image_write.h"
 #include <memory>
 #include <string>
 
@@ -40,11 +42,30 @@ int main(int argc, char** argv) {
                     renderer.render(static_cast<Scene*>(root.get()), sceneName,
                                     gui, thread);
                 }
-            } else if (backend == "optix") {
-            } else {
+            }
+            else if (backend == "optix") {
+                optix::OptixRenderer renderer(static_cast<Scene*>(root.get()));
+                const int width = 768, height = 512;
+                renderer.resize(height, width);
+                renderer.updateCamera();
+                renderer.render();
+
+                std::vector<unsigned int> pixels(width * height);
+                renderer.downloadPixels(pixels.data());
+
+                const std::string fileName = "osc_example2.png";
+                stbi_write_png(fileName.c_str(), width, height, 4, pixels.data(),
+                            width * sizeof(unsigned int));
+                std::cout << TERMINAL_GREEN << std::endl
+                        << "Image rendered, and saved to " << fileName << " ... done."
+                        << std::endl
+                        << TERMINAL_DEFAULT << std::endl;
+            }
+            else {
                 cerr << "Fatal error: unknown backend: " << backend << endl;
             }
-        } else {
+        }
+        else {
             cerr << "Fatal error: unknown file \"" << path.str()
                  << "\", expected an extension of type .xml" << endl;
         }

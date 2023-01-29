@@ -1,7 +1,7 @@
 #include <optix.h>
 #include <optix_device.h>
 
-#include "optix/params.h"
+#include "tracer/backend/optix_params.h"
 #include "optix/vec_math.h"
 #include "optix/random.h"
 

@@ -69,7 +69,7 @@ BraceWrapping:
   # catch之前
   BeforeCatch:	false
   # else之前
-  BeforeElse:	false
+  BeforeElse:	true
   # 缩进大括号
   IndentBraces:	false
   SplitEmptyFunction: true
