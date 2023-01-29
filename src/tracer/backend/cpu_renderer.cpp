@@ -8,6 +8,7 @@
 #include <tbb/task_scheduler_init.h>
 #include <tbb/blocked_range.h>
 #include <tbb/parallel_for.h>
+#include <spdlog/spdlog.h>
 
 
 namespace drawlab {
@@ -103,7 +104,7 @@ void CPURenderer::render(Scene* scene, const std::string& filename,
 
         /// (equivalent to the following single-threaded call)
         // map(range);
-        cout << "done. (took " << timer.elapsedString() << ")" << endl;
+        spdlog::info("Render done. (took {})", timer.elapsedString());
     });
 
     if (gui) {

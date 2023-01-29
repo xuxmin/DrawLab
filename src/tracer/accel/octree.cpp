@@ -1,5 +1,6 @@
 #include "tracer/octree.h"
 #include "core/utils/timer.h"
+#include <spdlog/spdlog.h>
 
 namespace drawlab {
 
@@ -15,7 +16,7 @@ OCTree::~OCTree() {
 
 void OCTree::build(std::vector<Mesh*> meshPtrs) {
     Timer timer;
-    cout << "Build OCTree.. ";
+    spdlog::info("Build OCTree.. ");
     m_meshPtrs.assign(meshPtrs.begin(), meshPtrs.end());
 
     BoundingBox3f bbox;
@@ -28,9 +29,8 @@ void OCTree::build(std::vector<Mesh*> meshPtrs) {
         bbox.expandBy(m_meshPtrs[i]->getBoundingBox());
     }
     m_root = recursiveBuild(bbox, triangles, 0);
-    cout << "done. (Depth=" << m_maxDepth << ", Leaf=" << m_leaf
-         << ", Interior=" << m_interior << ", took " << timer.elapsedString()
-         << ")" << endl;
+    spdlog::info("Build done. (Depth={}, Leaf={}, Interior={}, took {})",
+                 m_maxDepth, m_leaf, m_interior, timer.elapsedString());
 }
 
 OCNode* OCTree::recursiveBuild(BoundingBox3f bbox,

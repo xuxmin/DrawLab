@@ -7,6 +7,7 @@
 #include "stb_image_write.h"
 #include "core/base/common.h"
 #include "core/parser/parser.h"
+#include <spdlog/spdlog.h>
 
 using namespace drawlab;
 using namespace optix;
@@ -49,14 +50,10 @@ int main(int argc, char** argv) {
         const std::string fileName = "osc_example2.png";
         stbi_write_png(fileName.c_str(), width, height, 4, pixels.data(),
                        width * sizeof(unsigned int));
-        std::cout << TERMINAL_GREEN << std::endl
-                  << "Image rendered, and saved to " << fileName << " ... done."
-                  << std::endl
-                  << TERMINAL_DEFAULT << std::endl;
+        spdlog::info("Image rendered, and saved to {}... done.", fileName);
 
     } catch (std::runtime_error& e) {
-        std::cout << TERMINAL_RED << "FATAL ERROR: " << e.what()
-                  << TERMINAL_DEFAULT << std::endl;
+        spdlog::critical("FATAL ERROR: {}", e.what());
         exit(1);
     }
     return 0;

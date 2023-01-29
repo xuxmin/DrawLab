@@ -5,6 +5,7 @@
 #include "tracer/backend/optix_renderer.h"
 #include "tracer/scene.h"
 #include "stb_image_write.h"
+#include <spdlog/spdlog.h>
 #include <memory>
 #include <string>
 
@@ -56,21 +57,20 @@ int main(int argc, char** argv) {
                 const std::string fileName = "osc_example2.png";
                 stbi_write_png(fileName.c_str(), width, height, 4, pixels.data(),
                             width * sizeof(unsigned int));
-                std::cout << TERMINAL_GREEN << std::endl
-                        << "Image rendered, and saved to " << fileName << " ... done."
-                        << std::endl
-                        << TERMINAL_DEFAULT << std::endl;
+                
+                spdlog::info("Image rendered, and saved to {} ... done.", fileName);
             }
             else {
-                cerr << "Fatal error: unknown backend: " << backend << endl;
+                spdlog::critical("Fatal error: unknown backend:  {}", backend);
             }
         }
         else {
-            cerr << "Fatal error: unknown file \"" << path.str()
-                 << "\", expected an extension of type .xml" << endl;
+            spdlog::critical("Fatal error: unknown file: \"{}\", expected an "
+                             "extension of type .xml",
+                             path.str());
         }
     } catch (const std::exception& e) {
-        cerr << "Fatal error: " << e.what() << endl;
+        spdlog::critical("Fatal error: {}", e.what());
         return -1;
     }
 }

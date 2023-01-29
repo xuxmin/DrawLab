@@ -12,8 +12,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-using std::cout;
-using std::endl;
+#include <spdlog/spdlog.h>
 
 namespace drawlab {
 
@@ -51,8 +50,8 @@ void Bitmap::loadEXR(const std::string& filename) {
 
     m_data.resize(m_width * m_height * 3);
 
-    cout << "Reading a " << getHeight() << "x" << getWidth()
-         << " OpenEXR file from \"" << filename << "\"" << endl;
+    spdlog::info("Reading a {}x{} OpenEXR file from \"{}\"", getHeight(),
+                 getWidth(), filename);
 
     const char *ch_r = nullptr, *ch_g = nullptr, *ch_b = nullptr;
     for (Imf::ChannelList::ConstIterator it = channels.begin();
@@ -123,8 +122,8 @@ void Bitmap::loadLDR(const std::string& filename) {
 }
 
 void Bitmap::saveEXR(const std::string& filename) {
-    cout << "Writing a " << getHeight() << "x" << getWidth()
-         << " OpenEXR file to \"" << filename << "\"" << endl;
+    spdlog::info("Writing a {}x{} OpenEXR file to \"{}.exr\"", getHeight(),
+                 getWidth(), filename);
 
     std::string path = filename + ".exr";
 
@@ -156,8 +155,8 @@ void Bitmap::saveEXR(const std::string& filename) {
 }
 
 void Bitmap::savePNG(const std::string& filename) {
-    cout << "Writing a " << getHeight() << "x" << getWidth()
-         << " PNG file to \"" << filename << "\"" << endl;
+    spdlog::info("Writing a {}x{} PNG file to \"{}.png\"", getHeight(),
+                 getWidth(), filename);
 
     std::string path = filename + ".png";
 
@@ -176,8 +175,7 @@ void Bitmap::savePNG(const std::string& filename) {
     int ret = stbi_write_png(path.c_str(), getWidth(), getHeight(), 3, rgb8,
                              3 * getWidth());
     if (ret == 0) {
-        cout << "Bitmap::savePNG(): Could not save PNG file \"" << path
-             << "%s\"" << endl;
+        spdlog::error("Bitmap::savePNG(): Could not save PNG file \"{}\"", path);
     }
     delete[] rgb8;
 }

@@ -5,6 +5,7 @@
 #include <optix_function_table_definition.h>
 #include "tracer/camera.h"
 #include "core/bitmap/bitmap.h"
+#include <spdlog/spdlog.h>
 
 namespace optix {
 
@@ -45,58 +46,69 @@ struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) HitgroupRecord {
 OptixRenderer::OptixRenderer(drawlab::Scene* scene): m_scene(scene) {
     initOptix();
 
-    std::cout << "#optix: creating optix context ..." << std::endl;
+    spdlog::info("[OPTIX RENDERER] Creating optix context ...");
     createContext();
-    std::cout << "#optix: setting up module ..." << std::endl;
+    spdlog::info("[OPTIX RENDERER] Setting up module ...");
     createModule();
 
-    std::cout << "#optix: creating raygen programs ..." << std::endl;
+    spdlog::info("[OPTIX RENDERER] Creating raygen programs ...");
     createRaygenPrograms();
-    std::cout << "#optix: creating miss programs ..." << std::endl;
+    spdlog::info("[OPTIX RENDERER] Creating miss programs ...");
     createMissPrograms();
-    std::cout << "#optix: creating hitgroup programs ..." << std::endl;
+    spdlog::info("[OPTIX RENDERER] Creating hitgroup programs ...");
     createHitgroupPrograms();
 
     launchParams.handle = buildAccel();
 
-    std::cout << "#optix: setting up optix pipeline ..." << std::endl;
+    spdlog::info("[OPTIX RENDERER] Setting up optix pipeline ...");
     createPipeline();
 
     createTextures();
 
-    std::cout << "#optix: building SBT ..." << std::endl;
+    spdlog::info("[OPTIX RENDERER] Building SBT ...");
     buildSBT();
 
     launchParamsBuffer.alloc(sizeof(launchParams));
-    std::cout << "#optix: context, module, pipeline, etc, all set up ..."
-              << std::endl;
+    spdlog::info("[OPTIX RENDERER] Context, module, pipeline, etc, all set up ...");
 
-    std::cout << TERMINAL_GREEN;
-    std::cout << "#optix: Optix 7 Sample fully set up" << std::endl;
-    std::cout << TERMINAL_DEFAULT;
+    spdlog::info("[OPTIX RENDERER] Optix 7 Sample fully set up");
 }
 
 void OptixRenderer::initOptix() {
-    std::cout << "#optix: initializing optix..." << std::endl;
+    spdlog::info("[OPTIX RENDERER] Initializing optix...");
 
     // Initialize CUDA for this device on this thread
     cudaFree(0);
     int numDevices;
     cudaGetDeviceCount(&numDevices);
     if (numDevices == 0)
-        throw std::runtime_error("#optix: no CUDA capable devices found!");
-    std::cout << "#optix: found " << numDevices << " CUDA devices" << std::endl;
+        throw std::runtime_error("[OPTIX RENDERER] No CUDA capable devices found!");
+    spdlog::info("[OPTIX RENDERER] Found {} CUDA devices", numDevices);
 
     // Initialize the OptiX API, loading all API entry points
     OPTIX_CHECK(optixInit());
-    std::cout << TERMINAL_GREEN
-              << "#optix: successfully initialized optix... yay!"
-              << TERMINAL_DEFAULT << std::endl;
+    spdlog::info("[OPTIX RENDERER] Successfully initialized optix... yay!");
 }
 
 static void context_log_cb(unsigned int level, const char* tag,
                            const char* message, void*) {
-    fprintf(stderr, "[%2d][%12s]: %s\n", (int)level, tag, message);
+    int spd_level = 0;
+    if (level == 4) {
+        spd_level = 2;  // print -> info
+    }
+    else if (level == 3) {
+        spd_level = 3;  // warning -> warn
+    }
+    else if (level == 2) {
+        spd_level = 4;  // err -> err
+    }
+    else if (level == 1) {
+        spd_level = 5;  // fatal -> critical
+    }
+    else {
+        spd_level = 6;  // disable -> off
+    }
+    spdlog::log((spdlog::level::level_enum)spd_level, "[{:>14}] {}", tag, message);
 }
 
 void OptixRenderer::createContext() {
@@ -105,11 +117,11 @@ void OptixRenderer::createContext() {
     CUDA_CHECK(cudaStreamCreate(&stream));
 
     cudaGetDeviceProperties(&deviceProps, deviceID);
-    std::cout << "#optix: running on device: " << deviceProps.name << std::endl;
+    spdlog::info("[OPTIX RENDERER] Running on device: {}", deviceProps.name);
 
     CUresult cuRes = cuCtxGetCurrent(&cudaContext);
-    if( cuRes != CUDA_SUCCESS ) 
-        fprintf( stderr, "Error querying current context: error code %d\n", cuRes );
+    if( cuRes != CUDA_SUCCESS )
+        spdlog::error("Error querying current context: error code {}", (int)cuRes);
 
     // Specify context options
     OptixDeviceContextOptions options = {};
@@ -328,10 +340,8 @@ OptixTraversableHandle OptixRenderer::buildAccel() {
      * Optionally, triangles can be indexed using an index buffer in
      * device memory.
      */
-    PING;
     const std::vector<drawlab::Mesh*> meshs = m_scene->getMeshes();
     int mesh_num = meshs.size();
-    PRINT(mesh_num);
 
     vertexBuffers.resize(mesh_num);
     indexBuffers.resize(mesh_num);

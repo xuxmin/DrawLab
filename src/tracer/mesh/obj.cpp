@@ -4,6 +4,8 @@
 #include <filesystem/resolver.h>
 #include <fstream>
 #include <unordered_map>
+#include <spdlog/spdlog.h>
+
 
 namespace drawlab {
 
@@ -26,8 +28,7 @@ public:
         }
         Transform trafo = propList.getTransform("toWorld", Transform());
 
-        cout << "Loading \"" << filename << "\" .. ";
-        cout.flush();
+        spdlog::info("Loading \"{}\" ...", filename.str());
         Timer timer;
 
         size_t max_index = 0;
@@ -78,12 +79,11 @@ public:
         }
 
         m_name = filename.str();
-        cout << "done. (V=" << m_V.size() / 3 << ", F=" << m_F.size() / 3
-             << ", took " << timer.elapsedString() << " and "
-             << memString(m_F.size() * sizeof(uint32_t) +
-                          sizeof(float) *
-                              (m_V.size() + m_N.size() + m_UV.size()))
-             << ")" << endl;
+        spdlog::info(
+            "Load done. (V={}, F={}, took {} and {})", m_V.size() / 3,
+            m_F.size() / 3, timer.elapsedString(),
+            memString(m_F.size() * sizeof(uint32_t) +
+                      sizeof(float) * (m_V.size() + m_N.size() + m_UV.size())));
     }
 };
 

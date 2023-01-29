@@ -3,6 +3,7 @@
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl3.h"
+#include <spdlog/spdlog.h>
 
 namespace drawlab {
 
@@ -22,7 +23,7 @@ GUI::~GUI() {
 void GUI::init() {
     // initialize glfw
     if (!glfwInit()) {
-        std::cout << ("Error: could not initialize GLFW!") << std::endl;
+        spdlog::critical("Error: could not initialize GLFW!");
         exit(1);
     }
 
@@ -45,7 +46,7 @@ void GUI::init() {
     // create window
     window = glfwCreateWindow(m_width, m_height, "drawlab", nullptr, nullptr);
     if (!window) {
-        std::cout << ("Error: could not create window!") << std::endl;
+        spdlog::critical("Error: could not create window!");
         glfwTerminate();
         exit(1);
     }
@@ -56,7 +57,7 @@ void GUI::init() {
 
     // initialize gl
     if (!gladLoadGL()) {
-        std::cout << "Failed to initialize GL" << std::endl;
+        spdlog::critical("Failed to initialize GL");
         glfwTerminate();
         exit(1);
     }

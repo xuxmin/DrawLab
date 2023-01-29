@@ -22,3 +22,6 @@
 [submodule "ext/cmdline"]
 	path = ext/cmdline
 	url = https://github.com/tanakh/cmdline.git
+[submodule "ext/spdlog"]
+	path = ext/spdlog
+	url = https://github.com/gabime/spdlog.git

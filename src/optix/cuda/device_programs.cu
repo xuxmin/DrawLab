@@ -224,19 +224,6 @@ extern "C" __global__ void __miss__occlusion() {
 // ray gen program - the actual rendering happens in here
 //------------------------------------------------------------------------------
 extern "C" __global__ void __raygen__renderFrame() {
-    if (params.frameID == 0 && optixGetLaunchIndex().x == 0 &&
-        optixGetLaunchIndex().y == 0) {
-        // we could of course also have used optixGetLaunchDims to query
-        // the launch size, but accessing the params here
-        // makes sure they're not getting optimized away (because
-        // otherwise they'd not get used)
-        printf("############################################\n");
-        printf("Hello world from OptiX 7 raygen program!\n(within a "
-               "%ix%i-sized launch)\n",
-               params.width, params.height);
-        printf("############################################\n");
-    }
-
     const int    w   = params.width;
     const int    h   = params.height;
     const float3 eye = params.eye;

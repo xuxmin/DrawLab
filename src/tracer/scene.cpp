@@ -1,4 +1,5 @@
 #include "tracer/scene.h"
+#include <spdlog/spdlog.h>
 
 namespace drawlab {
 
@@ -25,9 +26,7 @@ void Scene::activate() {
             ObjectFactory::createInstance("independent", PropertyList()));
     }
 
-    cout << endl;
-    cout << "Configuration: " << toString() << endl;
-    cout << endl;
+    spdlog::info("Configuration: {}", toString());
 }
 
 void Scene::addChild(Object* obj) {

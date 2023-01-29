@@ -2,6 +2,7 @@
 #include "core/base/common.h"
 #include "core/utils/timer.h"
 #include "tracer/texture.h"
+#include <spdlog/spdlog.h>
 #include <string>
 
 namespace drawlab {
@@ -11,17 +12,15 @@ public:
     BitmapTexture(const PropertyList& props) : Texture2D(props) {
         m_filename = props.getString("filename");
 
-        cout << "Loading texture \"" << m_filename << "\" .. ";
+        spdlog::info("Loading texture \"{}\" ...", m_filename);
         Timer timer;
 
         filesystem::path file = getFileResolver()->resolve(m_filename);
         if (!file.exists()) {
-            cout << "Texture file \"" << m_filename << "\" could not be found!"
-                 << endl;
+            spdlog::warn("Texture file \"{}\" could not be found!", m_filename);
         }
         m_bitmap = new Bitmap(m_filename);
-        cout << "done."
-             << "(took " << timer.elapsedString() << ")" << endl;
+        spdlog::info("Load donw. (took {})", timer.elapsedString());
     }
 
     Color3f eval(const Intersection& its) const {

@@ -33,4 +33,5 @@ target_include_directories(${TARGET_NAME}
     ${FILESYSTEM_INCLUDE_DIR}   # Portable filesystem 
     ${PUGIXML_INCLUDE_DIR}      # pugixml
     ${TBB_INCLUDE_DIR}          # tbb
+    ${SPDLOG_INCLUDE_DIR}       # spdlog
 )
