@@ -2,6 +2,7 @@ set(TARGET_NAME "optixlib")
 set(SOURCES
     sutil.cpp
     texture.cpp
+    device_context.cpp
 )
 
 find_package(CUDA REQUIRED)
@@ -15,6 +16,7 @@ target_include_directories(${TARGET_NAME}
     ${CMAKE_SOURCE_DIR}/include
     ${CUDA_INCLUDE_DIRS}
     ${CMAKE_BINARY_DIR}
+    ${SPDLOG_INCLUDE_DIR}       # spdlog
 )
 
 # Use gcc rather than g++ to link if we are linking statically against libgcc_s and libstdc++
@@ -25,6 +27,7 @@ if(USING_GNU_C OR USING_GNU_CXX)
     endif()
 endif()
 
+target_link_libraries(${TARGET_NAME} LINK_PRIVATE ${CUDA_CUDA_LIBRARY})
 
 if(CUDA_NVRTC_ENABLED)
     target_link_libraries(${TARGET_NAME} LINK_PRIVATE ${CUDA_nvrtc_LIBRARY})

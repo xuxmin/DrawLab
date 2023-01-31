@@ -3,6 +3,7 @@
 #include "tracer/backend/optix_params.h"
 #include "tracer/scene.h"
 #include "optix/texture.h"
+#include "optix/device_context.h"
 
 
 namespace optix {
@@ -69,12 +70,14 @@ protected:
     void createTextures();
 
 protected:
-    CUcontext cudaContext;
-    CUstream stream;
-    cudaDeviceProp deviceProps;
+
+    DeviceContext* deviceContext;
+    // CUcontext cudaContext;
+    // CUstream stream;
+    // cudaDeviceProp deviceProps;
 
     /// the optix context that our pipeline will run in.
-    OptixDeviceContext optixContext;
+    // OptixDeviceContext optixContext;
 
     /* The module that contains out device programs */
 
@@ -109,13 +112,9 @@ protected:
     */
     OptixPipeline pipeline;
 
-    // Two option structs control the parameters of the compilation process:
-    // - OptixPipelineCompileOptions: Must be identical for all modules 
-    //      used to create program groups linked in a single pipeline.
-    // - OptixModuleCompileOptions: May vary across the modules within 
-    //      the same pipeline.
-    OptixPipelineCompileOptions pipelineCompileOptions = {};
-    OptixPipelineLinkOptions pipelineLinkOptions = {};
+
+    // OptixPipelineCompileOptions pipelineCompileOptions = {};
+    // OptixPipelineLinkOptions pipelineLinkOptions = {};
 
     /* our launch parameters, on the host, and the buffer to store
        them on the device */
