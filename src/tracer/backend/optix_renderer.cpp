@@ -318,7 +318,7 @@ void OptixRenderer::buildSBT() {
             rec.data.normal   = (float3*)normalBuffer[i].devicePtr();
             rec.data.texcoord = (float2*)texcoordBuffer[i].devicePtr();
             rec.data.hasTexture = true;
-            rec.data.texture = textureObjects[0];
+            rec.data.texture = textures[0]->getObject();
             rec.data.color = make_float3(0.5, 0.5, 0.5);
             hitgroupRecords.push_back(rec);
         }
@@ -545,24 +545,10 @@ void OptixRenderer::downloadPixels(unsigned int h_pixels[]) {
 void OptixRenderer::createTextures() {
     int num_tex = 1;
 
-    textureArrays.resize(num_tex);
-    textureObjects.resize(num_tex);
-
     for (int tex_id = 0; tex_id < num_tex; tex_id++) {
-        drawlab::Bitmap* bitmap = new drawlab::Bitmap("KAMEN.JPG");
-
-        cudaResourceDesc res_desc = {};
-
-        cudaChannelFormatDesc channel_desc;
+        drawlab::Bitmap* bitmap = new drawlab::Bitmap("reljef.JPG");
         int width = bitmap->getWidth();
         int height = bitmap->getHeight();
-        int numComponents = 4;
-        int pitch = width * numComponents * sizeof(unsigned char);
-        channel_desc = cudaCreateChannelDesc<uchar4>();
-
-        cudaArray_t& pixelArray = textureArrays[tex_id];
-        CUDA_CHECK(cudaMallocArray(&pixelArray, &channel_desc, width, height));
-
         std::vector<unsigned char> temp(width * height * 4);
         for (int i = 0; i < width * height; i++) {
             temp[4*i] = bitmap->getPtr()[3*i];
@@ -571,30 +557,12 @@ void OptixRenderer::createTextures() {
             temp[4*i + 3] = bitmap->getPtr()[3*i + 2];
         }
 
-        CUDA_CHECK(cudaMemcpy2DToArray(pixelArray,
-                                   /* offset */ 0, 0, temp.data(), pitch,
-                                   pitch, height, cudaMemcpyHostToDevice));
-
-        res_desc.resType = cudaResourceTypeArray;
-        res_desc.res.array.array = pixelArray;
-
-        cudaTextureDesc tex_desc = {};
-        tex_desc.addressMode[0] = cudaAddressModeWrap;
-        tex_desc.addressMode[1] = cudaAddressModeWrap;
-        tex_desc.filterMode = cudaFilterModeLinear;
-        tex_desc.readMode = cudaReadModeNormalizedFloat;
-        tex_desc.normalizedCoords = 1;
-        tex_desc.maxAnisotropy = 1;
-        tex_desc.maxMipmapLevelClamp = 99;
-        tex_desc.minMipmapLevelClamp = 0;
-        tex_desc.mipmapFilterMode = cudaFilterModePoint;
-        tex_desc.borderColor[0] = 1.0f;
-        tex_desc.sRGB = 0;
-
-        // Create texture object
-        cudaTextureObject_t cuda_tex = 0;
-        CUDA_CHECK(cudaCreateTextureObject(&cuda_tex, &res_desc, &tex_desc, nullptr));
-        textureObjects[tex_id] = cuda_tex;
+        Texture* texture = new Texture(width, height, 0, CUDATexelFormat::CUDA_TEXEL_FORMAT_RGBA8,
+                                        CUDATextureFilterMode::CUDA_TEXTURE_LINEAR,
+                                        CUDATextureAddressMode::CUDA_TEXTURE_WRAP,
+                                        CUDATextureColorSpace::CUDA_COLOR_SPACE_LINEAR,
+                                        temp.data());
+        textures.push_back(texture);
     }
 }
 

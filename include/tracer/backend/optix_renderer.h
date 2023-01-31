@@ -2,6 +2,7 @@
 #include "optix/cuda_buffer.h"
 #include "tracer/backend/optix_params.h"
 #include "tracer/scene.h"
+#include "optix/texture.h"
 
 
 namespace optix {
@@ -131,9 +132,7 @@ protected:
     //! buffer that keeps the (final, compacted) accel structure
     CUDABuffer asBuffer;
 
-    /*! @{ one texture object and pixel array per used texture */
-    std::vector<cudaArray_t>         textureArrays;
-    std::vector<cudaTextureObject_t> textureObjects;
+    std::vector<Texture*> textures;
 };
 
 };  // namespace optix
