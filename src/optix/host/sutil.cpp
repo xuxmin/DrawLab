@@ -1,23 +1,22 @@
 #include "optix/host/sutil.h"
 #include "projectConfig.h"
-#include <nvrtc.h>
+#include <algorithm>
 #include <fstream>
 #include <map>
 #include <nvrtc.h>
 #include <sstream>
 #include <string>
 #include <vector>
-#include <algorithm>
 #if defined(_WIN32)
 #    ifndef WIN32_LEAN_AND_MEAN
 #        define WIN32_LEAN_AND_MEAN 1
 #    endif
-#    include<windows.h>
-#    include<mmsystem.h>
+#    include <mmsystem.h>
+#    include <windows.h>
 #else
-#    include<sys/time.h>
-#    include <unistd.h>
 #    include <dirent.h>
+#    include <sys/time.h>
+#    include <unistd.h>
 #endif
 
 namespace optix {
@@ -31,9 +30,9 @@ static bool fileExists(const std::string& path) {
     return fileExists(path.c_str());
 }
 
-#define STRINGIFY( x ) STRINGIFY2( x )
-#define STRINGIFY2( x ) #x
-#define LINE_STR STRINGIFY( __LINE__ )
+#define STRINGIFY(x) STRINGIFY2(x)
+#define STRINGIFY2(x) #x
+#define LINE_STR STRINGIFY(__LINE__)
 
 // Error check/report helper for users of the C API
 #define NVRTC_CHECK_ERROR(func)                                                \
@@ -60,15 +59,16 @@ static bool readSourceFile(std::string& str, const std::string& filename) {
 #if CUDA_NVRTC_ENABLED
 
 static void getCuStringFromFile(std::string& cu, std::string& location,
-                                const char* sampleDir, const char* filename) {
+                                const char* filepath) {
     std::vector<std::string> source_locations;
 
     const std::string base_dir = SOURCE_DIR;
 
-    // Potential source locations (in priority order)
-    if (sampleDir)
-        source_locations.push_back(base_dir + '/' + sampleDir + '/' + filename);
-    source_locations.push_back(base_dir + "/cuda/" + filename);
+    // // Potential source locations (in priority order)
+    // if (sampleDir)
+    //     source_locations.push_back(base_dir + '/' + sampleDir + '/' +
+    //     filename);
+    source_locations.push_back(base_dir + '/' + filepath);
 
     for (const std::string& loc : source_locations) {
         // Try to get source code from file
@@ -80,14 +80,13 @@ static void getCuStringFromFile(std::string& cu, std::string& location,
 
     // Wasn't able to find or open the requested file
     throw std::runtime_error("Couldn't open source file " +
-                             std::string(filename));
+                             std::string(filepath));
 }
 
 static std::string g_nvrtcLog;
 
-static void getPtxFromCuString(std::string& ptx, const char* sample_name,
-                               const char* cu_source, const char* name,
-                               const char** log_string) {
+static void getPtxFromCuString(std::string& ptx, const char* cu_source,
+                               const char* name, const char** log_string) {
     // Create program
     nvrtcProgram prog = 0;
     NVRTC_CHECK_ERROR(
@@ -99,11 +98,11 @@ static void getPtxFromCuString(std::string& ptx, const char* sample_name,
     const std::string base_dir = PROJECT_PTX_DIR;
 
     // Set sample dir as the primary include path
-    std::string sample_dir;
-    if (sample_name) {
-        sample_dir = std::string("-I") + base_dir + '/' + sample_name;
-        options.push_back(sample_dir.c_str());
-    }
+    // std::string sample_dir;
+    // if (sample_name) {
+    //     sample_dir = std::string("-I") + base_dir + '/' + sample_name;
+    //     options.push_back(sample_dir.c_str());
+    // }
 
     // Collect include dirs
     std::vector<std::string> include_dirs;
@@ -217,14 +216,13 @@ struct PtxSourceCache {
 };
 static PtxSourceCache g_ptxSourceCache;
 
-const char* getInputData(const char* sample, const char* sampleDir,
-                         const char* filename, size_t& dataSize,
-                         const char** log) {
+const char* getInputData(const char* filepath,
+                         size_t& dataSize, const char** log) {
     if (log)
         *log = NULL;
 
     std::string *ptx, cu;
-    std::string key = std::string(filename) + ";" + (sample ? sample : "");
+    std::string key = std::string(filepath);
     std::map<std::string, std::string*>::iterator elem =
         g_ptxSourceCache.map.find(key);
 
@@ -232,17 +230,18 @@ const char* getInputData(const char* sample, const char* sampleDir,
         ptx = new std::string();
 #if CUDA_NVRTC_ENABLED
         std::string location;
-        getCuStringFromFile(cu, location, sampleDir, filename);
-        getPtxFromCuString(*ptx, sample, cu.c_str(), location.c_str(), log);
+        getCuStringFromFile(cu, location, filepath);
+        getPtxFromCuString(*ptx, cu.c_str(), location.c_str(), log);
 #else
-        getInputDataFromFile(*ptx, sample, filename);
+        getInputDataFromFile(*ptx, "drawlab", filepath);
 #endif
         g_ptxSourceCache.map[key] = ptx;
-    } else {
+    }
+    else {
         ptx = elem->second;
     }
     dataSize = ptx->size();
     return ptx->c_str();
 }
 
-}  // namespace sutil
+}  // namespace optix

@@ -72,12 +72,6 @@ protected:
 protected:
 
     DeviceContext* deviceContext;
-    // CUcontext cudaContext;
-    // CUstream stream;
-    // cudaDeviceProp deviceProps;
-
-    /// the optix context that our pipeline will run in.
-    // OptixDeviceContext optixContext;
 
     /* The module that contains out device programs */
 
@@ -87,7 +81,6 @@ protected:
      *   .cu --nvcc--> .ptx ---> module(optixModule)
     */
     OptixModule module;
-    OptixModuleCompileOptions moduleCompileOptions = {};
 
     /**
      * Modules are combined to create program groups

@@ -3,6 +3,7 @@ set(SOURCES
     host/sutil.cpp
     host/texture.cpp
     host/device_context.cpp
+    host/material.cpp
 )
 
 find_package(CUDA REQUIRED)

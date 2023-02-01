@@ -88,8 +88,7 @@ void OptixRenderer::createContext() {
 
 void OptixRenderer::createModule() {
     size_t ptxSize = 0;
-    const char* ptxCode = optix::getInputData("helloOptix", "optix/cuda",
-                                              "device_programs.cu", ptxSize);
+    const char* ptxCode = optix::getInputData("optix/cuda/device_programs.cu", ptxSize);
 
     char log[2048];
     size_t sizeof_log = sizeof(log);

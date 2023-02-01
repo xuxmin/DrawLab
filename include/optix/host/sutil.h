@@ -3,10 +3,10 @@
 // optix 7
 #include <cuda_runtime.h>
 #include <iostream>
-#include <sstream>
-#include <stdexcept>
 #include <optix.h>
 #include <optix_stubs.h>
+#include <sstream>
+#include <stdexcept>
 
 //------------------------------------------------------------------------------
 //
@@ -109,7 +109,6 @@ private:
 /// @param log (Optional) pointer to compiler log string. If *log == NULL there
 /// is no output. Only valid until the next getInputData call
 /// @return
-const char* getInputData(const char* sample, const char* sampleDir,
-                         const char* filename, size_t& dataSize,
+const char* getInputData(const char* filepath, size_t& dataSize,
                          const char** log = NULL);
-}  // namespace sutil
+}  // namespace optix
