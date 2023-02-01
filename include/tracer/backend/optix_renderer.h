@@ -1,9 +1,9 @@
 #pragma once
-#include "optix/cuda_buffer.h"
-#include "tracer/backend/optix_params.h"
 #include "tracer/scene.h"
-#include "optix/texture.h"
-#include "optix/device_context.h"
+#include "optix/host/texture.h"
+#include "optix/host/device_context.h"
+#include "optix/host/cuda_buffer.h"
+#include "optix/common/optix_params.h"
 
 
 namespace optix {

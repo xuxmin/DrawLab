@@ -1,5 +1,5 @@
-#include "optix/texture.h"
-#include "optix/sutil.h"
+#include "optix/host/texture.h"
+#include "optix/host/sutil.h"
 
 namespace optix {
 

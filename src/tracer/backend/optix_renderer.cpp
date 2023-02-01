@@ -1,9 +1,9 @@
 #include "tracer/backend/optix_renderer.h"
-#include "optix/sutil.h"
-#include "optix/vec_math.h"
-// this include may only appear in a single source file:
+#include "optix/host/sutil.h"
+#include "optix/common/vec_math.h"
 #include "core/bitmap/bitmap.h"
 #include "tracer/camera.h"
+// this include may only appear in a single source file:
 #include <optix_function_table_definition.h>
 #include <spdlog/spdlog.h>
 
@@ -19,29 +19,16 @@ namespace optix {
  * data: Opaque to NVIDIA OptiX 7. can store program parameter values.
  */
 /*! SBT record for a raygen program */
-struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) RaygenRecord {
-    __align__(
-        OPTIX_SBT_RECORD_ALIGNMENT) char header[OPTIX_SBT_RECORD_HEADER_SIZE];
-    // just a dummy value - later examples will use more interesting
-    // data here
-    void* data;
+template <typename T>
+struct Record {
+    __align__( OPTIX_SBT_RECORD_ALIGNMENT ) char header[OPTIX_SBT_RECORD_HEADER_SIZE];
+    T data;
 };
 
-/*! SBT record for a miss program */
-struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) MissRecord {
-    __align__(
-        OPTIX_SBT_RECORD_ALIGNMENT) char header[OPTIX_SBT_RECORD_HEADER_SIZE];
-    // just a dummy value - later examples will use more interesting
-    // data here
-    void* data;
-};
+typedef Record<RayGenData> RayGenRecord;
+typedef Record<MissData> MissRecord;
+typedef Record<HitGroupData> HitgroupRecord;
 
-/*! SBT record for a hitgroup program */
-struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) HitgroupRecord {
-    __align__(
-        OPTIX_SBT_RECORD_ALIGNMENT) char header[OPTIX_SBT_RECORD_HEADER_SIZE];
-    HitGroupData data;
-};
 
 OptixRenderer::OptixRenderer(drawlab::Scene* scene) : m_scene(scene) {
     initOptix();
@@ -220,11 +207,10 @@ void OptixRenderer::buildSBT() {
     // ------------------------------------------------------------------
     // build raygen records
     // ------------------------------------------------------------------
-    std::vector<RaygenRecord> raygenRecords;
+    std::vector<RayGenRecord> raygenRecords;
     for (int i = 0; i < raygenPGs.size(); i++) {
-        RaygenRecord rec;
+        RayGenRecord rec;
         OPTIX_CHECK(optixSbtRecordPackHeader(raygenPGs[i], &rec));
-        rec.data = nullptr; /* for now ... */
         raygenRecords.push_back(rec);
     }
     raygenRecordsBuffer.allocAndUpload(raygenRecords);
@@ -237,7 +223,6 @@ void OptixRenderer::buildSBT() {
     for (int i = 0; i < missPGs.size(); i++) {
         MissRecord rec;
         OPTIX_CHECK(optixSbtRecordPackHeader(missPGs[i], &rec));
-        rec.data = nullptr; /* for now ... */
         missRecords.push_back(rec);
     }
     missRecordsBuffer.allocAndUpload(missRecords);
@@ -259,13 +244,15 @@ void OptixRenderer::buildSBT() {
         for (int ray_id = 0; ray_id < RAY_TYPE_COUNT; ray_id++) {
             HitgroupRecord rec;
             OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[ray_id], &rec));
-            rec.data.vertex = (float3*)vertexBuffers[i].devicePtr();
-            rec.data.index = (int3*)indexBuffers[i].devicePtr();
-            rec.data.normal = (float3*)normalBuffer[i].devicePtr();
-            rec.data.texcoord = (float2*)texcoordBuffer[i].devicePtr();
-            rec.data.hasTexture = true;
-            rec.data.texture = textures[0]->getObject();
-            rec.data.color = make_float3(0.5, 0.5, 0.5);
+            rec.data.geometry_data.type = GeometryData::TRIANGLE_MESH;
+            rec.data.geometry_data.triangle_mesh.positions = (float3*)vertexBuffers[i].devicePtr();
+            rec.data.geometry_data.triangle_mesh.indices = (int3*)indexBuffers[i].devicePtr();
+            rec.data.geometry_data.triangle_mesh.normals = (float3*)normalBuffer[i].devicePtr();
+            rec.data.geometry_data.triangle_mesh.texcoords = (float2*)texcoordBuffer[i].devicePtr();
+            rec.data.material_data.type = MaterialData::DIFFUSE;
+            rec.data.material_data.diffuse.albedo = make_float4(0.5, 0.5, 0.5, 1.0);
+            rec.data.material_data.diffuse.albedo_tex = textures[0]->getObject();
+            rec.data.material_data.diffuse.normal_tex = 0;
             hitgroupRecords.push_back(rec);
         }
     }
@@ -481,7 +468,7 @@ void OptixRenderer::createTextures() {
     int num_tex = 1;
 
     for (int tex_id = 0; tex_id < num_tex; tex_id++) {
-        drawlab::Bitmap* bitmap = new drawlab::Bitmap("reljef.JPG");
+        drawlab::Bitmap* bitmap = new drawlab::Bitmap("sp_luk.JPG");
         int width = bitmap->getWidth();
         int height = bitmap->getHeight();
         std::vector<unsigned char> temp(width * height * 4);

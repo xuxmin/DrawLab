@@ -1,9 +1,9 @@
 #include <optix.h>
 #include <optix_device.h>
 
-#include "tracer/backend/optix_params.h"
-#include "optix/vec_math.h"
-#include "optix/random.h"
+#include "optix/device/random.h"
+#include "optix/common/optix_params.h"
+#include "optix/common/vec_math.h"
 
 
 namespace optix {
@@ -109,14 +109,18 @@ extern "C" __global__ void __closesthit__occlusion() {
 }
 
 extern "C" __global__ void __closesthit__radiance() {
-
     const HitGroupData* rt_data = (HitGroupData*)optixGetSbtDataPointer();
+    const GeometryData::TriangleMesh& mesh_data =
+        reinterpret_cast<const GeometryData::TriangleMesh&>(
+            rt_data->geometry_data.triangle_mesh);
+    const MaterialData& mat_data =
+        reinterpret_cast<const MaterialData&>(rt_data->material_data);
 
     // ------------------------------------------------------------------
     // gather some basic hit information
     // ------------------------------------------------------------------
     const int prim_idx = optixGetPrimitiveIndex();
-    const int3 index  = rt_data->index[prim_idx];
+    const int3 index  = mesh_data.indices[prim_idx];
     const float3 ray_dir = optixGetWorldRayDirection();
     const float u = optixGetTriangleBarycentrics().x;
     const float v = optixGetTriangleBarycentrics().y;
@@ -126,15 +130,15 @@ extern "C" __global__ void __closesthit__radiance() {
     // geometry normal (fallback)
     // ------------------------------------------------------------------
 
-    const float3 v0   = rt_data->vertex[index.x];
-    const float3 v1   = rt_data->vertex[index.y];
-    const float3 v2   = rt_data->vertex[index.z];
+    const float3 v0   = mesh_data.positions[index.x];
+    const float3 v1   = mesh_data.positions[index.y];
+    const float3 v2   = mesh_data.positions[index.z];
     float3 geometry_normal = normalize(cross(v1-v0, v2-v0));
     float3 shading_normal = geometry_normal;
 
-    if (rt_data->normal) {
-        shading_normal = (1.f - u - v) * rt_data->normal[index.x] +
-            u * rt_data->normal[index.y] + v * rt_data->normal[index.z];
+    if (mesh_data.normals) {
+        shading_normal = (1.f - u - v) * mesh_data.normals[index.x] +
+            u * mesh_data.normals[index.y] + v * mesh_data.normals[index.z];
     }
 
     // ------------------------------------------------------------------
@@ -149,15 +153,15 @@ extern "C" __global__ void __closesthit__radiance() {
     // compute diffuse material color, including diffuse texture, if
     // available
     // ------------------------------------------------------------------
-    float3 diffuseColor = rt_data->color;
-    if (rt_data->hasTexture && rt_data->texcoord) {
+    float4 diffuseColor = mat_data.diffuse.albedo;
+    if (mat_data.diffuse.albedo_tex) {
         const float2 tc
-            = (1.f-u-v) * rt_data->texcoord[index.x]
-            +         u * rt_data->texcoord[index.y]
-            +         v * rt_data->texcoord[index.z];
+            = (1.f-u-v) * mesh_data.texcoords[index.x]
+            +         u * mesh_data.texcoords[index.y]
+            +         v * mesh_data.texcoords[index.z];
       
-        float4 fromTexture = tex2D<float4>(rt_data->texture, tc.x, tc.y);
-        diffuseColor *= make_float3(fromTexture);
+        float4 fromTexture = tex2D<float4>(mat_data.diffuse.albedo_tex, tc.x, tc.y);
+        diffuseColor *= fromTexture;
     }
 
     // ------------------------------------------------------------------
@@ -189,7 +193,7 @@ extern "C" __global__ void __closesthit__radiance() {
         prd->radiance = make_float3(0.f);
     }
     else {
-        prd->radiance = cosDN * diffuseColor;
+        prd->radiance = make_float3(cosDN * diffuseColor);
     }
 }
 

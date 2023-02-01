@@ -1,5 +1,5 @@
-#include "optix/device_context.h"
-#include "optix/sutil.h"
+#include "optix/host/device_context.h"
+#include "optix/host/sutil.h"
 #include <spdlog/spdlog.h>
 
 namespace optix {

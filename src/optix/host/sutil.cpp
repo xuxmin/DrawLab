@@ -1,4 +1,4 @@
-#include "optix/sutil.h"
+#include "optix/host/sutil.h"
 #include "projectConfig.h"
 #include <nvrtc.h>
 #include <fstream>

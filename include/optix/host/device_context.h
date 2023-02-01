@@ -1,6 +1,6 @@
 #pragma once
 
-#include "optix/sutil.h"
+#include "optix/host/sutil.h"
 #include <cuda_runtime.h>
 #include <string>
 

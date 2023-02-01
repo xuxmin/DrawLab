@@ -1,8 +1,8 @@
 set(TARGET_NAME "optixlib")
 set(SOURCES
-    sutil.cpp
-    texture.cpp
-    device_context.cpp
+    host/sutil.cpp
+    host/texture.cpp
+    host/device_context.cpp
 )
 
 find_package(CUDA REQUIRED)
