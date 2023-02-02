@@ -1,8 +1,10 @@
+#include "optix/material/diffuse.h"
 #include "core/base/common.h"
 #include "core/math/frame.h"
 #include "core/math/wrap.h"
-#include "tracer/texture.h"
+#include "optix/host/device_context.h"
 #include "tracer/bsdf.h"
+#include "tracer/texture.h"
 
 namespace drawlab {
 
@@ -84,6 +86,26 @@ public:
     }
 
     EClassType getClassType() const { return EBSDF; }
+
+    const optix::Material*
+    createOptixMaterial(optix::DeviceContext& context) const {
+        optix::Material* optix_mat = nullptr;
+        if (m_albedo->isConstant()) {
+            Color3f color = m_albedo->eval(Intersection());
+            optix_mat = new optix::Diffuse(
+                "diffuse", context,
+                make_float4(color[0], color[1], color[2], 1.f));
+        }
+        else {
+            optix_mat = new optix::Diffuse("diffuse", context,
+                                           m_albedo->getOptixTexture(context));
+        }
+        return optix_mat;
+    }
+
+    std::string getMaterialId() const {
+        return "Diffuse" + std::to_string(int(m_albedo));
+    }
 
 private:
     // Color3f m_albedo;

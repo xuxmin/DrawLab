@@ -2,12 +2,21 @@
 
 namespace optix {
 
+Material::Material(std::string mat_id, MaterialData::Type mat_type,
+                   DeviceContext& device_context, std::string cu_file,
+                   const std::vector<std::pair<int, const char*>> closet_hits,
+                   const std::vector<std::pair<int, const char*>> any_hits)
+    : m_material_id(mat_id), m_material_type(mat_type) {
+    m_module = device_context.createModuleFromCU(cu_file);
 
-Material::Material(const DeviceContext& context, std::string cu_file) {
+    // TODO: assert ray_type_num ?
 
-    // Create Module
-    size_t ptxSize = 0;
-    const char* ptxCode = optix::getInputData("device_programs.cu", ptxSize);
+    for (int i = 0; i < closet_hits.size(); i++) {
+        auto& ch = closet_hits[i];
+        auto& ah = any_hits[i];
+        m_hitgroup_pgs.push_back(device_context.createHitgroupPrograms(
+            m_module, ch.second, ah.second));
+    }
 }
 
-}
+}  // namespace optix

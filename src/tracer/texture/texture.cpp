@@ -28,6 +28,10 @@ std::shared_ptr<Bitmap> Texture::getBitmap(const Vector2i &) const {
     throw Exception("Texture::getBitmap(): not implemented!");
 }
 
+const optix::Texture* Texture::getOptixTexture(optix::DeviceContext& context) const {
+    throw Exception("Texture::getOptixTexture(): not implemented!");
+}
+
 Texture::~Texture() { }
 
 Texture2D::Texture2D(const PropertyList &props) : Texture(props) {

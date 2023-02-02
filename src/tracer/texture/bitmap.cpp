@@ -55,6 +55,35 @@ public:
         return std::shared_ptr<Bitmap>(m_bitmap);
     }
 
+    const optix::Texture* getOptixTexture(optix::DeviceContext& context) const {
+        std::string tex_id = m_filename + std::to_string(int(m_bitmap));
+        const optix::Texture* texture = context.getTexture(tex_id);
+        if (texture != nullptr) {
+            return texture;
+        }
+
+        // Create a texture
+        int width = m_bitmap->getWidth();
+        int height = m_bitmap->getHeight();
+        std::vector<unsigned char> temp(width * height * 4);
+        for (int i = 0; i < width * height; i++) {
+            temp[4 * i] = m_bitmap->getPtr()[3 * i];
+            temp[4 * i + 1] = m_bitmap->getPtr()[3 * i + 1];
+            temp[4 * i + 2] = m_bitmap->getPtr()[3 * i + 2];
+            temp[4 * i + 3] = m_bitmap->getPtr()[3 * i + 2];
+        }
+
+        optix::Texture* optix_texture = new optix::Texture(
+            width, height, 0, optix::CUDATexelFormat::CUDA_TEXEL_FORMAT_RGBA8,
+            optix::CUDATextureFilterMode::CUDA_TEXTURE_LINEAR,
+            optix::CUDATextureAddressMode::CUDA_TEXTURE_WRAP,
+            optix::CUDATextureColorSpace::CUDA_COLOR_SPACE_LINEAR, temp.data());
+
+        context.addTexture(tex_id, optix_texture);
+
+        return optix_texture;
+    }
+
 protected:
     std::string m_filename;
     Bitmap* m_bitmap;

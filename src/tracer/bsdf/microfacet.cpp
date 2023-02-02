@@ -87,7 +87,8 @@ public:
         if (sample_x > m_ks) {
             sample.x() = (sample_x - m_ks) / (1 - m_ks);
             bRec.wo = Warp::squareToCosineHemisphere(sample);
-        } else {
+        }
+        else {
             sample.x() = sample_x / m_ks;
             Vector3f wh = Warp::squareToBeckmann(sample, m_alpha);
             bRec.wo = reflect(bRec.wi, wh);
@@ -118,6 +119,13 @@ public:
                            "  ks = %f\n"
                            "]",
                            m_alpha, m_intIOR, m_extIOR, m_kd.toString(), m_ks);
+    }
+    const optix::Material* createOptixMaterial(optix::DeviceContext& context) const {
+        return nullptr;
+    }
+
+    std::string getMaterialId() const {
+        return "";
     }
 
 private:

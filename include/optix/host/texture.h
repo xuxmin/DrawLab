@@ -41,7 +41,7 @@ public:
     
     ~Texture();
 
-    cudaTextureObject_t getObject();
+    const cudaTextureObject_t getObject() const;
 
 private:
     cudaTextureObject_t m_texture_object;

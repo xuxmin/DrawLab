@@ -93,7 +93,9 @@ Texture::Texture(uint32_t width, uint32_t height, uint32_t linePitchInBytes,
                                        nullptr));
 }
 
-cudaTextureObject_t Texture::getObject() { return m_texture_object; }
+const cudaTextureObject_t Texture::getObject() const {
+    return m_texture_object;
+}
 
 Texture::~Texture() {
     cudaDestroyTextureObject(m_texture_object);

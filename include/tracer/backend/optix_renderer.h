@@ -40,14 +40,6 @@ protected:
     /// @brief Creates and configures a optix device context
     void createContext();
 
-    
-    /**
-     * \brief Creates the module from the .ptx file.
-     * 
-     * A module may include multiple programs of any program type
-    */
-    void createModule();
-
     /**
      * Programs, a block of executable code on the GPU, called shader in DXR
      * and Vulkan.
@@ -57,7 +49,6 @@ protected:
     */
     void createRaygenPrograms();
     void createMissPrograms();
-    void createHitgroupPrograms();
 
     void createPipeline();
 
@@ -66,8 +57,6 @@ protected:
 
     // Build an acceleration structure for the scene
     OptixTraversableHandle buildAccel();
-
-    void createTextures();
 
 protected:
 
@@ -92,11 +81,41 @@ protected:
     */
     std::vector<OptixProgramGroup> raygenPGs;
     std::vector<OptixProgramGroup> missPGs;
-    std::vector<OptixProgramGroup> hitgroupPGs;
 
     CUDABuffer raygenRecordsBuffer;
     CUDABuffer missRecordsBuffer;
     CUDABuffer hitgroupRecordsBuffer;
+
+    /**
+     * The shader binding table (SBT) is an array that contains information
+     * about the location of programs and their parameters
+     * 
+     * More details about sbt:
+     * 1. Only one raygenRecord and exceptionRecord
+     * 2. Arrays of SBT records for miss programs.
+     *      In optixTrace(), use missSBTIndex parameter to select miss programs.
+     * 3. Arrays of SBT records for hit groups.
+     *      The computation of the index for the hit group (intersection,
+     *      any-hit, closest-hit) is done during traversal.
+     * 
+     * The SBT record index sbtIndex is determined by the following index calculation during traversal:
+     * sbt-index = sbt-instance-offset
+     *              + (sbt-geometry-acceleration-structure-index * sbt-stride-from-trace-call)
+     *              + sbt-offset-from-trace-call
+     * 
+     * sbt-instance-offset:                         0 if only one gas
+     * 
+     * sbt-geometry-acceleration-structure-index:   buildInput index if numSBTRecords=1
+     * 
+     * sbt-stride-from-trace-call: The parameter SBTstride, defined as an index offset,
+     * is multiplied by optixTrace with the SBT geometry acceleration structure index.
+     * It is required to implement different ray types.
+     * 
+     * sbt-offset-from-trace-call: The optixTrace function takes the parameter SBToffset, 
+     * allowing for an SBT access shift for this specific ray. It is required to implement
+     * different ray types.
+     * 
+    */
     OptixShaderBindingTable sbt = {};
 
     /**

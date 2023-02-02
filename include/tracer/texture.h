@@ -2,6 +2,8 @@
 #include "core/parser/proplist.h"
 #include "tracer/mesh.h"
 #include <memory>
+#include "optix/host/texture.h"
+#include "optix/host/device_context.h"
 
 
 namespace drawlab {
@@ -42,6 +44,7 @@ public:
      * */
     EClassType getClassType() const { return ETexture; }
 
+    virtual const optix::Texture* getOptixTexture(optix::DeviceContext& context) const;
 
 protected:
     Texture(const PropertyList &props);

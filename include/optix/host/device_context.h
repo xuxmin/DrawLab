@@ -1,10 +1,14 @@
 #pragma once
 
 #include "optix/host/sutil.h"
+#include "optix/host/texture.h"
 #include <cuda_runtime.h>
 #include <string>
+#include <map>
 
 namespace optix {
+
+class Material;
 
 class DeviceContext {
 public:
@@ -18,6 +22,23 @@ public:
     ///         based on what values (motion blur on/off, multi-level
     ///         instnacing, etc) are set in the context
     void configurePipelineOptions();
+
+    /**
+     * @brief Create module from cu file. A module may include
+     *        multiple programs of any program type
+     *          .cu --nvcc--> .ptx ---> module(optixModule)
+     * @param cu_file file path relative to SOURCE_DIR
+    */
+    OptixModule createModuleFromCU(std::string cu_file) const;
+
+    OptixProgramGroup createHitgroupPrograms(OptixModule ch_module,
+                                             OptixModule ah_module,
+                                             std::string ch_func,
+                                             std::string ah_func);
+
+    OptixProgramGroup createHitgroupPrograms(OptixModule module,
+                                             std::string ch_func,
+                                             std::string ah_func);
 
     const OptixPipelineCompileOptions* getPipelineCompileOptions() const {
         return &m_pipeline_compile_options;
@@ -39,6 +60,18 @@ public:
         return m_stream;
     }
 
+    /// @brief Return texture from pool
+    const Texture* getTexture(std::string tex_id) const;
+
+    /// @brief Add texture to device context
+    void addTexture(std::string tex_id, const Texture* texture);
+
+    const Material* getMaterial(std::string mat_id) const;
+
+    void addMaterial(std::string mat_id, const Material* material);
+
+    const std::map<std::string, OptixProgramGroup>& getHitgroupPGs() const; 
+
 private:
     int m_device_id;
     CUstream m_stream = nullptr;
@@ -54,6 +87,10 @@ private:
     OptixPipelineCompileOptions m_pipeline_compile_options = {};
     OptixPipelineLinkOptions m_pipeline_link_options = {};
     OptixModuleCompileOptions m_module_compile_options = {};
+
+    std::map<std::string, const Texture*> m_textures;
+    std::map<std::string, const Material*> m_materials;
+    std::map<std::string, OptixProgramGroup> m_hitgroup_pgs;
 };
 
 }  // namespace optix

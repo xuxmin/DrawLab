@@ -64,6 +64,14 @@ public:
                            m_intIOR, m_extIOR);
     }
 
+    const optix::Material* createOptixMaterial(optix::DeviceContext& context) const {
+        return nullptr;
+    }
+
+    std::string getMaterialId() const {
+        return "";
+    }
+
 private:
     float m_intIOR, m_extIOR;
 };

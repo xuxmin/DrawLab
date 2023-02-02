@@ -33,6 +33,14 @@ public:
     }
 
     std::string toString() const { return "Mirror[]"; }
+
+    const optix::Material* createOptixMaterial(optix::DeviceContext& context) const {
+        return nullptr;
+    }
+
+    std::string getMaterialId() const {
+        return "";
+    }
 };
 
 REGISTER_CLASS(Mirror, "mirror");

@@ -1,7 +1,7 @@
 #include "tracer/backend/optix_renderer.h"
-#include "optix/host/sutil.h"
-#include "optix/common/vec_math.h"
 #include "core/bitmap/bitmap.h"
+#include "optix/common/vec_math.h"
+#include "optix/host/sutil.h"
 #include "tracer/camera.h"
 // this include may only appear in a single source file:
 #include <optix_function_table_definition.h>
@@ -9,51 +9,26 @@
 
 namespace optix {
 
-/**
- * The SBT(shader binding table) connects geometric data to programs
- *
- * header: Opaque to the application, filled in by optixSbtRecordPackHeader.
- *      uased by Optix 7 to identify different behaviour, such as any-hit,
- *      intersection...
- *
- * data: Opaque to NVIDIA OptiX 7. can store program parameter values.
- */
-/*! SBT record for a raygen program */
-template <typename T>
-struct Record {
-    __align__( OPTIX_SBT_RECORD_ALIGNMENT ) char header[OPTIX_SBT_RECORD_HEADER_SIZE];
-    T data;
-};
-
-typedef Record<RayGenData> RayGenRecord;
-typedef Record<MissData> MissRecord;
-typedef Record<HitGroupData> HitgroupRecord;
-
-
 OptixRenderer::OptixRenderer(drawlab::Scene* scene) : m_scene(scene) {
     initOptix();
 
     spdlog::info("[OPTIX RENDERER] Creating optix context ...");
     createContext();
     spdlog::info("[OPTIX RENDERER] Setting up module ...");
-    createModule();
+    module = deviceContext->createModuleFromCU("optix/cuda/device_programs.cu");
 
     spdlog::info("[OPTIX RENDERER] Creating raygen programs ...");
     createRaygenPrograms();
     spdlog::info("[OPTIX RENDERER] Creating miss programs ...");
     createMissPrograms();
-    spdlog::info("[OPTIX RENDERER] Creating hitgroup programs ...");
-    createHitgroupPrograms();
 
     launchParams.handle = buildAccel();
 
-    spdlog::info("[OPTIX RENDERER] Setting up optix pipeline ...");
-    createPipeline();
-
-    createTextures();
-
     spdlog::info("[OPTIX RENDERER] Building SBT ...");
     buildSBT();
+
+    spdlog::info("[OPTIX RENDERER] Setting up optix pipeline ...");
+    createPipeline();
 
     launchParamsBuffer.alloc(sizeof(launchParams));
     spdlog::info(
@@ -84,19 +59,6 @@ void OptixRenderer::createContext() {
 
     deviceContext = new DeviceContext(deviceID);
     deviceContext->configurePipelineOptions();
-}
-
-void OptixRenderer::createModule() {
-    size_t ptxSize = 0;
-    const char* ptxCode = optix::getInputData("optix/cuda/device_programs.cu", ptxSize);
-
-    char log[2048];
-    size_t sizeof_log = sizeof(log);
-    OPTIX_CHECK_LOG(
-        optixModuleCreateFromPTX(deviceContext->getOptixDeviceContext(),
-                                 deviceContext->getModuleCompileOptions(),
-                                 deviceContext->getPipelineCompileOptions(),
-                                 ptxCode, ptxSize, log, &sizeof_log, &module));
 }
 
 void OptixRenderer::createRaygenPrograms() {
@@ -141,40 +103,18 @@ void OptixRenderer::createMissPrograms() {
         &pgOptions, log, &sizeof_log, &missPGs[RAY_TYPE_OCCLUSION]));
 }
 
-void OptixRenderer::createHitgroupPrograms() {
-    hitgroupPGs.resize(RAY_TYPE_COUNT);
-
-    OptixProgramGroupOptions pgOptions = {};
-    OptixProgramGroupDesc pgDesc = {};
-    pgDesc.kind = OPTIX_PROGRAM_GROUP_KIND_HITGROUP;
-    pgDesc.hitgroup.moduleCH = module;
-    pgDesc.hitgroup.moduleAH = module;
-    pgDesc.hitgroup.entryFunctionNameCH = "__closesthit__radiance";
-    pgDesc.hitgroup.entryFunctionNameAH = "__anyhit__radiance";
-
-    char log[2048];  // For error reporting from OptiX creation functions
-    size_t sizeof_log = sizeof(log);
-    OPTIX_CHECK_LOG(optixProgramGroupCreate(
-        deviceContext->getOptixDeviceContext(), &pgDesc,
-        1,  // num program groups
-        &pgOptions, log, &sizeof_log, &hitgroupPGs[RAY_TYPE_RADIANCE]));
-
-    pgDesc.hitgroup.entryFunctionNameCH = "__closesthit__occlusion";
-    pgDesc.hitgroup.entryFunctionNameAH = "__anyhit__occlusion";
-    OPTIX_CHECK_LOG(optixProgramGroupCreate(
-        deviceContext->getOptixDeviceContext(), &pgDesc,
-        1,  // num program groups
-        &pgOptions, log, &sizeof_log, &hitgroupPGs[RAY_TYPE_OCCLUSION]));
-}
-
 void OptixRenderer::createPipeline() {
+
     std::vector<OptixProgramGroup> programGroups;
     for (auto pg : raygenPGs)
         programGroups.push_back(pg);
     for (auto pg : missPGs)
         programGroups.push_back(pg);
-    for (auto pg : hitgroupPGs)
-        programGroups.push_back(pg);
+
+    // Add hitgroup programs
+    for (auto pg : deviceContext->getHitgroupPGs()) {
+        programGroups.push_back(pg.second);
+    }
 
     char log[2048];
     size_t sizeof_log = sizeof(log);
@@ -242,16 +182,22 @@ void OptixRenderer::buildSBT() {
     for (int i = 0; i < numObjects; i++) {
         for (int ray_id = 0; ray_id < RAY_TYPE_COUNT; ray_id++) {
             HitgroupRecord rec;
-            OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[ray_id], &rec));
+
+            const optix::Material* mat = meshs[i]->getBSDF()->getOptixMaterial(*deviceContext);
+            OPTIX_CHECK(optixSbtRecordPackHeader(mat->getHitgroupPGs(ray_id), &rec));
+
             rec.data.geometry_data.type = GeometryData::TRIANGLE_MESH;
-            rec.data.geometry_data.triangle_mesh.positions = (float3*)vertexBuffers[i].devicePtr();
-            rec.data.geometry_data.triangle_mesh.indices = (int3*)indexBuffers[i].devicePtr();
-            rec.data.geometry_data.triangle_mesh.normals = (float3*)normalBuffer[i].devicePtr();
-            rec.data.geometry_data.triangle_mesh.texcoords = (float2*)texcoordBuffer[i].devicePtr();
-            rec.data.material_data.type = MaterialData::DIFFUSE;
-            rec.data.material_data.diffuse.albedo = make_float4(0.5, 0.5, 0.5, 1.0);
-            rec.data.material_data.diffuse.albedo_tex = textures[0]->getObject();
-            rec.data.material_data.diffuse.normal_tex = 0;
+            rec.data.geometry_data.triangle_mesh.positions =
+                (float3*)vertexBuffers[i].devicePtr();
+            rec.data.geometry_data.triangle_mesh.indices =
+                (int3*)indexBuffers[i].devicePtr();
+            rec.data.geometry_data.triangle_mesh.normals =
+                (float3*)normalBuffer[i].devicePtr();
+            rec.data.geometry_data.triangle_mesh.texcoords =
+                (float2*)texcoordBuffer[i].devicePtr();
+
+            mat->packHitgroupRecord(rec);
+
             hitgroupRecords.push_back(rec);
         }
     }
@@ -299,6 +245,31 @@ OptixTraversableHandle OptixRenderer::buildAccel() {
 
         // Triangle inputs
         OptixBuildInputTriangleArray& buildInput = buildInputs[i].triangleArray;
+
+
+        /**
+         * Different build type
+         * 
+         * instance acceleration structures:
+         *  OPTIX_BUILD_INPUT_TYPE_INSTANCES
+         *  OPTIX_BUILD_INPUT_TYPE_INSTANCE_POINTERS
+         * 
+         * A geometry acceleration structure containing built-in triangles
+         *  OPTIX_BUILD_INPUT_TYPE_TRIANGLES
+         * 
+         * A geometry acceleration structure containing built-in curve primitives
+         *  OPTIX_BUILD_INPUT_TYPE_CURVES
+         * 
+         * A geometry acceleration structure containing custom primitives
+         *  OPTIX_BUILD_INPUT_TYPE_CUSTOM_PRIMITIVES
+         * 
+         * 
+         * Instance acceleration structures have a single build input and 
+         * specify an array of instances. Each instance includes a ray 
+         * transformation and an OptixTraversableHandle that refers to a 
+         * geometry-AS, a transform node, or another instance acceleration 
+         * structure.
+        */
         buildInputs[i].type = OPTIX_BUILD_INPUT_TYPE_TRIANGLES;
 
         buildInput.vertexFormat = OPTIX_VERTEX_FORMAT_FLOAT3;
@@ -316,7 +287,7 @@ OptixTraversableHandle OptixRenderer::buildAccel() {
         buildInput.preTransform = 0;
 
         // Each build input maps to one or more consecutive records in the
-        // shader binding table(SBT)
+        // shader binding table(SBT), which controls program dispatch.
         buildInput.numSbtRecords = 1;
         buildInput.sbtIndexOffsetBuffer = 0;
         buildInput.sbtIndexOffsetSizeInBytes = 0;
@@ -461,30 +432,6 @@ void OptixRenderer::resize(const int height, const int width) {
 
 void OptixRenderer::downloadPixels(unsigned int h_pixels[]) {
     colorBuffer.download(h_pixels, launchParams.height * launchParams.width);
-}
-
-void OptixRenderer::createTextures() {
-    int num_tex = 1;
-
-    for (int tex_id = 0; tex_id < num_tex; tex_id++) {
-        drawlab::Bitmap* bitmap = new drawlab::Bitmap("sp_luk.JPG");
-        int width = bitmap->getWidth();
-        int height = bitmap->getHeight();
-        std::vector<unsigned char> temp(width * height * 4);
-        for (int i = 0; i < width * height; i++) {
-            temp[4 * i] = bitmap->getPtr()[3 * i];
-            temp[4 * i + 1] = bitmap->getPtr()[3 * i + 1];
-            temp[4 * i + 2] = bitmap->getPtr()[3 * i + 2];
-            temp[4 * i + 3] = bitmap->getPtr()[3 * i + 2];
-        }
-
-        Texture* texture = new Texture(
-            width, height, 0, CUDATexelFormat::CUDA_TEXEL_FORMAT_RGBA8,
-            CUDATextureFilterMode::CUDA_TEXTURE_LINEAR,
-            CUDATextureAddressMode::CUDA_TEXTURE_WRAP,
-            CUDATextureColorSpace::CUDA_COLOR_SPACE_LINEAR, temp.data());
-        textures.push_back(texture);
-    }
 }
 
 }  // namespace optix
