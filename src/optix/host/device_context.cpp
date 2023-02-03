@@ -94,9 +94,10 @@ OptixModule DeviceContext::createModuleFromCU(std::string cu_file) const {
     return module;
 }
 
-OptixProgramGroup DeviceContext::createHitgroupPrograms(
-    OptixModule ch_module, OptixModule ah_module, std::string ch_func,
-    std::string ah_func) {
+OptixProgramGroup DeviceContext::createHitgroupPrograms(OptixModule ch_module,
+                                                        OptixModule ah_module,
+                                                        std::string ch_func,
+                                                        std::string ah_func) {
     std::string key = std::to_string(int(ch_module)) +
                       std::to_string(int(ah_module)) + ch_func + ah_func;
     if (m_hitgroup_pgs.find(key) != m_hitgroup_pgs.end()) {
@@ -124,10 +125,110 @@ OptixProgramGroup DeviceContext::createHitgroupPrograms(
     return hitgroupPG;
 }
 
-OptixProgramGroup
-DeviceContext::createHitgroupPrograms(OptixModule module, std::string ch_func,
-                                      std::string ah_func) {
+OptixProgramGroup DeviceContext::createHitgroupPrograms(OptixModule module,
+                                                        std::string ch_func,
+                                                        std::string ah_func) {
     return createHitgroupPrograms(module, module, ch_func, ah_func);
+}
+
+void DeviceContext::createRaygenProgramsAndBindSBT(std::string cu_file,
+                                                   const char* func) {
+    // Create module
+    OptixModule module = createModuleFromCU(cu_file);
+
+    // Create raygen pgs
+    OptixProgramGroupOptions pgOptions = {};
+    OptixProgramGroupDesc pgDesc = {};
+    pgDesc.kind = OPTIX_PROGRAM_GROUP_KIND_RAYGEN;
+    pgDesc.raygen.module = module;
+    pgDesc.raygen.entryFunctionName = func;
+
+    char log[2048];  // For error reporting from OptiX creation functions
+    size_t sizeof_log = sizeof(log);
+    OPTIX_CHECK_LOG(optixProgramGroupCreate(m_optix_context, &pgDesc, 1,
+                                            &pgOptions, log, &sizeof_log,
+                                            &m_raygen_pg));
+
+    std::vector<RayGenRecord> raygenRecords;
+    RayGenRecord rec;
+    OPTIX_CHECK(optixSbtRecordPackHeader(m_raygen_pg, &rec));
+    raygenRecords.push_back(rec);
+    m_raygen_record_buffer.allocAndUpload(raygenRecords);
+    m_sbt.raygenRecord = m_raygen_record_buffer.devicePtr();
+}
+
+void DeviceContext::createMissProgramsAndBindSBT(
+    const char* cu_file, std::vector<const char*> func) {
+    int ray_type_count = func.size();
+    m_miss_pgs.resize(ray_type_count);
+
+    OptixModule module = createModuleFromCU(cu_file);
+
+    OptixProgramGroupOptions pgOptions = {};
+    OptixProgramGroupDesc pgDesc = {};
+    pgDesc.kind = OPTIX_PROGRAM_GROUP_KIND_MISS;
+    pgDesc.miss.module = module;
+
+    for (int ray_id = 0; ray_id < ray_type_count; ray_id++) {
+        pgDesc.miss.entryFunctionName = func[ray_id];
+
+        char log[2048];  // For error reporting from OptiX creation functions
+        size_t sizeof_log = sizeof(log);
+        OPTIX_CHECK_LOG(optixProgramGroupCreate(m_optix_context, &pgDesc,
+                                                1,  // num program groups
+                                                &pgOptions, log, &sizeof_log,
+                                                &m_miss_pgs[ray_id]));
+    }
+
+    std::vector<MissRecord> missRecords;
+    for (int i = 0; i < m_miss_pgs.size(); i++) {
+        MissRecord rec;
+        OPTIX_CHECK(optixSbtRecordPackHeader(m_miss_pgs[i], &rec));
+        missRecords.push_back(rec);
+    }
+    m_miss_record_buffer.allocAndUpload(missRecords);
+    m_sbt.missRecordBase = m_miss_record_buffer.devicePtr();
+    m_sbt.missRecordStrideInBytes = sizeof(MissRecord);
+    m_sbt.missRecordCount = (int)missRecords.size();
+}
+
+void DeviceContext::createPipeline() {
+    std::vector<OptixProgramGroup> programGroups;
+
+    // Add raygen programs
+    programGroups.push_back(m_raygen_pg);
+    // Add miss programs
+    for (auto pg : m_miss_pgs) {
+        programGroups.push_back(pg);
+    }
+    // Add hitgroup programs
+    for (auto pg : m_hitgroup_pgs) {
+        programGroups.push_back(pg.second);
+    }
+
+    char log[2048];
+    size_t sizeof_log = sizeof(log);
+    OPTIX_CHECK_LOG(optixPipelineCreate(
+        m_optix_context, &m_pipeline_compile_options, &m_pipeline_link_options,
+        programGroups.data(), (int)programGroups.size(), log, &sizeof_log,
+        &m_pipeline));
+
+    OPTIX_CHECK_LOG(
+        optixPipelineSetStackSize(/* [in] The pipeline to configure the stack
+                                     size for */
+                                  m_pipeline,
+                                  /* [in] The direct stack size requirement for
+                                     direct callables invoked from IS or AH. */
+                                  2 * 1024,
+                                  /* [in] The direct stack size requirement for
+                                     direct callables invoked from RG, MS, or
+                                     CH.  */
+                                  2 * 1024,
+                                  /* [in] The continuation stack requirement. */
+                                  2 * 1024,
+                                  /* [in] The maximum depth of a traversable
+                                     graph passed to trace. */
+                                  1));
 }
 
 const Texture* DeviceContext::getTexture(std::string tex_id) const {
@@ -166,9 +267,9 @@ void DeviceContext::addMaterial(std::string mat_id, const Material* material) {
     spdlog::info("[DEVICE CONTEXT] Add material {} to DeviceContext", mat_id);
 }
 
-const std::map<std::string, OptixProgramGroup>& DeviceContext::getHitgroupPGs() const {
+const std::map<std::string, OptixProgramGroup>&
+DeviceContext::getHitgroupPGs() const {
     return m_hitgroup_pgs;
 }
-
 
 }  // namespace optix

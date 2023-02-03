@@ -4,9 +4,9 @@
 #include "optix/host/sutil.h"
 #include "tracer/camera.h"
 // this include may only appear in a single source file:
+#include "stb_image_write.h"
 #include <optix_function_table_definition.h>
 #include <spdlog/spdlog.h>
-#include "stb_image_write.h"
 
 namespace optix {
 
@@ -16,12 +16,13 @@ OptixRenderer::OptixRenderer(drawlab::Scene* scene) : m_scene(scene) {
     spdlog::info("[OPTIX RENDERER] Creating optix context ...");
     createContext();
     spdlog::info("[OPTIX RENDERER] Setting up module ...");
-    module = deviceContext->createModuleFromCU("optix/cuda/device_programs.cu");
 
     spdlog::info("[OPTIX RENDERER] Creating raygen programs ...");
-    createRaygenPrograms();
+    deviceContext->createRaygenProgramsAndBindSBT("optix/integrator/simple.cu",
+                                                  "__raygen__simple");
     spdlog::info("[OPTIX RENDERER] Creating miss programs ...");
-    createMissPrograms();
+    deviceContext->createMissProgramsAndBindSBT(
+        "optix/miss/miss.cu", {"__miss__radiance", "__miss__occlusion"});
 
     launchParams.handle = buildAccel();
 
@@ -29,7 +30,7 @@ OptixRenderer::OptixRenderer(drawlab::Scene* scene) : m_scene(scene) {
     buildSBT();
 
     spdlog::info("[OPTIX RENDERER] Setting up optix pipeline ...");
-    createPipeline();
+    deviceContext->createPipeline();
 
     launchParamsBuffer.alloc(sizeof(launchParams));
     spdlog::info(
@@ -64,118 +65,11 @@ void OptixRenderer::createContext() {
     deviceContext->configurePipelineOptions();
 }
 
-void OptixRenderer::createRaygenPrograms() {
-    // we do a single ray gen program in this example:
-    raygenPGs.resize(1);
-
-    OptixProgramGroupOptions pgOptions = {};
-    OptixProgramGroupDesc pgDesc = {};
-    pgDesc.kind = OPTIX_PROGRAM_GROUP_KIND_RAYGEN;
-    pgDesc.raygen.module = module;
-    pgDesc.raygen.entryFunctionName = "__raygen__renderFrame";
-
-    char log[2048];  // For error reporting from OptiX creation functions
-    size_t sizeof_log = sizeof(log);
-    OPTIX_CHECK_LOG(optixProgramGroupCreate(
-        deviceContext->getOptixDeviceContext(), &pgDesc, 1, &pgOptions, log,
-        &sizeof_log, &raygenPGs[0]));
-}
-
-void OptixRenderer::createMissPrograms() {
-    missPGs.resize(RAY_TYPE_COUNT);
-
-    OptixProgramGroupOptions pgOptions = {};
-    OptixProgramGroupDesc pgDesc = {};
-    pgDesc.kind = OPTIX_PROGRAM_GROUP_KIND_MISS;
-    pgDesc.miss.module = module;
-    pgDesc.miss.entryFunctionName = "__miss__radiance";
-
-    char log[2048];  // For error reporting from OptiX creation functions
-    size_t sizeof_log = sizeof(log);
-    OPTIX_CHECK_LOG(optixProgramGroupCreate(
-        deviceContext->getOptixDeviceContext(), &pgDesc,
-        1,  // num program groups
-        &pgOptions, log, &sizeof_log, &missPGs[RAY_TYPE_RADIANCE]));
-
-    // NULL miss program for occlusion rays
-    pgDesc.miss.module = module;
-    pgDesc.miss.entryFunctionName = "__miss__occlusion";
-    OPTIX_CHECK_LOG(optixProgramGroupCreate(
-        deviceContext->getOptixDeviceContext(), &pgDesc,
-        1,  // num program groups
-        &pgOptions, log, &sizeof_log, &missPGs[RAY_TYPE_OCCLUSION]));
-}
-
-void OptixRenderer::createPipeline() {
-
-    std::vector<OptixProgramGroup> programGroups;
-    for (auto pg : raygenPGs)
-        programGroups.push_back(pg);
-    for (auto pg : missPGs)
-        programGroups.push_back(pg);
-
-    // Add hitgroup programs
-    for (auto pg : deviceContext->getHitgroupPGs()) {
-        programGroups.push_back(pg.second);
-    }
-
-    char log[2048];
-    size_t sizeof_log = sizeof(log);
-    OPTIX_CHECK_LOG(optixPipelineCreate(
-        deviceContext->getOptixDeviceContext(),
-        deviceContext->getPipelineCompileOptions(),
-        deviceContext->getPipelineLinkOptions(), programGroups.data(),
-        (int)programGroups.size(), log, &sizeof_log, &pipeline));
-
-    OPTIX_CHECK_LOG(
-        optixPipelineSetStackSize(/* [in] The pipeline to configure the stack
-                                     size for */
-                                  pipeline,
-                                  /* [in] The direct stack size requirement for
-                                     direct callables invoked from IS or AH. */
-                                  2 * 1024,
-                                  /* [in] The direct stack size requirement for
-                                     direct callables invoked from RG, MS, or
-                                     CH.  */
-                                  2 * 1024,
-                                  /* [in] The continuation stack requirement. */
-                                  2 * 1024,
-                                  /* [in] The maximum depth of a traversable
-                                     graph passed to trace. */
-                                  1));
-}
-
 void OptixRenderer::buildSBT() {
-    // ------------------------------------------------------------------
-    // build raygen records
-    // ------------------------------------------------------------------
-    std::vector<RayGenRecord> raygenRecords;
-    for (int i = 0; i < raygenPGs.size(); i++) {
-        RayGenRecord rec;
-        OPTIX_CHECK(optixSbtRecordPackHeader(raygenPGs[i], &rec));
-        raygenRecords.push_back(rec);
-    }
-    raygenRecordsBuffer.allocAndUpload(raygenRecords);
-    sbt.raygenRecord = raygenRecordsBuffer.devicePtr();
-
-    // ------------------------------------------------------------------
-    // build miss records
-    // ------------------------------------------------------------------
-    std::vector<MissRecord> missRecords;
-    for (int i = 0; i < missPGs.size(); i++) {
-        MissRecord rec;
-        OPTIX_CHECK(optixSbtRecordPackHeader(missPGs[i], &rec));
-        missRecords.push_back(rec);
-    }
-    missRecordsBuffer.allocAndUpload(missRecords);
-    sbt.missRecordBase = missRecordsBuffer.devicePtr();
-    sbt.missRecordStrideInBytes = sizeof(MissRecord);
-    sbt.missRecordCount = (int)missRecords.size();
-
     // ------------------------------------------------------------------
     // build hitgroup records
     // ------------------------------------------------------------------
-
+    OptixShaderBindingTable& sbt = deviceContext->getSBT();
     // we don't actually have any objects in this example, but let's
     // create a dummy one so the SBT doesn't have any null pointers
     // (which the sanity checks in compilation would complain about)
@@ -186,8 +80,10 @@ void OptixRenderer::buildSBT() {
         for (int ray_id = 0; ray_id < RAY_TYPE_COUNT; ray_id++) {
             HitgroupRecord rec;
 
-            const optix::Material* mat = meshs[i]->getBSDF()->getOptixMaterial(*deviceContext);
-            OPTIX_CHECK(optixSbtRecordPackHeader(mat->getHitgroupPGs(ray_id), &rec));
+            const optix::Material* mat =
+                meshs[i]->getBSDF()->getOptixMaterial(*deviceContext);
+            OPTIX_CHECK(
+                optixSbtRecordPackHeader(mat->getHitgroupPGs(ray_id), &rec));
 
             rec.data.geometry_data.type = GeometryData::TRIANGLE_MESH;
             rec.data.geometry_data.triangle_mesh.positions =
@@ -249,30 +145,29 @@ OptixTraversableHandle OptixRenderer::buildAccel() {
         // Triangle inputs
         OptixBuildInputTriangleArray& buildInput = buildInputs[i].triangleArray;
 
-
         /**
          * Different build type
-         * 
+         *
          * instance acceleration structures:
          *  OPTIX_BUILD_INPUT_TYPE_INSTANCES
          *  OPTIX_BUILD_INPUT_TYPE_INSTANCE_POINTERS
-         * 
+         *
          * A geometry acceleration structure containing built-in triangles
          *  OPTIX_BUILD_INPUT_TYPE_TRIANGLES
-         * 
-         * A geometry acceleration structure containing built-in curve primitives
-         *  OPTIX_BUILD_INPUT_TYPE_CURVES
-         * 
+         *
+         * A geometry acceleration structure containing built-in curve
+         * primitives OPTIX_BUILD_INPUT_TYPE_CURVES
+         *
          * A geometry acceleration structure containing custom primitives
          *  OPTIX_BUILD_INPUT_TYPE_CUSTOM_PRIMITIVES
-         * 
-         * 
-         * Instance acceleration structures have a single build input and 
-         * specify an array of instances. Each instance includes a ray 
-         * transformation and an OptixTraversableHandle that refers to a 
-         * geometry-AS, a transform node, or another instance acceleration 
+         *
+         *
+         * Instance acceleration structures have a single build input and
+         * specify an array of instances. Each instance includes a ray
+         * transformation and an OptixTraversableHandle that refers to a
+         * geometry-AS, a transform node, or another instance acceleration
          * structure.
-        */
+         */
         buildInputs[i].type = OPTIX_BUILD_INPUT_TYPE_TRIANGLES;
 
         buildInput.vertexFormat = OPTIX_VERTEX_FORMAT_FLOAT3;
@@ -378,10 +273,12 @@ void OptixRenderer::render() {
     launchParams.frameID++;
 
     OPTIX_CHECK(optixLaunch(/*! pipeline we're launching launch: */
-                            pipeline, deviceContext->getStream(),
+                            deviceContext->getPipeline(),
+                            deviceContext->getStream(),
                             /*! parameters and SBT */
                             launchParamsBuffer.devicePtr(),
-                            launchParamsBuffer.m_size_in_bytes, &sbt,
+                            launchParamsBuffer.m_size_in_bytes,
+                            &deviceContext->getSBT(),
                             /*! dimensions of the launch: */
                             launchParams.width, launchParams.height, 1));
     // sync - make sure the frame is rendered before we download and
@@ -395,12 +292,11 @@ void OptixRenderer::render() {
     downloadPixels(pixels.data());
     const std::string fileName = "osc_example2.png";
     stbi_write_png(fileName.c_str(), m_width, m_height, 4, pixels.data(),
-                            m_width * sizeof(unsigned int));
+                   m_width * sizeof(unsigned int));
     spdlog::info("Image rendered, and saved to {} ... done.", fileName);
 }
 
 void OptixRenderer::updateCamera() {
-
     const drawlab::Camera* camera = m_scene->getCamera();
     drawlab::Vector2i outputSize = camera->getOutputSize();
     resize(outputSize[1], outputSize[0]);

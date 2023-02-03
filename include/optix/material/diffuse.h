@@ -8,7 +8,7 @@ public:
     Diffuse(std::string mat_id, DeviceContext& device_context, float4 albedo)
         : Material(
               mat_id, MaterialData::DIFFUSE, device_context,
-              "optix/cuda/diffuse.cu",
+              "optix/material/diffuse.cu",
               {{0, "__closesthit__radiance"}, {1, "__closesthit__occlusion"}},
               {{0, "__anyhit__radiance"}, {1, "__anyhit__occlusion"}}),
           m_albedo_val(albedo), m_albedo_tex(nullptr) {}
@@ -17,7 +17,7 @@ public:
             const Texture* albedo)
         : Material(
               mat_id, MaterialData::DIFFUSE, device_context,
-              "optix/cuda/diffuse.cu",
+              "optix/material/diffuse.cu",
               {{0, "__closesthit__radiance"}, {1, "__closesthit__occlusion"}},
               {{0, "__anyhit__radiance"}, {1, "__anyhit__occlusion"}}),
           m_albedo_val(make_float4(0.f, 0.f, 0.f, 0.f)), m_albedo_tex(albedo) {}

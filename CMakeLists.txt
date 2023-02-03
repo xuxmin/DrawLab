@@ -45,7 +45,7 @@ OPTIX_add_sample_executable(drawlab
     src/opengl/texture.cpp
     src/opengl/display.cpp
 
-    src/tracer/scene.cpp
+    src/tracer/scene/scene.cpp
     src/tracer/mesh/mesh.cpp
     src/tracer/mesh/obj.cpp
     src/tracer/accel/accel.cpp

@@ -1,10 +1,12 @@
 #pragma once
 
+#include "optix/common/optix_params.h"
+#include "optix/host/cuda_buffer.h"
 #include "optix/host/sutil.h"
 #include "optix/host/texture.h"
 #include <cuda_runtime.h>
-#include <string>
 #include <map>
+#include <string>
 
 namespace optix {
 
@@ -28,7 +30,7 @@ public:
      *        multiple programs of any program type
      *          .cu --nvcc--> .ptx ---> module(optixModule)
      * @param cu_file file path relative to SOURCE_DIR
-    */
+     */
     OptixModule createModuleFromCU(std::string cu_file) const;
 
     OptixProgramGroup createHitgroupPrograms(OptixModule ch_module,
@@ -40,25 +42,18 @@ public:
                                              std::string ch_func,
                                              std::string ah_func);
 
-    const OptixPipelineCompileOptions* getPipelineCompileOptions() const {
-        return &m_pipeline_compile_options;
-    }
+    void createRaygenProgramsAndBindSBT(std::string cu_file, const char* func);
 
-    const OptixPipelineLinkOptions* getPipelineLinkOptions() const {
-        return &m_pipeline_link_options;
-    }
+    void createMissProgramsAndBindSBT(const char* cu_file,
+                                      std::vector<const char*> func);
 
-    const OptixModuleCompileOptions* getModuleCompileOptions() const {
-        return &m_module_compile_options;
-    }
+    void createPipeline();
 
     const OptixDeviceContext& getOptixDeviceContext() const {
         return m_optix_context;
     }
 
-    const CUstream& getStream() const {
-        return m_stream;
-    }
+    const CUstream& getStream() const { return m_stream; }
 
     /// @brief Return texture from pool
     const Texture* getTexture(std::string tex_id) const;
@@ -70,7 +65,11 @@ public:
 
     void addMaterial(std::string mat_id, const Material* material);
 
-    const std::map<std::string, OptixProgramGroup>& getHitgroupPGs() const; 
+    const std::map<std::string, OptixProgramGroup>& getHitgroupPGs() const;
+
+    const OptixPipeline getPipeline() const { return m_pipeline; }
+
+    OptixShaderBindingTable& getSBT() { return m_sbt; }
 
 private:
     int m_device_id;
@@ -91,6 +90,46 @@ private:
     std::map<std::string, const Texture*> m_textures;
     std::map<std::string, const Material*> m_materials;
     std::map<std::string, OptixProgramGroup> m_hitgroup_pgs;
+    OptixProgramGroup m_raygen_pg;
+    std::vector<OptixProgramGroup> m_miss_pgs;
+
+    OptixPipeline m_pipeline;
+
+    CUDABuffer m_raygen_record_buffer;
+    CUDABuffer m_miss_record_buffer;
+    /**
+     * The shader binding table (SBT) is an array that contains information
+     * about the location of programs and their parameters
+     *
+     * More details about sbt:
+     * 1. Only one raygenRecord and exceptionRecord
+     * 2. Arrays of SBT records for miss programs.
+     *      In optixTrace(), use missSBTIndex parameter to select miss programs.
+     * 3. Arrays of SBT records for hit groups.
+     *      The computation of the index for the hit group (intersection,
+     *      any-hit, closest-hit) is done during traversal.
+     *
+     * The SBT record index sbtIndex is determined by the following index
+     * calculation during traversal: sbt-index = sbt-instance-offset
+     *              + (sbt-geometry-acceleration-structure-index *
+     * sbt-stride-from-trace-call)
+     *              + sbt-offset-from-trace-call
+     *
+     * sbt-instance-offset:                         0 if only one gas
+     *
+     * sbt-geometry-acceleration-structure-index:   buildInput index if
+     * numSBTRecords=1
+     *
+     * sbt-stride-from-trace-call: The parameter SBTstride, defined as an index
+     * offset, is multiplied by optixTrace with the SBT geometry acceleration
+     * structure index. It is required to implement different ray types.
+     *
+     * sbt-offset-from-trace-call: The optixTrace function takes the parameter
+     * SBToffset, allowing for an SBT access shift for this specific ray. It is
+     * required to implement different ray types.
+     *
+     */
+    OptixShaderBindingTable m_sbt = {};
 };
 
 }  // namespace optix
