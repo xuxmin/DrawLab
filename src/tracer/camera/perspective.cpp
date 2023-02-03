@@ -128,6 +128,11 @@ public:
                            m_farClip, indent(m_rfilter->toString()));
     }
 
+    void packLaunchParameters(optix::LaunchParams& launch_params) const {
+        throw Exception("PerspectiveCamera::packLaunchParameters() is not implemented!");
+    }
+
+
 private:
     Vector2f m_invOutputSize;
     Transform m_sampleToCamera;

@@ -6,6 +6,7 @@
 // this include may only appear in a single source file:
 #include <optix_function_table_definition.h>
 #include <spdlog/spdlog.h>
+#include "stb_image_write.h"
 
 namespace optix {
 
@@ -35,6 +36,8 @@ OptixRenderer::OptixRenderer(drawlab::Scene* scene) : m_scene(scene) {
         "[OPTIX RENDERER] Context, module, pipeline, etc, all set up ...");
 
     spdlog::info("[OPTIX RENDERER] Optix 7 Sample fully set up");
+
+    updateCamera();
 }
 
 void OptixRenderer::initOptix() {
@@ -386,32 +389,23 @@ void OptixRenderer::render() {
     // want to use streams and double-buffering, but for this simple
     // example, this will have to do)
     CUDA_SYNC_CHECK();
+
+    // write image
+    std::vector<unsigned int> pixels(m_width * m_height);
+    downloadPixels(pixels.data());
+    const std::string fileName = "osc_example2.png";
+    stbi_write_png(fileName.c_str(), m_width, m_height, 4, pixels.data(),
+                            m_width * sizeof(unsigned int));
+    spdlog::info("Image rendered, and saved to {} ... done.", fileName);
 }
 
 void OptixRenderer::updateCamera() {
-    const float aspect_ratio = launchParams.width / (float)launchParams.height;
-    const float fov = 60;
 
-    float3 from = make_float3(-8., 10.f, 0.f);
-    float3 at = make_float3(0, 4.f, 0);
-    float3 up = make_float3(0, -1, 0);
+    const drawlab::Camera* camera = m_scene->getCamera();
+    drawlab::Vector2i outputSize = camera->getOutputSize();
+    resize(outputSize[1], outputSize[0]);
 
-    float ulen, vlen, wlen;
-    float3 W = at - from;  // Do not normalize W -- it implies focal length
-
-    wlen = length(W);
-    float3 U = normalize(cross(W, up));
-    float3 V = normalize(cross(U, W));
-
-    vlen = wlen * tanf(0.5f * fov * M_PIf / 180.0f);
-    V *= vlen;
-    ulen = vlen * aspect_ratio;
-    U *= ulen;
-
-    launchParams.eye = from;
-    launchParams.U = U;
-    launchParams.V = V;
-    launchParams.W = W;
+    camera->packLaunchParameters(launchParams);
 }
 
 /*! resize frame buffer to given resolution */
@@ -419,6 +413,9 @@ void OptixRenderer::resize(const int height, const int width) {
     // if window minimized
     if (height == 0 | width == 0)
         return;
+
+    m_width = width;
+    m_height = height;
 
     // resize our cuda frame buffer
     colorBuffer.resize(height * width * sizeof(unsigned int));

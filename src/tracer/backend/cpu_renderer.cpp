@@ -70,6 +70,7 @@ void CPURenderer::render(Scene* scene, const std::string& filename,
         ProgressBar bar;
         int cnt = 0;
         int total_cnt = blockGenerator.getBlockCount();
+        bar.update(0 / (float)(total_cnt));
         Timer timer;
 
         auto map = [&](const tbb::blocked_range<int>& range) {

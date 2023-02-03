@@ -60,6 +60,8 @@ protected:
 
 protected:
 
+    int m_width, m_height;
+
     DeviceContext* deviceContext;
 
     /* The module that contains out device programs */

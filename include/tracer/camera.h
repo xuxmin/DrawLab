@@ -2,6 +2,8 @@
 
 #include "core/base/common.h"
 #include "tracer/rfilter.h"
+#include "optix/common/optix_params.h"
+
 
 namespace drawlab {
 
@@ -53,6 +55,8 @@ public:
      * provided by this instance
      * */
     EClassType getClassType() const { return ECamera; }
+
+    virtual void packLaunchParameters(optix::LaunchParams& launch_params) const = 0;
 
 protected:
     Vector2i m_outputSize;

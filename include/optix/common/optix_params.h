@@ -4,6 +4,7 @@
 #include <optix.h>
 #include "optix/common/geometry_data.h"
 #include "optix/common/material_data.h"
+#include "optix/common/camera_data.h"
 
 
 namespace optix {
@@ -20,10 +21,7 @@ struct LaunchParams {
     int height;
 
     // camera
-    float3 eye;
-    float3 U;
-    float3 V;
-    float3 W;
+    CameraData camera_data;
 
     OptixTraversableHandle handle;
 };
@@ -56,5 +54,14 @@ template <typename T> struct Record {
 typedef Record<RayGenData> RayGenRecord;
 typedef Record<MissData> MissRecord;
 typedef Record<HitGroupData> HitgroupRecord;
+
+/**
+ * The payload is associated with each ray, and is passed to all 
+ * the intersection, any-hit, closest-hit and miss programs that 
+ * are executed during this invocation of trace.
+*/
+struct RadiancePRD {
+    float3       radiance;
+};
 
 }  // namespace optix

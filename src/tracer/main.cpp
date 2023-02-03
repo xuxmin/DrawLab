@@ -4,7 +4,6 @@
 #include "tracer/backend/cpu_renderer.h"
 #include "tracer/backend/optix_renderer.h"
 #include "tracer/scene.h"
-#include "stb_image_write.h"
 #include <spdlog/spdlog.h>
 #include <memory>
 #include <string>
@@ -46,19 +45,7 @@ int main(int argc, char** argv) {
             }
             else if (backend == "optix") {
                 optix::OptixRenderer renderer(static_cast<Scene*>(root.get()));
-                const int width = 768, height = 512;
-                renderer.resize(height, width);
-                renderer.updateCamera();
                 renderer.render();
-
-                std::vector<unsigned int> pixels(width * height);
-                renderer.downloadPixels(pixels.data());
-
-                const std::string fileName = "osc_example2.png";
-                stbi_write_png(fileName.c_str(), width, height, 4, pixels.data(),
-                            width * sizeof(unsigned int));
-                
-                spdlog::info("Image rendered, and saved to {} ... done.", fileName);
             }
             else {
                 spdlog::critical("Fatal error: unknown backend:  {}", backend);
