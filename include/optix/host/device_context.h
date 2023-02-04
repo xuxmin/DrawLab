@@ -19,20 +19,21 @@ public:
     DeviceContext(int deviceID);
     ~DeviceContext();
 
-    std::string getDeviceName() const;
-    const int getDeviceId() const;
-
     /// @brief  configures the optixPipeline link options and compile options,
-    ///         based on what values (motion blur on/off, multi-level
-    ///         instnacing, etc) are set in the context
     void configurePipelineOptions();
 
-    /**
-     * @brief Create module from cu file. A module may include
-     *        multiple programs of any program type
-     *          .cu --nvcc--> .ptx ---> module(optixModule)
-     * @param cu_file file path relative to SOURCE_DIR
-     */
+    std::string getDeviceName() const;
+
+    const int getDeviceId() const;
+
+    void createRaygenProgramsAndBindSBT(std::string cu_file, const char* func);
+
+    void createMissProgramsAndBindSBT(const char* cu_file, std::vector<const char*> func);
+
+    void createHitProgramsAndBindSBT(int shape_num, int ray_type_num, std::function<const Material*(int)> getMaterial);
+
+    void createPipeline();
+
     OptixModule createModuleFromCU(std::string cu_file) const;
 
     OptixProgramGroup createHitgroupPrograms(OptixModule ch_module,
@@ -44,18 +45,7 @@ public:
                                              std::string ch_func,
                                              std::string ah_func);
 
-    void createRaygenProgramsAndBindSBT(std::string cu_file, const char* func);
-
-    void createMissProgramsAndBindSBT(const char* cu_file,
-                                      std::vector<const char*> func);
-
-    void createHitProgramsAndBindSBT(int shape_num, int ray_type_num, std::function<const Material*(int)> getMaterial);
-
-    void createPipeline();
-
-    const OptixDeviceContext& getOptixDeviceContext() const {
-        return m_optix_context;
-    }
+    void launch(const CUDABuffer& launch_params_buffer, int width, int height);
 
     const CUstream& getStream() const { return m_stream; }
 
@@ -69,15 +59,11 @@ public:
 
     void addMaterial(std::string mat_id, const Material* material);
 
-    const std::map<std::string, OptixProgramGroup>& getHitgroupPGs() const;
-
     const OptixPipeline getPipeline() const { return m_pipeline; }
 
     OptixShaderBindingTable& getSBT() { return m_sbt; }
 
     OptixTraversableHandle& getHandle() {return m_as_handle; }
-
-    OptixAccel* getAccel() {return m_accel; }
 
     void DeviceContext::createAccel(std::function<void(OptixAccel*)> init);
 
@@ -102,9 +88,10 @@ private:
 
     std::map<std::string, const Texture*> m_textures;
     std::map<std::string, const Material*> m_materials;
-    std::map<std::string, OptixProgramGroup> m_hitgroup_pgs;
+
     OptixProgramGroup m_raygen_pg;
     std::vector<OptixProgramGroup> m_miss_pgs;
+    std::map<std::string, OptixProgramGroup> m_hitgroup_pgs;
 
     OptixPipeline m_pipeline;
 

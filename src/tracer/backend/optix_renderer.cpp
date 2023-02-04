@@ -1,30 +1,32 @@
 #include "tracer/backend/optix_renderer.h"
-#include "core/bitmap/bitmap.h"
-#include "optix/common/vec_math.h"
 #include "optix/host/sutil.h"
 #include "tracer/camera.h"
 // this include may only appear in a single source file:
-#include "stb_image_write.h"
 #include <optix_function_table_definition.h>
+#include "stb_image_write.h"
 #include <spdlog/spdlog.h>
 
 namespace optix {
 
-OptixRenderer::OptixRenderer(drawlab::Scene* scene) : m_scene(scene) {
-    initOptix();
+OptixRenderer::OptixRenderer(drawlab::Scene* scene, int device_id) : m_scene(scene) {
 
-    spdlog::info("[OPTIX RENDERER] Creating optix context ...");
-    createContext();
-    spdlog::info("[OPTIX RENDERER] Setting up module ...");
+    spdlog::info("[OPTIX RENDERER] Step 1. Initializing optix ...");
+    optix::initOptix();
 
-    spdlog::info("[OPTIX RENDERER] Creating raygen programs ...");
-    deviceContext->createRaygenProgramsAndBindSBT("optix/integrator/simple.cu",
-                                                  "__raygen__simple");
-    spdlog::info("[OPTIX RENDERER] Creating miss programs ...");
-    deviceContext->createMissProgramsAndBindSBT(
+    spdlog::info("[OPTIX RENDERER] Step 2. Creating optix context ...");
+    m_device_context = new DeviceContext(device_id);
+    m_device_context->configurePipelineOptions();
+
+    spdlog::info("[OPTIX RENDERER] Step 3. Creating raygen programs ...");
+    m_device_context->createRaygenProgramsAndBindSBT(
+        "optix/integrator/simple.cu", "__raygen__simple");
+
+    spdlog::info("[OPTIX RENDERER] Step 4. Creating miss programs ...");
+    m_device_context->createMissProgramsAndBindSBT(
         "optix/miss/miss.cu", {"__miss__radiance", "__miss__occlusion"});
 
-    deviceContext->createAccel([&](OptixAccel* accel) {
+    spdlog::info("[OPTIX RENDERER] Step 5. Creating optix accel ...");
+    m_device_context->createAccel([&](OptixAccel* accel) {
         for (auto mesh : m_scene->getMeshes()) {
             accel->addTriangleMesh(
                 mesh->getVertexPosition(), mesh->getVertexIndex(),
@@ -32,69 +34,32 @@ OptixRenderer::OptixRenderer(drawlab::Scene* scene) : m_scene(scene) {
         }
     });
 
-    launchParams.handle = deviceContext->getHandle();
-
-    spdlog::info("[OPTIX RENDERER] Building SBT ...");
+    spdlog::info("[OPTIX RENDERER] Step 6. Creating hitgroup programs ...");
     const std::vector<drawlab::Mesh*> meshs = m_scene->getMeshes();
-    deviceContext->createHitProgramsAndBindSBT(
+    m_device_context->createHitProgramsAndBindSBT(
         meshs.size(), RAY_TYPE_COUNT, [&](int shape_id) {
-            return meshs[shape_id]->getBSDF()->getOptixMaterial(*deviceContext);
+            return meshs[shape_id]->getBSDF()->getOptixMaterial(*m_device_context);
         });
 
-    spdlog::info("[OPTIX RENDERER] Setting up optix pipeline ...");
-    deviceContext->createPipeline();
+    spdlog::info("[OPTIX RENDERER] Step 7. Setting up optix pipeline ...");
+    m_device_context->createPipeline();
 
-    launchParamsBuffer.alloc(sizeof(launchParams));
+    m_launch_params_buffer.alloc(sizeof(m_launch_params));
     spdlog::info(
         "[OPTIX RENDERER] Context, module, pipeline, etc, all set up ...");
 
     spdlog::info("[OPTIX RENDERER] Optix 7 Sample fully set up");
 
-    updateCamera();
-}
-
-void OptixRenderer::initOptix() {
-    spdlog::info("[OPTIX RENDERER] Initializing optix...");
-
-    // Initialize CUDA for this device on this thread
-    cudaFree(0);
-    int numDevices;
-    cudaGetDeviceCount(&numDevices);
-    if (numDevices == 0)
-        throw std::runtime_error(
-            "[OPTIX RENDERER] No CUDA capable devices found!");
-    spdlog::info("[OPTIX RENDERER] Found {} CUDA devices", numDevices);
-
-    // Initialize the OptiX API, loading all API entry points
-    OPTIX_CHECK(optixInit());
-    spdlog::info("[OPTIX RENDERER] Successfully initialized optix... yay!");
-}
-
-void OptixRenderer::createContext() {
-    const int deviceID = 0;
-
-    deviceContext = new DeviceContext(deviceID);
-    deviceContext->configurePipelineOptions();
+    updateLaunchParams();
 }
 
 void OptixRenderer::render() {
-    // sanity check: make sure we launch only after first resize is
-    // already done:
-    if (launchParams.width == 0)
-        return;
+    m_launch_params_buffer.upload(&m_launch_params, 1);
+    m_launch_params.frameID++;
 
-    launchParamsBuffer.upload(&launchParams, 1);
-    launchParams.frameID++;
+    m_device_context->launch(m_launch_params_buffer, m_launch_params.width,
+                             m_launch_params.height);
 
-    OPTIX_CHECK(optixLaunch(/*! pipeline we're launching launch: */
-                            deviceContext->getPipeline(),
-                            deviceContext->getStream(),
-                            /*! parameters and SBT */
-                            launchParamsBuffer.devicePtr(),
-                            launchParamsBuffer.m_size_in_bytes,
-                            &deviceContext->getSBT(),
-                            /*! dimensions of the launch: */
-                            launchParams.width, launchParams.height, 1));
     // sync - make sure the frame is rendered before we download and
     // display (obviously, for a high-performance application you
     // want to use streams and double-buffering, but for this simple
@@ -110,35 +75,33 @@ void OptixRenderer::render() {
     spdlog::info("Image rendered, and saved to {} ... done.", fileName);
 }
 
-void OptixRenderer::updateCamera() {
+void OptixRenderer::updateLaunchParams() {
+    m_launch_params.handle = m_device_context->getHandle();
+
     const drawlab::Camera* camera = m_scene->getCamera();
     drawlab::Vector2i outputSize = camera->getOutputSize();
     resize(outputSize[1], outputSize[0]);
 
-    camera->packLaunchParameters(launchParams);
+    camera->packLaunchParameters(m_launch_params);
 }
 
 /*! resize frame buffer to given resolution */
 void OptixRenderer::resize(const int height, const int width) {
-    // if window minimized
-    if (height == 0 | width == 0)
-        return;
-
     m_width = width;
     m_height = height;
 
     // resize our cuda frame buffer
-    colorBuffer.resize(height * width * sizeof(unsigned int));
+    m_color_buffer.resize(height * width * sizeof(unsigned int));
 
     // update the launch parameters that we'll pass to the optix
-    // launch:
-    launchParams.width = width;
-    launchParams.height = height;
-    launchParams.color_buffer = (unsigned int*)colorBuffer.m_device_ptr;
+    // launch
+    m_launch_params.width = width;
+    m_launch_params.height = height;
+    m_launch_params.color_buffer = (unsigned int*)m_color_buffer.m_device_ptr;
 }
 
 void OptixRenderer::downloadPixels(unsigned int h_pixels[]) {
-    colorBuffer.download(h_pixels, launchParams.height * launchParams.width);
+    m_color_buffer.download(h_pixels, m_launch_params.height * m_launch_params.width);
 }
 
 }  // namespace optix

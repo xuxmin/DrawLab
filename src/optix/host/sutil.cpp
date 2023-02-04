@@ -18,6 +18,7 @@
 #    include <sys/time.h>
 #    include <unistd.h>
 #endif
+#include <spdlog/spdlog.h>
 
 namespace optix {
 
@@ -242,6 +243,19 @@ const char* getInputData(const char* filepath,
     }
     dataSize = ptx->size();
     return ptx->c_str();
+}
+
+void initOptix() {
+    cudaFree(0);
+    int numDevices;
+    cudaGetDeviceCount(&numDevices);
+    if (numDevices == 0)
+        throw std::runtime_error(
+            "No CUDA capable devices found!");
+
+    // Initialize the OptiX API, loading all API entry points
+    OPTIX_CHECK(optixInit());
+    spdlog::info("Successfully initialized optix");
 }
 
 }  // namespace optix

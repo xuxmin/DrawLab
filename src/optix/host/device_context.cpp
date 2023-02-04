@@ -1,6 +1,6 @@
 #include "optix/host/device_context.h"
-#include "optix/host/sutil.h"
 #include "optix/host/material.h"
+#include "optix/host/sutil.h"
 #include <spdlog/spdlog.h>
 
 namespace optix {
@@ -27,7 +27,8 @@ static void context_log_cb(unsigned int level, const char* tag,
                 message);
 }
 
-DeviceContext::DeviceContext(int deviceID) : m_device_id(deviceID), m_accel(nullptr) {
+DeviceContext::DeviceContext(int deviceID)
+    : m_device_id(deviceID), m_accel(nullptr), m_raygen_pg(nullptr) {
     CUDA_CHECK(cudaSetDevice(deviceID));
     CUDA_CHECK(cudaStreamCreate(&m_stream));
 
@@ -134,6 +135,10 @@ OptixProgramGroup DeviceContext::createHitgroupPrograms(OptixModule module,
 
 void DeviceContext::createRaygenProgramsAndBindSBT(std::string cu_file,
                                                    const char* func) {
+    if (m_raygen_pg != nullptr) {
+        throw Exception(
+            "DeviceContext::createRaygenProgramsAndBindSBT() can be called only once!");
+    }
     // Create module
     OptixModule module = createModuleFromCU(cu_file);
 
@@ -160,6 +165,11 @@ void DeviceContext::createRaygenProgramsAndBindSBT(std::string cu_file,
 
 void DeviceContext::createMissProgramsAndBindSBT(
     const char* cu_file, std::vector<const char*> func) {
+    if (m_miss_pgs.size() > 0) {
+        throw Exception("DeviceContext::createMissProgramsAndBindSBT() can "
+                        "be called only once!");
+    }
+
     int ray_type_count = func.size();
     m_miss_pgs.resize(ray_type_count);
 
@@ -191,6 +201,32 @@ void DeviceContext::createMissProgramsAndBindSBT(
     m_sbt.missRecordBase = m_miss_record_buffer.devicePtr();
     m_sbt.missRecordStrideInBytes = sizeof(MissRecord);
     m_sbt.missRecordCount = (int)missRecords.size();
+}
+
+void DeviceContext::createHitProgramsAndBindSBT(
+    int shape_num, int ray_type_num,
+    std::function<const Material*(int)> getMaterial) {
+
+    std::vector<HitgroupRecord> hitgroupRecords;
+    for (int shape_id = 0; shape_id < shape_num; shape_id++) {
+        for (int ray_id = 0; ray_id < ray_type_num; ray_id++) {
+            HitgroupRecord rec;
+            const Material* mat = getMaterial(shape_id);
+
+            OPTIX_CHECK(
+                optixSbtRecordPackHeader(mat->getHitgroupPGs(ray_id), &rec));
+
+            m_accel->packHitgroupRecord(rec, shape_id);
+            mat->packHitgroupRecord(rec);
+
+            hitgroupRecords.push_back(rec);
+        }
+    }
+
+    m_hitgroup_record_buffer.allocAndUpload(hitgroupRecords);
+    m_sbt.hitgroupRecordBase = m_hitgroup_record_buffer.devicePtr();
+    m_sbt.hitgroupRecordStrideInBytes = sizeof(HitgroupRecord);
+    m_sbt.hitgroupRecordCount = (int)hitgroupRecords.size();
 }
 
 void DeviceContext::createPipeline() {
@@ -268,42 +304,23 @@ void DeviceContext::addMaterial(std::string mat_id, const Material* material) {
     spdlog::info("[DEVICE CONTEXT] Add material {} to DeviceContext", mat_id);
 }
 
-const std::map<std::string, OptixProgramGroup>&
-DeviceContext::getHitgroupPGs() const {
-    return m_hitgroup_pgs;
-}
-
 void DeviceContext::createAccel(std::function<void(OptixAccel*)> init) {
     if (m_accel) {
-        throw Exception("DeviceContext::createAccel() can only be called once!");
+        throw Exception(
+            "DeviceContext::createAccel() can only be called once!");
     }
     m_accel = new OptixAccel(m_optix_context);
+
     init(m_accel);
+
     m_as_handle = m_accel->build();
 }
 
-void DeviceContext::createHitProgramsAndBindSBT(int shape_num, int ray_type_num,
-                                                std::function<const Material*(int)> getMaterial) {
-    std::vector<HitgroupRecord> hitgroupRecords;
-    for (int shape_id = 0; shape_id < shape_num; shape_id++) {
-        for (int ray_id = 0; ray_id < ray_type_num; ray_id++) {
-            HitgroupRecord rec;
-            const Material* mat = getMaterial(shape_id);
-
-            OPTIX_CHECK(
-                optixSbtRecordPackHeader(mat->getHitgroupPGs(ray_id), &rec));
-
-            m_accel->packHitgroupRecord(rec, shape_id);
-            mat->packHitgroupRecord(rec);
-
-            hitgroupRecords.push_back(rec);
-        }
-    }
-
-    m_hitgroup_record_buffer.allocAndUpload(hitgroupRecords);
-    m_sbt.hitgroupRecordBase = m_hitgroup_record_buffer.devicePtr();
-    m_sbt.hitgroupRecordStrideInBytes = sizeof(HitgroupRecord);
-    m_sbt.hitgroupRecordCount = (int)hitgroupRecords.size();
+void DeviceContext::launch(const CUDABuffer& launch_params_buffer,
+                            int width, int height) {
+    OPTIX_CHECK(optixLaunch(
+        m_pipeline, m_stream, launch_params_buffer.devicePtr(),
+        launch_params_buffer.m_size_in_bytes, &m_sbt, width, height, 1));
 }
 
 }  // namespace optix

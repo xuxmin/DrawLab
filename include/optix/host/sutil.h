@@ -111,4 +111,6 @@ private:
 /// @return
 const char* getInputData(const char* filepath, size_t& dataSize,
                          const char** log = NULL);
+
+void initOptix();
 }  // namespace optix
