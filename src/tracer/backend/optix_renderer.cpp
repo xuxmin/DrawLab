@@ -25,7 +25,12 @@ OptixRenderer::OptixRenderer(drawlab::Scene* scene) : m_scene(scene) {
         "optix/miss/miss.cu", {"__miss__radiance", "__miss__occlusion"});
 
     const std::vector<drawlab::Mesh*> meshs = m_scene->getMeshes();
-    m_optix_accel = new drawlab::OptixAccel(deviceContext->getOptixDeviceContext(), meshs);
+    m_optix_accel = new OptixAccel(deviceContext->getOptixDeviceContext());
+    for (auto mesh : m_scene->getMeshes()) {
+        m_optix_accel->addTriangleMesh(
+            mesh->getVertexPosition(), mesh->getVertexIndex(),
+            mesh->getVertexNormal(), mesh->getVertexTexCoord());
+    }
     launchParams.handle = m_optix_accel->build();
 
     spdlog::info("[OPTIX RENDERER] Building SBT ...");

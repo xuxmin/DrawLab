@@ -49,7 +49,6 @@ OPTIX_add_sample_executable(drawlab
     src/tracer/mesh/mesh.cpp
     src/tracer/mesh/obj.cpp
     src/tracer/accel/octree.cpp
-    src/tracer/accel/optix_accel.cpp
     src/tracer/emitter/area.cpp
     src/tracer/bsdf/diffuse.cpp
     src/tracer/bsdf/dielectric.cpp

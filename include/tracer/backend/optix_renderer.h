@@ -3,8 +3,8 @@
 #include "optix/host/texture.h"
 #include "optix/host/device_context.h"
 #include "optix/host/cuda_buffer.h"
+#include "optix/host/accel.h"
 #include "optix/common/optix_params.h"
-#include "tracer/optix_accel.h"
 
 
 namespace optix {
@@ -50,7 +50,8 @@ protected:
 
     DeviceContext* deviceContext;
 
-    drawlab::OptixAccel* m_optix_accel;
+    // drawlab::OptixAccel* m_optix_accel;
+    OptixAccel* m_optix_accel;
 
     CUDABuffer hitgroupRecordsBuffer;
 
