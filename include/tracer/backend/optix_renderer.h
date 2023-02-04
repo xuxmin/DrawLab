@@ -41,9 +41,6 @@ protected:
     /// @brief Creates and configures a optix device context
     void createContext();
 
-    /// @brief Constructs the shader binding table
-    void buildSBT();
-
 protected:
 
     int m_width, m_height;
@@ -52,11 +49,6 @@ protected:
 
     // drawlab::OptixAccel* m_optix_accel;
     OptixAccel* m_optix_accel;
-
-    CUDABuffer hitgroupRecordsBuffer;
-
-    // OptixPipelineCompileOptions pipelineCompileOptions = {};
-    // OptixPipelineLinkOptions pipelineLinkOptions = {};
 
     /* our launch parameters, on the host, and the buffer to store
        them on the device */

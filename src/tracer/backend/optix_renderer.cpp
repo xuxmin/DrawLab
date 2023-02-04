@@ -35,7 +35,11 @@ OptixRenderer::OptixRenderer(drawlab::Scene* scene) : m_scene(scene) {
     launchParams.handle = deviceContext->getHandle();
 
     spdlog::info("[OPTIX RENDERER] Building SBT ...");
-    buildSBT();
+    const std::vector<drawlab::Mesh*> meshs = m_scene->getMeshes();
+    deviceContext->createHitProgramsAndBindSBT(
+        meshs.size(), RAY_TYPE_COUNT, [&](int shape_id) {
+            return meshs[shape_id]->getBSDF()->getOptixMaterial(*deviceContext);
+        });
 
     spdlog::info("[OPTIX RENDERER] Setting up optix pipeline ...");
     deviceContext->createPipeline();
@@ -71,38 +75,6 @@ void OptixRenderer::createContext() {
 
     deviceContext = new DeviceContext(deviceID);
     deviceContext->configurePipelineOptions();
-}
-
-void OptixRenderer::buildSBT() {
-    // ------------------------------------------------------------------
-    // build hitgroup records
-    // ------------------------------------------------------------------
-    OptixShaderBindingTable& sbt = deviceContext->getSBT();
-    // we don't actually have any objects in this example, but let's
-    // create a dummy one so the SBT doesn't have any null pointers
-    // (which the sanity checks in compilation would complain about)
-    const std::vector<drawlab::Mesh*> meshs = m_scene->getMeshes();
-    int numObjects = (int)meshs.size();
-    std::vector<HitgroupRecord> hitgroupRecords;
-    for (int i = 0; i < numObjects; i++) {
-        for (int ray_id = 0; ray_id < RAY_TYPE_COUNT; ray_id++) {
-            HitgroupRecord rec;
-
-            const optix::Material* mat =
-                meshs[i]->getBSDF()->getOptixMaterial(*deviceContext);
-            OPTIX_CHECK(
-                optixSbtRecordPackHeader(mat->getHitgroupPGs(ray_id), &rec));
-
-            deviceContext->getAccel()->packHitgroupRecord(rec, i);
-            mat->packHitgroupRecord(rec);
-
-            hitgroupRecords.push_back(rec);
-        }
-    }
-    hitgroupRecordsBuffer.allocAndUpload(hitgroupRecords);
-    sbt.hitgroupRecordBase = hitgroupRecordsBuffer.devicePtr();
-    sbt.hitgroupRecordStrideInBytes = sizeof(HitgroupRecord);
-    sbt.hitgroupRecordCount = (int)hitgroupRecords.size();
 }
 
 void OptixRenderer::render() {

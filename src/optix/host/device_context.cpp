@@ -1,5 +1,6 @@
 #include "optix/host/device_context.h"
 #include "optix/host/sutil.h"
+#include "optix/host/material.h"
 #include <spdlog/spdlog.h>
 
 namespace optix {
@@ -26,7 +27,7 @@ static void context_log_cb(unsigned int level, const char* tag,
                 message);
 }
 
-DeviceContext::DeviceContext(int deviceID) : m_device_id(deviceID) {
+DeviceContext::DeviceContext(int deviceID) : m_device_id(deviceID), m_accel(nullptr) {
     CUDA_CHECK(cudaSetDevice(deviceID));
     CUDA_CHECK(cudaStreamCreate(&m_stream));
 
@@ -279,6 +280,30 @@ void DeviceContext::createAccel(std::function<void(OptixAccel*)> init) {
     m_accel = new OptixAccel(m_optix_context);
     init(m_accel);
     m_as_handle = m_accel->build();
+}
+
+void DeviceContext::createHitProgramsAndBindSBT(int shape_num, int ray_type_num,
+                                                std::function<const Material*(int)> getMaterial) {
+    std::vector<HitgroupRecord> hitgroupRecords;
+    for (int shape_id = 0; shape_id < shape_num; shape_id++) {
+        for (int ray_id = 0; ray_id < ray_type_num; ray_id++) {
+            HitgroupRecord rec;
+            const Material* mat = getMaterial(shape_id);
+
+            OPTIX_CHECK(
+                optixSbtRecordPackHeader(mat->getHitgroupPGs(ray_id), &rec));
+
+            m_accel->packHitgroupRecord(rec, shape_id);
+            mat->packHitgroupRecord(rec);
+
+            hitgroupRecords.push_back(rec);
+        }
+    }
+
+    m_hitgroup_record_buffer.allocAndUpload(hitgroupRecords);
+    m_sbt.hitgroupRecordBase = m_hitgroup_record_buffer.devicePtr();
+    m_sbt.hitgroupRecordStrideInBytes = sizeof(HitgroupRecord);
+    m_sbt.hitgroupRecordCount = (int)hitgroupRecords.size();
 }
 
 }  // namespace optix

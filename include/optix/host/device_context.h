@@ -49,6 +49,8 @@ public:
     void createMissProgramsAndBindSBT(const char* cu_file,
                                       std::vector<const char*> func);
 
+    void createHitProgramsAndBindSBT(int shape_num, int ray_type_num, std::function<const Material*(int)> getMaterial);
+
     void createPipeline();
 
     const OptixDeviceContext& getOptixDeviceContext() const {
@@ -108,6 +110,7 @@ private:
 
     CUDABuffer m_raygen_record_buffer;
     CUDABuffer m_miss_record_buffer;
+    CUDABuffer m_hitgroup_record_buffer;
     /**
      * The shader binding table (SBT) is an array that contains information
      * about the location of programs and their parameters
