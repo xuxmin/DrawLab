@@ -4,8 +4,10 @@
 #include "optix/host/cuda_buffer.h"
 #include "optix/host/sutil.h"
 #include "optix/host/texture.h"
+#include "optix/host/accel.h"
 #include <cuda_runtime.h>
 #include <map>
+#include <functional>
 #include <string>
 
 namespace optix {
@@ -71,6 +73,12 @@ public:
 
     OptixShaderBindingTable& getSBT() { return m_sbt; }
 
+    OptixTraversableHandle& getHandle() {return m_as_handle; }
+
+    OptixAccel* getAccel() {return m_accel; }
+
+    void DeviceContext::createAccel(std::function<void(OptixAccel*)> init);
+
 private:
     int m_device_id;
     CUstream m_stream = nullptr;
@@ -86,6 +94,9 @@ private:
     OptixPipelineCompileOptions m_pipeline_compile_options = {};
     OptixPipelineLinkOptions m_pipeline_link_options = {};
     OptixModuleCompileOptions m_module_compile_options = {};
+
+    OptixAccel* m_accel;
+    OptixTraversableHandle m_as_handle;
 
     std::map<std::string, const Texture*> m_textures;
     std::map<std::string, const Material*> m_materials;

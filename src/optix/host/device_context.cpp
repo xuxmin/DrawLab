@@ -272,4 +272,13 @@ DeviceContext::getHitgroupPGs() const {
     return m_hitgroup_pgs;
 }
 
+void DeviceContext::createAccel(std::function<void(OptixAccel*)> init) {
+    if (m_accel) {
+        throw Exception("DeviceContext::createAccel() can only be called once!");
+    }
+    m_accel = new OptixAccel(m_optix_context);
+    init(m_accel);
+    m_as_handle = m_accel->build();
+}
+
 }  // namespace optix

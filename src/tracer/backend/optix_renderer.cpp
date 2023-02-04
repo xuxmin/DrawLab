@@ -24,14 +24,15 @@ OptixRenderer::OptixRenderer(drawlab::Scene* scene) : m_scene(scene) {
     deviceContext->createMissProgramsAndBindSBT(
         "optix/miss/miss.cu", {"__miss__radiance", "__miss__occlusion"});
 
-    const std::vector<drawlab::Mesh*> meshs = m_scene->getMeshes();
-    m_optix_accel = new OptixAccel(deviceContext->getOptixDeviceContext());
-    for (auto mesh : m_scene->getMeshes()) {
-        m_optix_accel->addTriangleMesh(
-            mesh->getVertexPosition(), mesh->getVertexIndex(),
-            mesh->getVertexNormal(), mesh->getVertexTexCoord());
-    }
-    launchParams.handle = m_optix_accel->build();
+    deviceContext->createAccel([&](OptixAccel* accel) {
+        for (auto mesh : m_scene->getMeshes()) {
+            accel->addTriangleMesh(
+                mesh->getVertexPosition(), mesh->getVertexIndex(),
+                mesh->getVertexNormal(), mesh->getVertexTexCoord());
+        }
+    });
+
+    launchParams.handle = deviceContext->getHandle();
 
     spdlog::info("[OPTIX RENDERER] Building SBT ...");
     buildSBT();
@@ -92,7 +93,7 @@ void OptixRenderer::buildSBT() {
             OPTIX_CHECK(
                 optixSbtRecordPackHeader(mat->getHitgroupPGs(ray_id), &rec));
 
-            m_optix_accel->packHitgroupRecord(rec, i);
+            deviceContext->getAccel()->packHitgroupRecord(rec, i);
             mat->packHitgroupRecord(rec);
 
             hitgroupRecords.push_back(rec);
