@@ -2,7 +2,7 @@
 
 #include "core/math/bbox.h"
 #include "tracer/mesh.h"
-#include "tracer/octree.h"
+
 
 namespace drawlab {
 
@@ -18,10 +18,10 @@ public:
      *
      * This function can only be used before \ref build() is called
      */
-    void addMesh(Mesh* mesh);
-
-    /// Build the acceleration data structure
-    void build();
+    void addMesh(Mesh* mesh) {
+        m_meshPtrs.push_back(mesh);
+        m_bbox.expandBy(mesh->getBoundingBox());
+    }
 
     /// Return an axis-aligned box that bounds the scene
     const BoundingBox3f& getBoundingBox() const { return m_bbox; }
@@ -45,13 +45,16 @@ public:
      *
      * \return \c true if an intersection was found
      */
-    bool rayIntersect(const Ray3f& ray, Intersection& its,
-                      bool shadowRay) const;
+    virtual bool rayIntersect(const Ray3f& ray, Intersection& its,
+                              bool shadowRay) const = 0;
 
-private:
+    /// Build the acceleration data structure
+    virtual void build() = 0;
+
+
+protected:
     std::vector<Mesh*> m_meshPtrs;
     BoundingBox3f m_bbox;
-    OCTree* m_octree = nullptr;
 };
 
 }  // namespace drawlab

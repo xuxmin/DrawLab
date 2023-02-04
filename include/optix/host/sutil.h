@@ -38,7 +38,7 @@ private:
             std::stringstream ss;                                              \
             ss << "Optix call '" << #call << "' failed: " __FILE__ ":"         \
                << __LINE__ << ")\n";                                           \
-            throw Exception(res, ss.str().c_str());                            \
+            throw optix::Exception(res, ss.str().c_str());                            \
         }                                                                      \
     } while (0)
 
@@ -54,7 +54,7 @@ private:
                << log                                                          \
                << (sizeof_log_returned > sizeof(log) ? "<TRUNCATED>" : "")     \
                << "\n";                                                        \
-            throw Exception(res, ss.str().c_str());                            \
+            throw optix::Exception(res, ss.str().c_str());                            \
         }                                                                      \
     } while (0)
 
@@ -72,7 +72,7 @@ private:
             ss << "CUDA call (" << #call << " ) failed with error: '"          \
                << cudaGetErrorString(error) << "' (" __FILE__ << ":"           \
                << __LINE__ << ")\n";                                           \
-            throw Exception(ss.str().c_str());                                 \
+            throw optix::Exception(ss.str().c_str());                                 \
         }                                                                      \
     } while (0)
 
@@ -85,7 +85,7 @@ private:
             ss << "CUDA error on synchronize with error '"                     \
                << cudaGetErrorString(error) << "' (" __FILE__ << ":"           \
                << __LINE__ << ")\n";                                           \
-            throw Exception(ss.str().c_str());                                 \
+            throw optix::Exception(ss.str().c_str());                                 \
         }                                                                      \
     } while (0)
 

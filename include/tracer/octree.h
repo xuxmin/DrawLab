@@ -3,6 +3,7 @@
 #include "core/base/common.h"
 #include "core/math/bbox.h"
 #include "tracer/mesh.h"
+#include "tracer/accel.h"
 #include <algorithm>
 #include <vector>
 
@@ -20,9 +21,9 @@ struct OCNode {
     OCNode(BoundingBox3f bbox) { m_bbox = bbox; }
 };
 
-class OCTree {
+
+class OCTree : public Accel {
 private:
-    std::vector<Mesh*> m_meshPtrs;
     OCNode* m_root;
     int m_maxDepth;
     int m_leaf;
@@ -31,29 +32,20 @@ private:
     OCNode* recursiveBuild(BoundingBox3f bbox,
                            std::vector<std::pair<int, int>>& triangles,
                            int depth);
+
     bool recursiveIntersect(OCNode* root, Ray3f& ray, Point2f& uv, float& t,
-                            std::pair<int, int>& f);
-    bool recursiveAnyhit(OCNode* root, const Ray3f& ray);
+                            std::pair<int, int>& f) const;
+
+    bool recursiveAnyhit(OCNode* root, const Ray3f& ray) const;
 
 public:
-    OCTree();
-    ~OCTree();
+    OCTree() : m_maxDepth(0), m_leaf(0), m_interior(0) {}
+    ~OCTree() {}
 
-    /// @brief Build tree with the provided meshes.
-    void build(std::vector<Mesh*> meshPtr);
+    void build();
 
-    /**
-     * \brief Do ray intersection
-     * \param ray
-     * \param uv UV coordinates, if any
-     * \param t Unoccluded distance along the ray
-     * \param f Triangle index, the first is the mesh index, and
-     *          the second is the triangle index of that mesh.
-     */
-    bool rayIntersect(const Ray3f& ray, Point2f& uv, float& t,
-                      std::pair<int, int>& f);
-
-    bool rayAnyhit(const Ray3f& ray);
+    bool rayIntersect(const Ray3f& ray_, Intersection& its,
+                          bool shadowRay) const;
 };
 
 }  // namespace drawlab

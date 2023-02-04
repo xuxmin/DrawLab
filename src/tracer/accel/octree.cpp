@@ -4,35 +4,6 @@
 
 namespace drawlab {
 
-OCTree::OCTree() {
-    m_maxDepth = 0;
-    m_leaf = 0;
-    m_interior = 0;
-}
-
-OCTree::~OCTree() {
-    // TODO
-}
-
-void OCTree::build(std::vector<Mesh*> meshPtrs) {
-    Timer timer;
-    spdlog::info("Build OCTree.. ");
-    m_meshPtrs.assign(meshPtrs.begin(), meshPtrs.end());
-
-    BoundingBox3f bbox;
-    std::vector<std::pair<int, int>> triangles;
-
-    for (int i = 0; i < m_meshPtrs.size(); i++) {
-        for (int j = 0; j < m_meshPtrs[i]->getTriangleCount(); j++) {
-            triangles.push_back(std::make_pair(i, j));
-        }
-        bbox.expandBy(m_meshPtrs[i]->getBoundingBox());
-    }
-    m_root = recursiveBuild(bbox, triangles, 0);
-    spdlog::info("Build done. (Depth={}, Leaf={}, Interior={}, took {})",
-                 m_maxDepth, m_leaf, m_interior, timer.elapsedString());
-}
-
 OCNode* OCTree::recursiveBuild(BoundingBox3f bbox,
                                std::vector<std::pair<int, int>>& triangles,
                                int depth) {
@@ -43,7 +14,8 @@ OCNode* OCTree::recursiveBuild(BoundingBox3f bbox,
     if (triangles.size() < 20) {
         m_leaf++;
         return new OCNode(bbox, triangles);
-    } else {
+    }
+    else {
         m_interior++;
     }
 
@@ -79,7 +51,7 @@ OCNode* OCTree::recursiveBuild(BoundingBox3f bbox,
 }
 
 bool OCTree::recursiveIntersect(OCNode* root, Ray3f& ray, Point2f& uv, float& t,
-                                std::pair<int, int>& f) {
+                                std::pair<int, int>& f) const {
     if (root == nullptr || !root->m_bbox.rayIntersect(ray)) {
         return false;
     }
@@ -137,14 +109,7 @@ bool OCTree::recursiveIntersect(OCNode* root, Ray3f& ray, Point2f& uv, float& t,
     return hit;
 }
 
-bool OCTree::rayIntersect(const Ray3f& ray, Point2f& uv, float& t,
-                          std::pair<int, int>& f) {
-    Ray3f ray_copy(ray);
-    bool hit = recursiveIntersect(m_root, ray_copy, uv, t, f);
-    return hit;
-}
-
-bool OCTree::recursiveAnyhit(OCNode* root, const Ray3f& ray) {
+bool OCTree::recursiveAnyhit(OCNode* root, const Ray3f& ray) const {
     if (root == nullptr || !root->m_bbox.rayIntersect(ray)) {
         return false;
     }
@@ -167,8 +132,83 @@ bool OCTree::recursiveAnyhit(OCNode* root, const Ray3f& ray) {
     return false;
 }
 
-bool OCTree::rayAnyhit(const Ray3f& ray) {
-    return recursiveAnyhit(m_root, ray);
+void OCTree::build() {
+    Timer timer;
+    spdlog::info("Build OCTree.. ");
+
+    BoundingBox3f bbox;
+    std::vector<std::pair<int, int>> triangles;
+
+    for (int i = 0; i < m_meshPtrs.size(); i++) {
+        for (int j = 0; j < m_meshPtrs[i]->getTriangleCount(); j++) {
+            triangles.push_back(std::make_pair(i, j));
+        }
+        bbox.expandBy(m_meshPtrs[i]->getBoundingBox());
+    }
+    m_root = recursiveBuild(bbox, triangles, 0);
+    spdlog::info("Build done. (Depth={}, Leaf={}, Interior={}, took {})",
+                 m_maxDepth, m_leaf, m_interior, timer.elapsedString());
+}
+
+bool OCTree::rayIntersect(const Ray3f& ray_, Intersection& its,
+                          bool shadowRay) const {
+    Ray3f ray(ray_);  /// Make a copy of the ray (we will need to update its
+                      /// '.maxt' value)
+
+    if (shadowRay) {
+        return recursiveAnyhit(m_root, ray);
+    }
+
+    std::pair<int, int> f(-1, -1);
+    Point2f uv(0, 0);
+    float t = 0;
+    bool foundIntersection = recursiveIntersect(m_root, ray, uv, t, f);
+    if (foundIntersection) {
+        ray.maxt = t;
+        its.uv = uv;
+        its.mesh = m_meshPtrs[f.first];
+
+        /* Find the barycentric coordinates */
+        Vector3f bary(1 - uv.x() - uv.y(), uv.x(), uv.y());
+
+        /* References to all relevant mesh buffers */
+        const Mesh* mesh = its.mesh;
+
+        Point3f p0 = mesh->getVertexPosition(f.second, 0);
+        Point3f p1 = mesh->getVertexPosition(f.second, 1);
+        Point3f p2 = mesh->getVertexPosition(f.second, 2);
+
+        /* Compute the intersection positon accurately
+        using barycentric coordinates */
+        its.p = bary.x() * p0 + bary.y() * p1 + bary.z() * p2;
+
+        /* Compute proper texture coordinates if provided by the mesh */
+        Point2f new_UV = bary.x() * mesh->getVertexTexCoord(f.second, 0) +
+                         bary.y() * mesh->getVertexTexCoord(f.second, 1) +
+                         bary.z() * mesh->getVertexTexCoord(f.second, 2);
+        if (mesh->hasTexCoord()) {
+            its.uv = new_UV;
+        }
+
+        /* Compute the geometry frame */
+        its.geoFrame = Frame((p1 - p0).cross(p2 - p0).normalized());
+
+        if (mesh->hasVertexNormal()) {
+            /* Compute the shading frame. Note that for simplicity,
+            the current implementation doesn't attempt to provide
+            tangents that are continuous across the surface. That
+            means that this code will need to be modified to be able
+            use anisotropic BRDFs, which need tangent continuity */
+            its.shFrame = Frame(
+                bary.x() * mesh->getVertexNormal(f.second, 0) +
+                bary.y() * mesh->getVertexNormal(f.second, 1) +
+                bary.z() * mesh->getVertexNormal(f.second, 2).normalized());
+        }
+        else {
+            its.shFrame = its.geoFrame;
+        }
+    }
+    return foundIntersection;
 }
 
 }  // namespace drawlab

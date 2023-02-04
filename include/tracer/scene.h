@@ -3,7 +3,7 @@
 #include "core/base/common.h"
 #include "core/parser/object.h"
 #include "core/parser/proplist.h"
-#include "tracer/accel.h"
+#include "tracer/octree.h"
 #include "tracer/camera.h"
 #include "tracer/emitter.h"
 #include "tracer/integrator.h"

@@ -4,6 +4,7 @@
 #include "optix/host/device_context.h"
 #include "optix/host/cuda_buffer.h"
 #include "optix/common/optix_params.h"
+#include "tracer/optix_accel.h"
 
 
 namespace optix {
@@ -43,14 +44,13 @@ protected:
     /// @brief Constructs the shader binding table
     void buildSBT();
 
-    // Build an acceleration structure for the scene
-    OptixTraversableHandle buildAccel();
-
 protected:
 
     int m_width, m_height;
 
     DeviceContext* deviceContext;
+
+    drawlab::OptixAccel* m_optix_accel;
 
     CUDABuffer hitgroupRecordsBuffer;
 
@@ -65,12 +65,6 @@ protected:
     CUDABuffer colorBuffer;
 
     drawlab::Scene* m_scene;
-    std::vector<CUDABuffer> vertexBuffers;
-    std::vector<CUDABuffer> indexBuffers;
-    std::vector<CUDABuffer> normalBuffer;
-    std::vector<CUDABuffer> texcoordBuffer;
-    //! buffer that keeps the (final, compacted) accel structure
-    CUDABuffer asBuffer;
 };
 
 };  // namespace optix

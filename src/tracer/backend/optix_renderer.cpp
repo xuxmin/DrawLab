@@ -24,7 +24,9 @@ OptixRenderer::OptixRenderer(drawlab::Scene* scene) : m_scene(scene) {
     deviceContext->createMissProgramsAndBindSBT(
         "optix/miss/miss.cu", {"__miss__radiance", "__miss__occlusion"});
 
-    launchParams.handle = buildAccel();
+    const std::vector<drawlab::Mesh*> meshs = m_scene->getMeshes();
+    m_optix_accel = new drawlab::OptixAccel(deviceContext->getOptixDeviceContext(), meshs);
+    launchParams.handle = m_optix_accel->build();
 
     spdlog::info("[OPTIX RENDERER] Building SBT ...");
     buildSBT();
@@ -85,16 +87,7 @@ void OptixRenderer::buildSBT() {
             OPTIX_CHECK(
                 optixSbtRecordPackHeader(mat->getHitgroupPGs(ray_id), &rec));
 
-            rec.data.geometry_data.type = GeometryData::TRIANGLE_MESH;
-            rec.data.geometry_data.triangle_mesh.positions =
-                (float3*)vertexBuffers[i].devicePtr();
-            rec.data.geometry_data.triangle_mesh.indices =
-                (int3*)indexBuffers[i].devicePtr();
-            rec.data.geometry_data.triangle_mesh.normals =
-                (float3*)normalBuffer[i].devicePtr();
-            rec.data.geometry_data.triangle_mesh.texcoords =
-                (float2*)texcoordBuffer[i].devicePtr();
-
+            m_optix_accel->packHitgroupRecord(rec, i);
             mat->packHitgroupRecord(rec);
 
             hitgroupRecords.push_back(rec);
@@ -104,163 +97,6 @@ void OptixRenderer::buildSBT() {
     sbt.hitgroupRecordBase = hitgroupRecordsBuffer.devicePtr();
     sbt.hitgroupRecordStrideInBytes = sizeof(HitgroupRecord);
     sbt.hitgroupRecordCount = (int)hitgroupRecords.size();
-}
-
-OptixTraversableHandle OptixRenderer::buildAccel() {
-    // ------------------------------------------------------------
-    // Primitive build inputs
-    // ------------------------------------------------------------
-    /**
-     * A triangle build input references an array of triangle vertex
-     * buffers in device memory, one buffer per motion key (a single
-     * triangle vertex buffer if there is no motion)
-     * Optionally, triangles can be indexed using an index buffer in
-     * device memory.
-     */
-    const std::vector<drawlab::Mesh*> meshs = m_scene->getMeshes();
-    int mesh_num = meshs.size();
-
-    vertexBuffers.resize(mesh_num);
-    indexBuffers.resize(mesh_num);
-    normalBuffer.resize(mesh_num);
-    texcoordBuffer.resize(mesh_num);
-
-    std::vector<OptixBuildInput> buildInputs(mesh_num);
-    std::vector<CUdeviceptr> d_vertices(mesh_num);
-    std::vector<CUdeviceptr> d_indices(mesh_num);
-
-    for (int i = 0; i < mesh_num; i++) {
-        // Upload triangle data to device
-        vertexBuffers[i].allocAndUpload(meshs[i]->getVertexPosition());
-        indexBuffers[i].allocAndUpload(meshs[i]->getVertexIndex());
-        if (meshs[i]->hasVertexNormal())
-            normalBuffer[i].allocAndUpload(meshs[i]->getVertexNormal());
-        if (meshs[i]->hasTexCoord())
-            texcoordBuffer[i].allocAndUpload(meshs[i]->getVertexTexCoord());
-
-        // Get the pointer to the device
-        d_vertices[i] = vertexBuffers[i].devicePtr();
-        d_indices[i] = indexBuffers[i].devicePtr();
-
-        // Triangle inputs
-        OptixBuildInputTriangleArray& buildInput = buildInputs[i].triangleArray;
-
-        /**
-         * Different build type
-         *
-         * instance acceleration structures:
-         *  OPTIX_BUILD_INPUT_TYPE_INSTANCES
-         *  OPTIX_BUILD_INPUT_TYPE_INSTANCE_POINTERS
-         *
-         * A geometry acceleration structure containing built-in triangles
-         *  OPTIX_BUILD_INPUT_TYPE_TRIANGLES
-         *
-         * A geometry acceleration structure containing built-in curve
-         * primitives OPTIX_BUILD_INPUT_TYPE_CURVES
-         *
-         * A geometry acceleration structure containing custom primitives
-         *  OPTIX_BUILD_INPUT_TYPE_CUSTOM_PRIMITIVES
-         *
-         *
-         * Instance acceleration structures have a single build input and
-         * specify an array of instances. Each instance includes a ray
-         * transformation and an OptixTraversableHandle that refers to a
-         * geometry-AS, a transform node, or another instance acceleration
-         * structure.
-         */
-        buildInputs[i].type = OPTIX_BUILD_INPUT_TYPE_TRIANGLES;
-
-        buildInput.vertexFormat = OPTIX_VERTEX_FORMAT_FLOAT3;
-        buildInput.vertexStrideInBytes = sizeof(float) * 3;
-        buildInput.numVertices = meshs[i]->getVertexCount();
-        buildInput.vertexBuffers = &d_vertices[i];
-
-        buildInput.indexFormat = OPTIX_INDICES_FORMAT_UNSIGNED_INT3;
-        buildInput.vertexStrideInBytes = sizeof(unsigned int) * 3;
-        buildInput.numIndexTriplets = meshs[i]->getTriangleCount();
-        buildInput.indexBuffer = d_indices[i];
-
-        // Support a 3x4 transform matrix to transfrom the vertices at build
-        // time.
-        buildInput.preTransform = 0;
-
-        // Each build input maps to one or more consecutive records in the
-        // shader binding table(SBT), which controls program dispatch.
-        buildInput.numSbtRecords = 1;
-        buildInput.sbtIndexOffsetBuffer = 0;
-        buildInput.sbtIndexOffsetSizeInBytes = 0;
-        buildInput.sbtIndexOffsetStrideInBytes = 0;
-
-        uint32_t flagsPerSBTRecord[1];
-        flagsPerSBTRecord[0] = OPTIX_GEOMETRY_FLAG_NONE;
-        buildInput.flags = flagsPerSBTRecord;
-    }
-
-    // ------------------------------------------------------------
-    // BLAS setup
-    // ------------------------------------------------------------
-
-    OptixAccelBuildOptions accelOptions = {};
-    accelOptions.buildFlags =
-        OPTIX_BUILD_FLAG_NONE | OPTIX_BUILD_FLAG_ALLOW_COMPACTION;
-    // A numKeys value of zero specifies no motion blu
-    accelOptions.motionOptions.numKeys = 0;
-    accelOptions.operation = OPTIX_BUILD_OPERATION_BUILD;
-
-    OptixAccelBufferSizes blasBufferSizes = {};
-    OPTIX_CHECK(optixAccelComputeMemoryUsage(
-        deviceContext->getOptixDeviceContext(), &accelOptions,
-        buildInputs.data(), mesh_num, &blasBufferSizes));
-
-    // ------------------------------------------------------------
-    // prepare compaction
-    // ------------------------------------------------------------
-
-    CUDABuffer compactedSizeBuffer;
-    compactedSizeBuffer.alloc(sizeof(unsigned long long));
-
-    OptixAccelEmitDesc emitDesc;
-    emitDesc.type = OPTIX_PROPERTY_TYPE_COMPACTED_SIZE;
-    emitDesc.result = compactedSizeBuffer.devicePtr();
-
-    // ------------------------------------------------------------
-    // Build (main stage)
-    // ------------------------------------------------------------
-
-    CUDABuffer tempBuffer;
-    tempBuffer.alloc(blasBufferSizes.tempSizeInBytes);
-    CUDABuffer outputBuffer;
-    outputBuffer.alloc(blasBufferSizes.outputSizeInBytes);
-
-    OptixTraversableHandle outputHandle = 0;
-    OPTIX_CHECK(optixAccelBuild(
-        deviceContext->getOptixDeviceContext(), 0, &accelOptions,
-        &buildInputs[0], mesh_num, tempBuffer.devicePtr(),
-        tempBuffer.m_size_in_bytes, outputBuffer.devicePtr(),
-        outputBuffer.m_size_in_bytes, &outputHandle, &emitDesc, 1));
-    CUDA_SYNC_CHECK();
-
-    // ------------------------------------------------------------
-    // perform compaction
-    // ------------------------------------------------------------
-    unsigned long long compactedSize;
-    compactedSizeBuffer.download(&compactedSize, 1);
-
-    asBuffer.alloc(compactedSize);
-    OPTIX_CHECK(optixAccelCompact(deviceContext->getOptixDeviceContext(),
-                                  /*stream:*/ 0, outputHandle,
-                                  asBuffer.devicePtr(),
-                                  asBuffer.m_size_in_bytes, &outputHandle));
-    CUDA_SYNC_CHECK();
-
-    // ------------------------------------------------------------
-    // Finally clean up!
-    // ------------------------------------------------------------
-    outputBuffer.free();
-    tempBuffer.free();
-    compactedSizeBuffer.free();
-
-    return outputHandle;
 }
 
 void OptixRenderer::render() {
