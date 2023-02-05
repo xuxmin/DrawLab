@@ -46,16 +46,9 @@ extern "C" __global__ void __raygen__simple() {
                   1e20f,  // tmax
                   &prd);
 
-    const int r = int(255.99f * prd.radiance.x);
-    const int g = int(255.99f * prd.radiance.y);
-    const int b = int(255.99f * prd.radiance.z);
-
-    // convert to 32-bit rgba value (we explicitly set alpha to 0xff
-    // to make stb_image_write happy ...
-    const unsigned int rgba = 0xff000000 | (r << 0) | (g << 8) | (b << 16);
 
     // and write to frame buffer ...
     const unsigned int image_index = idx.x + idx.y * params.width;
-    params.color_buffer[image_index] = rgba;
+    params.color_buffer[image_index] = prd.radiance;
 }
 }  // namespace optix

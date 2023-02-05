@@ -11,15 +11,15 @@ public:
     OptixRenderer(drawlab::Scene* scene, int device_id = 0);
 
     /// Render one frame.
-    void render();
+    void render(std::string filename, const bool gui = false);
 
     /// Resize framebuffer to a given size
     void resize(const int height, const int width);
 
-    /// Download the rendered color buffer
-    void downloadPixels(unsigned int h_pixels[]);
-
     void updateLaunchParams();
+
+private:
+    void renderFrame();
 
 protected:
     int m_width, m_height;

@@ -32,9 +32,9 @@ int main(int argc, char** argv) {
             std::unique_ptr<Object> root(loadFromXML(sceneName));
 
             std::string backend = a.get<std::string>("backend");
+            bool gui = a.exist("gui");
             if (backend == "cpu") {
                 int thread = a.get<int>("thread");
-                bool gui = a.exist("gui");
                 CPURenderer renderer;
 
                 /* When the XML root object is a scene, start rendering it .. */
@@ -45,7 +45,11 @@ int main(int argc, char** argv) {
             }
             else if (backend == "optix") {
                 optix::OptixRenderer renderer(static_cast<Scene*>(root.get()));
-                renderer.render();
+                std::string filename = sceneName;
+                size_t lastdot = filename.find_last_of(".");
+                if (lastdot != std::string::npos)
+                    filename.erase(lastdot, std::string::npos);
+                renderer.render(filename, gui);
             }
             else {
                 spdlog::critical("Fatal error: unknown backend:  {}", backend);

@@ -11,7 +11,8 @@ namespace drawlab {
 
 class GUI {
 public:
-    GUI(const ImageBlock& block) : m_block(block){};
+    GUI(const ImageBlock* block) : m_block(block), m_bitmap(nullptr) {};
+    GUI(Bitmap* bitmap) : m_bitmap(bitmap), m_block(nullptr) {};
     ~GUI();
 
     /// @brief Initialize UI and bind the event.
@@ -21,7 +22,8 @@ public:
     void start();
 
 private:
-    const ImageBlock& m_block;
+    const ImageBlock* m_block;
+    Bitmap* m_bitmap;
 
     int m_width;
     int m_height;

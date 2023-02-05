@@ -33,7 +33,8 @@ void GUI::init() {
                    GL_TRUE);  // To make Apple happy -- should not be needed
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    Vector2i size = m_block.getSize();
+    Vector2i size = m_block ? m_block->getSize() 
+                            : Vector2i(m_bitmap->getWidth(), m_bitmap->getHeight());
 
     const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
     float s =
@@ -116,15 +117,21 @@ void GUI::update() {
     ImGui::SetNextWindowPos(ImVec2(10, 10));
     ImGui::Begin("Controller");
 
-    m_block.lock();
-    Bitmap* bitmap = m_block.toBitmap();
-    bitmap->flipud();
-    bitmap->resize(m_height, m_width);
-    unsigned int pbo = m_display->getPBO(m_width, m_height, bitmap->getPtr());
-    m_display->display(m_width, m_height, m_width, m_height, pbo);
-    delete bitmap;
-    m_block.unlock();
-
+    if (m_block) {
+        m_block->lock();
+        Bitmap* bitmap = m_block->toBitmap();
+        bitmap->flipud();
+        bitmap->resize(m_height, m_width);
+        unsigned int pbo = m_display->getPBO(m_width, m_height, bitmap->getPtr());
+        m_display->display(m_width, m_height, m_width, m_height, pbo);
+        delete bitmap;
+        m_block->unlock();
+    }
+    else {
+        m_bitmap->resize(m_height, m_width);
+        unsigned int pbo = m_display->getPBO(m_width, m_height, m_bitmap->getPtr());
+        m_display->display(m_width, m_height, m_width, m_height, pbo);
+    }
     ImGui::End();
     endFrameImGui();
     glfwSwapBuffers(window);

@@ -1,6 +1,8 @@
 #include "tracer/backend/optix_renderer.h"
 #include "optix/host/sutil.h"
 #include "tracer/camera.h"
+#include "core/bitmap/bitmap.h"
+#include "editor/gui.h"
 // this include may only appear in a single source file:
 #include <optix_function_table_definition.h>
 #include "stb_image_write.h"
@@ -53,26 +55,35 @@ OptixRenderer::OptixRenderer(drawlab::Scene* scene, int device_id) : m_scene(sce
     updateLaunchParams();
 }
 
-void OptixRenderer::render() {
+void OptixRenderer::renderFrame() {
     m_launch_params_buffer.upload(&m_launch_params, 1);
-    m_launch_params.frameID++;
-
-    m_device_context->launch(m_launch_params_buffer, m_launch_params.width,
-                             m_launch_params.height);
-
+    m_device_context->launch(m_launch_params_buffer, m_width, m_height);
     // sync - make sure the frame is rendered before we download and
     // display (obviously, for a high-performance application you
     // want to use streams and double-buffering, but for this simple
     // example, this will have to do)
     CUDA_SYNC_CHECK();
+}
 
-    // write image
-    std::vector<unsigned int> pixels(m_width * m_height);
-    downloadPixels(pixels.data());
-    const std::string fileName = "osc_example2.png";
-    stbi_write_png(fileName.c_str(), m_width, m_height, 4, pixels.data(),
-                   m_width * sizeof(unsigned int));
-    spdlog::info("Image rendered, and saved to {} ... done.", fileName);
+
+void OptixRenderer::render(std::string filename, const bool gui) {
+
+    renderFrame();
+
+    drawlab::Bitmap bitmap(m_height, m_width);
+    float3* pixels = (float3*)bitmap.getPtr();
+    m_color_buffer.download(pixels, m_width * m_height);
+    drawlab::Bitmap bitmap_copy(bitmap);
+
+    if (gui) {
+        bitmap.flipud();
+        drawlab::GUI gui(&bitmap);
+        gui.init();
+        gui.start();
+    }
+
+    bitmap_copy.savePNG(filename);
+    spdlog::info("Image rendered, and saved to {} ... done.", filename);
 }
 
 void OptixRenderer::updateLaunchParams() {
@@ -91,17 +102,13 @@ void OptixRenderer::resize(const int height, const int width) {
     m_height = height;
 
     // resize our cuda frame buffer
-    m_color_buffer.resize(height * width * sizeof(unsigned int));
+    m_color_buffer.resize(height * width * sizeof(float3));
 
     // update the launch parameters that we'll pass to the optix
     // launch
     m_launch_params.width = width;
     m_launch_params.height = height;
-    m_launch_params.color_buffer = (unsigned int*)m_color_buffer.m_device_ptr;
-}
-
-void OptixRenderer::downloadPixels(unsigned int h_pixels[]) {
-    m_color_buffer.download(h_pixels, m_launch_params.height * m_launch_params.width);
+    m_launch_params.color_buffer = (float3*)m_color_buffer.m_device_ptr;
 }
 
 }  // namespace optix

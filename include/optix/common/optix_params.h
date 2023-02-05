@@ -16,7 +16,7 @@ struct LaunchParams {
     int frameID{0};
 
     // frame
-    unsigned int* color_buffer;
+    float3* color_buffer;
     int width;
     int height;
 

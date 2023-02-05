@@ -109,7 +109,7 @@ void CPURenderer::render(Scene* scene, const std::string& filename,
     });
 
     if (gui) {
-        GUI gui(result);
+        GUI gui(&result);
         gui.init();
         gui.start();
     }
