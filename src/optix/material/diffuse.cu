@@ -130,9 +130,10 @@ extern "C" __global__ void __closesthit__radiance() {
     // compute shadow
     // ------------------------------------------------------------------
     const float3 surfPos = (1.f - u - v) * v0 + u * v1 + v * v2;
-    // printf("%lf %lf %lf\n", surfPos.x, surfPos.y, surfPos.z);
-    const float3 lightPos = make_float3(-9., 20.f, 0.f);
+
+    const float3 lightPos = params.lights[0].point.position;
     const float3 lightDir = lightPos - surfPos;
+    const float4 lightColor = make_float4(params.lights[0].point.intensity);
     const float Ldist = length(lightPos - surfPos);
 
     // trace shadow ray:
@@ -153,7 +154,7 @@ extern "C" __global__ void __closesthit__radiance() {
         prd->radiance = make_float3(0.f);
     }
     else {
-        prd->radiance = make_float3(cosDN * diffuseColor);
+        prd->radiance = make_float3(cosDN * diffuseColor * lightColor);
     }
 }
 

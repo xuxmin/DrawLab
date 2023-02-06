@@ -41,6 +41,12 @@ public:
                            m_position.x(), m_position.y(), m_position.z());
     }
 
+    void getOptixLight(optix::Light& light) const {
+        light.type = optix::Light::Type::POINT;
+        light.point.intensity = make_float3(m_intensity[0], m_intensity[1], m_intensity[2]);
+        light.point.position = make_float3(m_position[0], m_position[1], m_position[2]);
+    }
+
 private:
     Color3f m_intensity;
     Point3f m_position;

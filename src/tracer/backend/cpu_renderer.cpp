@@ -54,7 +54,7 @@ void CPURenderer::render(Scene* scene, const std::string& filename,
     Vector2i outputSize = camera->getOutputSize();
     scene->getIntegrator()->preprocess(scene);
 
-    if (!scene->hasEmitter()) {
+    if (scene->getEmitters().empty()) {
         throw Exception("There is not emitter in the scene.");
         exit(-1);
     }

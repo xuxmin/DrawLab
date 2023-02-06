@@ -30,6 +30,7 @@ protected:
     CUDABuffer m_launch_params_buffer;
 
     CUDABuffer m_color_buffer;
+    CUDABuffer m_light_buffer;
 
     drawlab::Scene* m_scene;
 };

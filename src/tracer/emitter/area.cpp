@@ -55,6 +55,10 @@ public:
                            m_radiance.x(), m_radiance.y(), m_radiance.z());
     }
 
+    void getOptixLight(optix::Light& light) const {
+        throw Exception("Not implement yet.");
+    }
+
 private:
     Color3f m_radiance;
 };

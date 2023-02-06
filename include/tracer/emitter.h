@@ -109,6 +109,8 @@ public:
         throw Exception("Emitter::eval(): not implemented!");
     }
 
+    virtual void getOptixLight(optix::Light& light) const = 0;
+
 protected:
     Mesh* m_mesh = nullptr;
 };

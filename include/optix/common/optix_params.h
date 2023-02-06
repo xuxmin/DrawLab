@@ -5,6 +5,7 @@
 #include "optix/common/geometry_data.h"
 #include "optix/common/material_data.h"
 #include "optix/common/camera_data.h"
+#include "optix/common/light_data.h"
 
 
 namespace optix {
@@ -22,6 +23,10 @@ struct LaunchParams {
 
     // camera
     CameraData camera_data;
+
+    // lights
+    Light* lights;
+    int light_num;
 
     OptixTraversableHandle handle;
 };

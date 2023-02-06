@@ -94,6 +94,16 @@ void OptixRenderer::updateLaunchParams() {
     resize(outputSize[1], outputSize[0]);
 
     camera->packLaunchParameters(m_launch_params);
+
+    std::vector<Light> lights;
+    for (const auto emitter : m_scene->getEmitters()) {
+        Light light;
+        emitter->getOptixLight(light);
+        lights.push_back(light);
+    }
+    m_light_buffer.allocAndUpload(lights);
+    m_launch_params.light_num = lights.size();
+    m_launch_params.lights = (Light*)m_light_buffer.m_device_ptr;
 }
 
 /*! resize frame buffer to given resolution */

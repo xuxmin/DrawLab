@@ -69,7 +69,7 @@ public:
 
     const std::vector<Mesh*>& getMeshes() const { return m_meshes; }
 
-    bool hasEmitter() { return m_emitters.size() > 0; }
+    const std::vector<Emitter*>& getEmitters() const { return m_emitters; }
 
     /**
      * \brief Intersect a ray against all triangles stored in the scene
