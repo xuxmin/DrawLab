@@ -7,6 +7,7 @@
 #include <optix_stubs.h>
 #include <sstream>
 #include <stdexcept>
+#include <string>
 
 //------------------------------------------------------------------------------
 //
@@ -19,6 +20,8 @@ namespace optix {
 class Exception : public std::runtime_error {
 public:
     Exception(const char* msg) : std::runtime_error(msg) {}
+
+    Exception(std::string msg) : std::runtime_error(msg.c_str()) {}
 
     Exception(OptixResult res, const char* msg)
         : std::runtime_error(createMessage(res, msg).c_str()) {}

@@ -5,6 +5,7 @@
 #include "optix/host/sutil.h"
 #include "optix/host/texture.h"
 #include "optix/host/accel.h"
+#include "optix/host/resource_manager.h"
 #include <cuda_runtime.h>
 #include <map>
 #include <functional>
@@ -93,7 +94,7 @@ private:
 
     OptixProgramGroup m_raygen_pg;
     std::vector<OptixProgramGroup> m_miss_pgs;
-    std::map<std::string, OptixProgramGroup> m_hitgroup_pgs;
+    ResourceManager<OptixProgramGroup> m_hitgroup_pgs;
 
     OptixPipeline m_pipeline;
 

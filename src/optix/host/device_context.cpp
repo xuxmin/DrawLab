@@ -103,8 +103,9 @@ OptixProgramGroup DeviceContext::createHitgroupPrograms(OptixModule ch_module,
                                                         std::string ah_func) {
     std::string key = std::to_string(int(ch_module)) +
                       std::to_string(int(ah_module)) + ch_func + ah_func;
-    if (m_hitgroup_pgs.find(key) != m_hitgroup_pgs.end()) {
-        return m_hitgroup_pgs.at(key);
+    
+    if (m_hitgroup_pgs.existed(key)) {
+        return m_hitgroup_pgs.get(key);
     }
 
     OptixProgramGroup hitgroupPG;
@@ -123,7 +124,7 @@ OptixProgramGroup DeviceContext::createHitgroupPrograms(OptixModule ch_module,
                                             &pgOptions, log, &sizeof_log,
                                             &hitgroupPG));
 
-    m_hitgroup_pgs[key] = hitgroupPG;
+    m_hitgroup_pgs.add(key, hitgroupPG);
 
     return hitgroupPG;
 }
@@ -240,7 +241,7 @@ void DeviceContext::createPipeline() {
         programGroups.push_back(pg);
     }
     // Add hitgroup programs
-    for (auto pg : m_hitgroup_pgs) {
+    for (auto pg : m_hitgroup_pgs.getResources()) {
         programGroups.push_back(pg.second);
     }
 
