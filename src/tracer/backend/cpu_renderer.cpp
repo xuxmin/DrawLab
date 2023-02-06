@@ -54,6 +54,11 @@ void CPURenderer::render(Scene* scene, const std::string& filename,
     Vector2i outputSize = camera->getOutputSize();
     scene->getIntegrator()->preprocess(scene);
 
+    if (!scene->hasEmitter()) {
+        throw Exception("There is not emitter in the scene.");
+        exit(-1);
+    }
+
     const int BLOCK_SIZE = 32;
 
     /* Create a block generator (i.e. a work scheduler) */
