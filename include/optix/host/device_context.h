@@ -13,6 +13,8 @@
 namespace optix {
 
 class Material;
+class LaunchParam;
+
 
 class DeviceContext {
 public:
@@ -45,7 +47,7 @@ public:
                                              std::string ch_func,
                                              std::string ah_func);
 
-    void launch(const CUDABuffer& launch_params_buffer, int width, int height);
+    void launch(const LaunchParam& launch_params);
 
     const CUstream& getStream() const { return m_stream; }
 
@@ -63,7 +65,7 @@ public:
 
     OptixShaderBindingTable& getSBT() { return m_sbt; }
 
-    OptixTraversableHandle& getHandle() {return m_as_handle; }
+    const OptixTraversableHandle& getHandle() const {return m_as_handle; }
 
     void DeviceContext::createAccel(std::function<void(OptixAccel*)> init);
 

@@ -17,7 +17,7 @@ namespace optix {
  * - set in OptixPipelineCompileOptions
  * - filled in by optix upon optixLaunch
  */
-extern "C" __constant__ LaunchParams params;
+extern "C" __constant__ Params params;
 
 static __forceinline__ __device__ void
 traceRadiance(OptixTraversableHandle handle, float3 ray_origin,

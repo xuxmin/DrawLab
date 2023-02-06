@@ -46,7 +46,7 @@ OptixRenderer::OptixRenderer(drawlab::Scene* scene, int device_id) : m_scene(sce
     spdlog::info("[OPTIX RENDERER] Step 7. Setting up optix pipeline ...");
     m_device_context->createPipeline();
 
-    m_launch_params_buffer.alloc(sizeof(m_launch_params));
+    m_launch_param = new LaunchParam(*m_device_context);
     spdlog::info(
         "[OPTIX RENDERER] Context, module, pipeline, etc, all set up ...");
 
@@ -56,8 +56,8 @@ OptixRenderer::OptixRenderer(drawlab::Scene* scene, int device_id) : m_scene(sce
 }
 
 void OptixRenderer::renderFrame() {
-    m_launch_params_buffer.upload(&m_launch_params, 1);
-    m_device_context->launch(m_launch_params_buffer, m_width, m_height);
+    m_launch_param->updateParamsBuffer();
+    m_device_context->launch(*m_launch_param);
     // sync - make sure the frame is rendered before we download and
     // display (obviously, for a high-performance application you
     // want to use streams and double-buffering, but for this simple
@@ -72,7 +72,7 @@ void OptixRenderer::render(std::string filename, const bool gui) {
 
     drawlab::Bitmap bitmap(m_height, m_width);
     float3* pixels = (float3*)bitmap.getPtr();
-    m_color_buffer.download(pixels, m_width * m_height);
+    m_launch_param->getColorData(pixels);
     drawlab::Bitmap bitmap_copy(bitmap);
 
     if (gui) {
@@ -87,13 +87,14 @@ void OptixRenderer::render(std::string filename, const bool gui) {
 }
 
 void OptixRenderer::updateLaunchParams() {
-    m_launch_params.handle = m_device_context->getHandle();
 
     const drawlab::Camera* camera = m_scene->getCamera();
     drawlab::Vector2i outputSize = camera->getOutputSize();
-    resize(outputSize[1], outputSize[0]);
+    m_width = outputSize[0];
+    m_height = outputSize[1];
+    m_launch_param->setupColorBuffer(m_width, m_height);
+    m_launch_param->setupCamera(camera->getOptixCamera());
 
-    camera->packLaunchParameters(m_launch_params);
 
     std::vector<Light> lights;
     for (const auto emitter : m_scene->getEmitters()) {
@@ -101,24 +102,11 @@ void OptixRenderer::updateLaunchParams() {
         emitter->getOptixLight(light);
         lights.push_back(light);
     }
-    m_light_buffer.allocAndUpload(lights);
-    m_launch_params.light_num = lights.size();
-    m_launch_params.lights = (Light*)m_light_buffer.m_device_ptr;
+    m_launch_param->setupLights(lights);
 }
 
 /*! resize frame buffer to given resolution */
 void OptixRenderer::resize(const int height, const int width) {
-    m_width = width;
-    m_height = height;
-
-    // resize our cuda frame buffer
-    m_color_buffer.resize(height * width * sizeof(float3));
-
-    // update the launch parameters that we'll pass to the optix
-    // launch
-    m_launch_params.width = width;
-    m_launch_params.height = height;
-    m_launch_params.color_buffer = (float3*)m_color_buffer.m_device_ptr;
 }
 
 }  // namespace optix

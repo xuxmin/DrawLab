@@ -50,7 +50,7 @@ public:
                               cudaMemcpyHostToDevice));
     }
 
-    template <typename T> void download(T* t, size_t count) {
+    template <typename T> void download(T* t, size_t count) const {
         assert(m_device_ptr != nullptr);
         assert(m_size_in_bytes == count * sizeof(T));
         CUDA_CHECK(cudaMemcpy((void*)t, m_device_ptr, count * sizeof(T),

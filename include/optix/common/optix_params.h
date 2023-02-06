@@ -4,8 +4,8 @@
 #include <optix.h>
 #include "optix/common/geometry_data.h"
 #include "optix/common/material_data.h"
-#include "optix/common/camera_data.h"
-#include "optix/common/light_data.h"
+#include "optix/common/camera.h"
+#include "optix/common/light.h"
 
 
 namespace optix {
@@ -13,16 +13,14 @@ namespace optix {
 // for this simple example, we have a single ray type
 enum { RAY_TYPE_RADIANCE = 0, RAY_TYPE_OCCLUSION, RAY_TYPE_COUNT };
 
-struct LaunchParams {
-    int frameID{0};
-
+struct Params {
     // frame
     float3* color_buffer;
     int width;
     int height;
 
     // camera
-    CameraData camera_data;
+    Camera camera;
 
     // lights
     Light* lights;

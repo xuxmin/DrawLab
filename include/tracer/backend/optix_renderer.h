@@ -2,6 +2,7 @@
 #include "optix/common/optix_params.h"
 #include "optix/host/cuda_buffer.h"
 #include "optix/host/device_context.h"
+#include "optix/host/launch_param.h"
 #include "tracer/scene.h"
 
 namespace optix {
@@ -26,11 +27,7 @@ protected:
 
     DeviceContext* m_device_context;
 
-    LaunchParams m_launch_params;
-    CUDABuffer m_launch_params_buffer;
-
-    CUDABuffer m_color_buffer;
-    CUDABuffer m_light_buffer;
+    LaunchParam* m_launch_param;
 
     drawlab::Scene* m_scene;
 };

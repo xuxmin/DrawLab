@@ -1,6 +1,7 @@
 #include "optix/host/device_context.h"
 #include "optix/host/material.h"
 #include "optix/host/sutil.h"
+#include "optix/host/launch_param.h"
 #include <spdlog/spdlog.h>
 
 namespace optix {
@@ -316,11 +317,12 @@ void DeviceContext::createAccel(std::function<void(OptixAccel*)> init) {
     m_as_handle = m_accel->build();
 }
 
-void DeviceContext::launch(const CUDABuffer& launch_params_buffer,
-                            int width, int height) {
-    OPTIX_CHECK(optixLaunch(
-        m_pipeline, m_stream, launch_params_buffer.devicePtr(),
-        launch_params_buffer.m_size_in_bytes, &m_sbt, width, height, 1));
+void DeviceContext::launch(const LaunchParam& launch_params) {
+    const CUDABuffer& params_buffer = launch_params.getParamsBuffer();
+    OPTIX_CHECK(optixLaunch(m_pipeline, m_stream, params_buffer.devicePtr(),
+                            params_buffer.m_size_in_bytes, &m_sbt,
+                            launch_params.getWidth(), launch_params.getHeight(),
+                            1));
 }
 
 }  // namespace optix

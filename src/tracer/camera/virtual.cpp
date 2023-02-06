@@ -95,12 +95,14 @@ public:
                            indent(m_rfilter->toString()));
     }
 
-    void packLaunchParameters(optix::LaunchParams& launch_params) const {
-        launch_params.camera_data.type = optix::CameraData::VIRTUAL;
-        launch_params.camera_data.virtual_cam.eye = make_float3(m_eye[0], m_eye[1], m_eye[2]);
-        launch_params.camera_data.virtual_cam.U = make_float3(m_U[0], m_U[1], m_U[2]);
-        launch_params.camera_data.virtual_cam.V = make_float3(m_V[0], m_V[1], m_V[2]);
-        launch_params.camera_data.virtual_cam.W = make_float3(m_W[0], m_W[1], m_W[2]);
+    optix::Camera getOptixCamera() const {
+        optix::Camera camera;
+        camera.type = optix::Camera::VIRTUAL;
+        camera.virtual_cam.eye = make_float3(m_eye[0], m_eye[1], m_eye[2]);
+        camera.virtual_cam.U = make_float3(m_U[0], m_U[1], m_U[2]);
+        camera.virtual_cam.V = make_float3(m_V[0], m_V[1], m_V[2]);
+        camera.virtual_cam.W = make_float3(m_W[0], m_W[1], m_W[2]);
+        return camera;
     }
 
 private:

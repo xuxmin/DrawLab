@@ -56,7 +56,7 @@ public:
      * */
     EClassType getClassType() const { return ECamera; }
 
-    virtual void packLaunchParameters(optix::LaunchParams& launch_params) const = 0;
+    virtual optix::Camera getOptixCamera() const = 0;
 
 protected:
     Vector2i m_outputSize;

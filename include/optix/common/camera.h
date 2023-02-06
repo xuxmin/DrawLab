@@ -4,7 +4,7 @@
 
 namespace optix{
 
-struct CameraData {
+struct Camera {
     enum Type {
         VIRTUAL = 0,
     };

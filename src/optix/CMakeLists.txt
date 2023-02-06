@@ -5,6 +5,7 @@ set(SOURCES
     host/device_context.cpp
     host/material.cpp
     host/accel.cpp
+    host/launch_param.cpp
 )
 
 find_package(CUDA REQUIRED)
