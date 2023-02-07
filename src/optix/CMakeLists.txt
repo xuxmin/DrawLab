@@ -6,6 +6,8 @@ set(SOURCES
     host/material.cpp
     host/accel.cpp
     host/launch_param.cpp
+    host/camera.cpp
+    host/trackball.cpp
 )
 
 find_package(CUDA REQUIRED)
