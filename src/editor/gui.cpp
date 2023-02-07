@@ -1,5 +1,5 @@
-#include "editor/gui.h"
 #include "glad/glad.h"
+#include "editor/gui.h"
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl3.h"
@@ -8,6 +8,13 @@
 namespace drawlab {
 
 GLFWwindow* GUI::window;
+int GUI::window_width;
+int GUI::window_height;
+
+GUI::GUI(int width, int height) {
+    window_width = width;
+    window_height = height;
+}
 
 GUI::~GUI() {
     ImGui_ImplOpenGL3_Shutdown();
@@ -16,8 +23,15 @@ GUI::~GUI() {
 
     glfwDestroyWindow(window);
     glfwTerminate();
+}
 
-    delete m_display;
+void GUI::scaleWindow() {
+    Vector2i size = Vector2i(window_width, window_height);
+    const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+    float s = std::max(mode->width / (float)size[0], mode->height / (float)size[1]);
+    m_scale = s > 2 ? s / 2 : 1;
+    window_width = (int)(window_width * m_scale);
+    window_height = (int)(window_height * m_scale);
 }
 
 void GUI::init() {
@@ -29,23 +43,12 @@ void GUI::init() {
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT,
-                   GL_TRUE);  // To make Apple happy -- should not be needed
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    Vector2i size = m_block ? m_block->getSize() 
-                            : Vector2i(m_bitmap->getWidth(), m_bitmap->getHeight());
-
-    const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-    float s =
-        std::max(mode->width / (float)size[0], mode->height / (float)size[1]);
-    m_scale = s > 2 ? s / 2 : 1;
-
-    m_width = (int)(size[0] * m_scale);
-    m_height = (int)(size[1] * m_scale);
-
     // create window
-    window = glfwCreateWindow(m_width, m_height, "drawlab", nullptr, nullptr);
+    scaleWindow();
+    window = glfwCreateWindow(window_width, window_height, "drawlab", nullptr, nullptr);
     if (!window) {
         spdlog::critical("Error: could not create window!");
         glfwTerminate();
@@ -61,6 +64,11 @@ void GUI::init() {
         spdlog::critical("Failed to initialize GL");
         glfwTerminate();
         exit(1);
+    }
+
+    // initialize renderer if already set
+    if (m_renderer) {
+        m_renderer->init();
     }
 
     // Setup Dear ImGui context
@@ -98,8 +106,6 @@ void GUI::init() {
 
     ImGui::GetStyle().WindowBorderSize = 0.0f;
     ImGui::GetStyle().ScaleAllSizes(m_scale);
-
-    m_display = new opengl::Display(opengl::Display::BufferImageFormat::FLOAT3);
 }
 
 void GUI::start() {
@@ -117,21 +123,10 @@ void GUI::update() {
     ImGui::SetNextWindowPos(ImVec2(10, 10));
     ImGui::Begin("Controller");
 
-    if (m_block) {
-        m_block->lock();
-        Bitmap* bitmap = m_block->toBitmap();
-        bitmap->flipud();
-        bitmap->resize(m_height, m_width);
-        unsigned int pbo = m_display->getPBO(m_width, m_height, bitmap->getPtr());
-        m_display->display(m_width, m_height, m_width, m_height, pbo);
-        delete bitmap;
-        m_block->unlock();
+    if (m_renderer) {
+        m_renderer->render();
     }
-    else {
-        m_bitmap->resize(m_height, m_width);
-        unsigned int pbo = m_display->getPBO(m_width, m_height, m_bitmap->getPtr());
-        m_display->display(m_width, m_height, m_width, m_height, pbo);
-    }
+
     ImGui::End();
     endFrameImGui();
     glfwSwapBuffers(window);

@@ -1,20 +1,26 @@
-#include "core/utils/timer.h"
-#include "core/utils/pb.h"
-#include "core/bitmap/block.h"
-#include "tracer/scene.h"
-#include "editor/gui.h"
 #include "tracer/backend/cpu_renderer.h"
-#include <thread>
-#include <tbb/task_scheduler_init.h>
+#include "core/bitmap/bitmap.h"
+#include "core/bitmap/block.h"
+#include "core/utils/pb.h"
+#include "core/utils/timer.h"
+#include "editor/gui.h"
+#include "tracer/scene.h"
+#include <spdlog/spdlog.h>
 #include <tbb/blocked_range.h>
 #include <tbb/parallel_for.h>
-#include <spdlog/spdlog.h>
-
+#include <tbb/task_scheduler_init.h>
 
 namespace drawlab {
 
+CPURenderer::CPURenderer(Scene* scene) : m_scene(scene) {
+    const Camera* camera = m_scene->getCamera();
+    Vector2i outputSize = camera->getOutputSize();
+    m_block = new ImageBlock(outputSize, camera->getReconstructionFilter());
+    m_display = nullptr;
+}
+
 void CPURenderer::renderBlock(const Scene* scene, Sampler* sampler,
-                                     ImageBlock& block) {
+                              ImageBlock& block) {
     const Camera* camera = scene->getCamera();
     const Integrator* integrator = scene->getIntegrator();
 
@@ -48,13 +54,13 @@ void CPURenderer::renderBlock(const Scene* scene, Sampler* sampler,
     }
 }
 
-void CPURenderer::render(Scene* scene, const std::string& filename,
-                                const bool gui, const int thread_count) {
-    const Camera* camera = scene->getCamera();
+void CPURenderer::renderAsync(const std::string& filename, bool gui,
+                              const int thread_count) {
+    const Camera* camera = m_scene->getCamera();
     Vector2i outputSize = camera->getOutputSize();
-    scene->getIntegrator()->preprocess(scene);
+    m_scene->getIntegrator()->preprocess(m_scene);
 
-    if (scene->getEmitters().empty()) {
+    if (m_scene->getEmitters().empty()) {
         throw Exception("There is not emitter in the scene.");
         exit(-1);
     }
@@ -63,9 +69,6 @@ void CPURenderer::render(Scene* scene, const std::string& filename,
 
     /* Create a block generator (i.e. a work scheduler) */
     BlockGenerator blockGenerator(outputSize, BLOCK_SIZE);
-
-    int height = outputSize[1], width = outputSize[0];
-    ImageBlock result(outputSize, camera->getReconstructionFilter());
 
     std::thread render_thread([&] {
         tbb::task_scheduler_init init(thread_count);
@@ -85,7 +88,7 @@ void CPURenderer::render(Scene* scene, const std::string& filename,
                              camera->getReconstructionFilter());
 
             /* Create a clone of the sampler for the current thread */
-            std::unique_ptr<Sampler> sampler(scene->getSampler()->clone());
+            std::unique_ptr<Sampler> sampler(m_scene->getSampler()->clone());
 
             for (int i = range.begin(); i < range.end(); ++i) {
                 /* Request an image block from the block generator */
@@ -95,11 +98,11 @@ void CPURenderer::render(Scene* scene, const std::string& filename,
                 sampler->prepare(block);
 
                 /* Render all contained pixels */
-                renderBlock(scene, sampler.get(), block);
+                renderBlock(m_scene, sampler.get(), block);
 
                 /* The image block has been processed. Now add it to
                    the "big" block that represents the entire image */
-                result.put(block);
+                m_block->put(block);
 
                 bar.update(cnt++ / (float)(total_cnt));
             }
@@ -114,14 +117,15 @@ void CPURenderer::render(Scene* scene, const std::string& filename,
     });
 
     if (gui) {
-        GUI gui(&result);
+        GUI gui(outputSize[0], outputSize[1]);
+        gui.setRenderer(this);
         gui.init();
         gui.start();
     }
 
     render_thread.join();
 
-    std::unique_ptr<Bitmap> bitmap(result.toBitmap());
+    std::unique_ptr<Bitmap> bitmap(m_block->toBitmap());
     std::string outputName = filename;
     size_t lastdot = outputName.find_last_of(".");
     if (lastdot != std::string::npos)
@@ -129,5 +133,33 @@ void CPURenderer::render(Scene* scene, const std::string& filename,
     bitmap->saveEXR(outputName);
     bitmap->savePNG(outputName);
 }
+
+void CPURenderer::init() {
+    m_display = new opengl::Display(opengl::Display::BufferImageFormat::FLOAT3);
+}
+
+void CPURenderer::render() {
+    const int w = GUI::window_width;
+    const int h = GUI::window_height;
+
+    m_block->lock();
+    Bitmap* bitmap = m_block->toBitmap();
+    bitmap->flipud();
+    bitmap->resize(h, w);
+    unsigned int pbo = m_display->getPBO(w, h, bitmap->getPtr());
+    m_display->display(w, h, w, h, pbo);
+    delete bitmap;
+    m_block->unlock();
+}
+
+void CPURenderer::resize(size_t w, size_t h) {}
+
+void CPURenderer::keyEvent(char key) {}
+
+void CPURenderer::cursorEvent(float x, float y, unsigned char keys) {}
+
+void CPURenderer::scrollEvent(float offset_x, float offset_y) {}
+
+void CPURenderer::mouseButtonEvent(int button, int event) {}
 
 }  // namespace drawlab

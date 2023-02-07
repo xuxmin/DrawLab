@@ -133,7 +133,7 @@ extern "C" __global__ void __closesthit__radiance() {
 
     const float3 lightPos = params.lights[0].point.position;
     const float3 lightDir = lightPos - surfPos;
-    const float4 lightColor = make_float4(params.lights[0].point.intensity);
+    const float4 lightColor = make_float4(params.lights[0].point.intensity) / 100.f;
     const float Ldist = length(lightPos - surfPos);
 
     // trace shadow ray:

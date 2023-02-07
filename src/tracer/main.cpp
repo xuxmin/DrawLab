@@ -4,8 +4,8 @@
 #include "tracer/backend/cpu_renderer.h"
 #include "tracer/backend/optix_renderer.h"
 #include "tracer/scene.h"
-#include <spdlog/spdlog.h>
 #include <memory>
+#include <spdlog/spdlog.h>
 #include <string>
 
 using namespace drawlab;
@@ -35,21 +35,16 @@ int main(int argc, char** argv) {
             bool gui = a.exist("gui");
             if (backend == "cpu") {
                 int thread = a.get<int>("thread");
-                CPURenderer renderer;
 
                 /* When the XML root object is a scene, start rendering it .. */
                 if (root->getClassType() == Object::EScene) {
-                    renderer.render(static_cast<Scene*>(root.get()), sceneName,
-                                    gui, thread);
+                    CPURenderer renderer(static_cast<Scene*>(root.get()));
+                    renderer.renderAsync(sceneName, gui, thread);
                 }
             }
             else if (backend == "optix") {
                 optix::OptixRenderer renderer(static_cast<Scene*>(root.get()));
-                std::string filename = sceneName;
-                size_t lastdot = filename.find_last_of(".");
-                if (lastdot != std::string::npos)
-                    filename.erase(lastdot, std::string::npos);
-                renderer.render(filename, gui);
+                renderer.renderAsync(sceneName, gui);
             }
             else {
                 spdlog::critical("Fatal error: unknown backend:  {}", backend);
