@@ -28,6 +28,8 @@ public:
 
     const std::map<std::string, T>& getResources() const { return m_resources; }
 
+    void clear() { m_resources.clear(); }
+
 private:
     std::map<std::string, T> m_resources;
 };

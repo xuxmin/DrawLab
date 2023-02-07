@@ -32,6 +32,8 @@ public:
         mat_data.diffuse.normal_tex = 0;
     }
 
+    ~Diffuse() {}
+
 private:
     float4 m_albedo_val;
     const Texture* m_albedo_tex;

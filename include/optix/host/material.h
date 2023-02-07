@@ -26,6 +26,8 @@ public:
         return m_hitgroup_pgs[ray_type];
     }
 
+    virtual ~Material();
+
 protected:
     std::string m_material_id;
     MaterialData::Type m_material_type;

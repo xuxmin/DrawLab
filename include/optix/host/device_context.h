@@ -20,6 +20,9 @@ class LaunchParam;
 class DeviceContext {
 public:
     DeviceContext(int deviceID);
+
+    void destroy();
+
     ~DeviceContext();
 
     /// @brief  configures the optixPipeline link options and compile options,
@@ -92,6 +95,8 @@ private:
     std::map<std::string, const Texture*> m_textures;
     std::map<std::string, const Material*> m_materials;
 
+    OptixModule m_raygen_module;
+    OptixModule m_miss_module;
     OptixProgramGroup m_raygen_pg;
     std::vector<OptixProgramGroup> m_miss_pgs;
     ResourceManager<OptixProgramGroup> m_hitgroup_pgs;

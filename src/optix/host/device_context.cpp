@@ -142,13 +142,13 @@ void DeviceContext::createRaygenProgramsAndBindSBT(std::string cu_file,
             "DeviceContext::createRaygenProgramsAndBindSBT() can be called only once!");
     }
     // Create module
-    OptixModule module = createModuleFromCU(cu_file);
+    m_raygen_module = createModuleFromCU(cu_file);
 
     // Create raygen pgs
     OptixProgramGroupOptions pgOptions = {};
     OptixProgramGroupDesc pgDesc = {};
     pgDesc.kind = OPTIX_PROGRAM_GROUP_KIND_RAYGEN;
-    pgDesc.raygen.module = module;
+    pgDesc.raygen.module = m_raygen_module;
     pgDesc.raygen.entryFunctionName = func;
 
     char log[2048];  // For error reporting from OptiX creation functions
@@ -175,12 +175,12 @@ void DeviceContext::createMissProgramsAndBindSBT(
     int ray_type_count = func.size();
     m_miss_pgs.resize(ray_type_count);
 
-    OptixModule module = createModuleFromCU(cu_file);
+    m_miss_module = createModuleFromCU(cu_file);
 
     OptixProgramGroupOptions pgOptions = {};
     OptixProgramGroupDesc pgDesc = {};
     pgDesc.kind = OPTIX_PROGRAM_GROUP_KIND_MISS;
-    pgDesc.miss.module = module;
+    pgDesc.miss.module = m_miss_module;
 
     for (int ray_id = 0; ray_id < ray_type_count; ray_id++) {
         pgDesc.miss.entryFunctionName = func[ray_id];
@@ -324,6 +324,46 @@ void DeviceContext::launch(const LaunchParam& launch_params) {
                             params_buffer.m_size_in_bytes, &m_sbt,
                             launch_params.getWidth(), launch_params.getHeight(),
                             1));
+}
+
+void DeviceContext::destroy() {
+    // Release pipeline
+    OPTIX_CHECK(optixPipelineDestroy(m_pipeline));
+
+    // Release raygen module and program
+    OPTIX_CHECK(optixProgramGroupDestroy(m_raygen_pg));
+    OPTIX_CHECK(optixModuleDestroy(m_raygen_module));
+
+    // Release miss module and programs
+    for (auto miss_pgs : m_miss_pgs) {
+        OPTIX_CHECK(optixProgramGroupDestroy(miss_pgs));
+    }
+    m_miss_pgs.clear();
+    OPTIX_CHECK(optixModuleDestroy(m_miss_module));
+
+    // Release material
+    for (auto mat : m_materials) {
+        delete mat.second;
+    }
+
+    // Release Texture
+    for (auto tex : m_textures) {
+        delete tex.second;
+    }
+
+    OPTIX_CHECK(optixDeviceContextDestroy(m_optix_context));
+
+    // Release record buffer
+    m_raygen_record_buffer.free();
+    m_miss_record_buffer.free();
+    m_hitgroup_record_buffer.free();
+
+    // Release OptixAccel
+    delete m_accel;
+}
+
+DeviceContext::~DeviceContext() {
+    destroy();
 }
 
 }  // namespace optix

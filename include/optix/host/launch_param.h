@@ -9,6 +9,8 @@ class LaunchParam {
 public:
     LaunchParam(const DeviceContext& device_context);
 
+    ~LaunchParam();
+
     void setupColorBuffer(int width, int height);
 
     void setupLights(const std::vector<Light>& lights);
@@ -37,6 +39,8 @@ private:
     CUDABuffer m_light_buffer;
 
     Camera m_camera;
+
+    bool dirty;
 };
 
 }  // namespace optix

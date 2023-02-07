@@ -19,4 +19,11 @@ Material::Material(std::string mat_id, MaterialData::Type mat_type,
     }
 }
 
+Material::~Material() {
+    OPTIX_CHECK(optixModuleDestroy(m_module));
+    for (auto pg : m_hitgroup_pgs) {
+        OPTIX_CHECK(optixProgramGroupDestroy(pg));
+    }
+}
+
 }  // namespace optix
