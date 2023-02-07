@@ -5,13 +5,6 @@
 
 namespace drawlab {
 
-// MOUSE CONTROL MACROS //
-#define MOUSE_BUTTON_LEFT 0
-#define MOUSE_BUTTON_RIGHT 1
-#define MOUSE_BUTTON_MIDDLE 2
-#define MOUSE_BUTTON_RELEASE 0
-#define MOUSE_BUTTON_PRESS 1
-
 /**
  * Abstract renderer definition.
  * The abstract class defines a general framework for user-space renderers.
@@ -74,12 +67,8 @@ public:
      * The arguments are defined in screen space coordinates.
      * \param x the x coordinate of the cursor
      * \param y the y coordinate of the cursor
-     * \param keys Encodes the current mouse buttons state in a bitmask
-     *             each bit from the least significant to the most significant
-     *             encodes: right mouse button, middle mouse button, left mouse
-     *             button.
      */
-    virtual void cursorEvent(float x, float y, unsigned char keys) {}
+    virtual void cursorEvent(float x, float y) {}
 
     /**
      * Respond to zoom event.
@@ -100,7 +89,7 @@ public:
      * \param event The type of event. Possible values are 0, 1 and 2, which
      *        correspond to release, press, repeat(held down).
      */
-    virtual void mouseButtonEvent(int button, int event) {}
+    virtual void mouseButtonEvent(int button, int event, float xpos, float ypos) {}
 };
 
 }  // namespace drawlab

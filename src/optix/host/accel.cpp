@@ -7,7 +7,22 @@ OptixAccel::OptixAccel(const OptixDeviceContext& device_context)
     m_triangle_input_flags[0] = OPTIX_GEOMETRY_FLAG_NONE;
 }
 
-OptixAccel::~OptixAccel() {}
+OptixAccel::~OptixAccel() {
+    for (auto vb : m_vertex_buffers) {
+        vb.free();
+    }
+    for (auto ib : m_index_buffers) {
+        ib.free();
+    }
+    for (auto nb : m_normal_buffers) {
+        nb.free();
+    }
+    for (auto tb : m_texcoord_buffers) {
+        tb.free();
+    }
+
+    m_as_buffer.free();
+}
 
 void OptixAccel::addTriangleMesh(const std::vector<float>& positions,
                                  const std::vector<unsigned int>& indices,

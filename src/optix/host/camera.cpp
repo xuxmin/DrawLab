@@ -27,8 +27,27 @@
 //
 
 #include "optix/host/camera.h"
+#include "optix/common/vec_math.h"
 
 namespace optix {
+
+PerspectiveCamera::PerspectiveCamera()
+    : m_eye(make_float3(1.0f)), m_lookat(make_float3(0.0f)),
+      m_up(make_float3(0.0f, 1.0f, 0.0f)), m_fovY(35.0f), m_aspectRatio(1.0f) {}
+
+PerspectiveCamera::PerspectiveCamera(const float3& eye, const float3& lookat,
+                                     const float3& up, float fovY,
+                                     float aspectRatio)
+    : m_eye(eye), m_lookat(lookat), m_up(up), m_fovY(fovY),
+      m_aspectRatio(aspectRatio) {}
+
+void PerspectiveCamera::setDirection(const float3& dir) {
+    m_lookat = m_eye + length(m_lookat - m_eye) * dir;
+}
+
+float3 PerspectiveCamera::direction() const {
+    return normalize(m_lookat - m_eye);
+}
 
 void PerspectiveCamera::UVWFrame(float3& U, float3& V, float3& W) const {
     W = m_lookat - m_eye;  // Do not normalize W -- it implies focal length

@@ -3,6 +3,7 @@
 #include "core/base/common.h"
 #include "editor/renderer.h"
 #include <GLFW/glfw3.h>
+#include <chrono>
 
 namespace drawlab {
 
@@ -17,7 +18,7 @@ public:
     /// @brief Start rendering
     void start();
 
-    void setRenderer(Renderer* renderer) { m_renderer = renderer; }
+    void setRenderer(Renderer* renderer) { GUI::renderer = renderer; }
 
     static int window_width;
     static int window_height;
@@ -25,16 +26,15 @@ public:
 private:
     void update();
 
-    // static void errCallback(int error, const char* description);
-    // static void keyCallback(GLFWwindow* window, int key, int scancode,
-    //                         int action, int mods);
-    // static void resizeCallback(GLFWwindow* window, int width, int height);
-    // static void cursorCallback(GLFWwindow* window, double xpos, double ypos);
-    // static void scrollCallback(GLFWwindow* window, double xoffset,
-    //                            double yoffset);
-    // static void mouseButtonCallback(GLFWwindow* window, int button, int
-    // action,
-    //                                 int mods);
+    static void errCallback(int error, const char* description);
+    static void keyCallback(GLFWwindow* window, int key, int scancode,
+                            int action, int mods);
+    static void resizeCallback(GLFWwindow* window, int width, int height);
+    static void cursorCallback(GLFWwindow* window, double xpos, double ypos);
+    static void scrollCallback(GLFWwindow* window, double xoffset,
+                               double yoffset);
+    static void mouseButtonCallback(GLFWwindow* window, int button, int action,
+                                    int mods);
 
     void scaleWindow();
 
@@ -43,10 +43,8 @@ private:
     static void endFrameImGui();
 
 private:
-    float m_scale;
-
-    Renderer* m_renderer;
-
+    static float window_scale;
+    static Renderer* renderer;
     static GLFWwindow* window;
 };
 

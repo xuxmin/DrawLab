@@ -156,10 +156,10 @@ void CPURenderer::resize(size_t w, size_t h) {}
 
 void CPURenderer::keyEvent(char key) {}
 
-void CPURenderer::cursorEvent(float x, float y, unsigned char keys) {}
+void CPURenderer::cursorEvent(float x, float y) {}
 
 void CPURenderer::scrollEvent(float offset_x, float offset_y) {}
 
-void CPURenderer::mouseButtonEvent(int button, int event) {}
+void CPURenderer::mouseButtonEvent(int button, int event, float xpos, float ypos) {}
 
 }  // namespace drawlab

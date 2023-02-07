@@ -14,9 +14,9 @@ public:
     void render();
     void resize(size_t w, size_t h);
     void keyEvent(char key);
-    void cursorEvent(float x, float y, unsigned char keys);
+    void cursorEvent(float x, float y);
     void scrollEvent(float offset_x, float offset_y);
-    void mouseButtonEvent(int button, int event);
+    void mouseButtonEvent(int button, int event, float xpos, float ypos);
 
 public:
     void renderAsync(const std::string& filename, bool gui = false,

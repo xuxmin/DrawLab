@@ -28,27 +28,20 @@
 
 #pragma once
 
-#include "optix/common/vec_math.h"
+#include <vector_types.h>
 
 namespace optix {
 
 // implementing a perspective camera
 class PerspectiveCamera {
 public:
-    PerspectiveCamera()
-        : m_eye(make_float3(1.0f)), m_lookat(make_float3(0.0f)),
-          m_up(make_float3(0.0f, 1.0f, 0.0f)), m_fovY(35.0f),
-          m_aspectRatio(1.0f) {}
+    PerspectiveCamera();
 
     PerspectiveCamera(const float3& eye, const float3& lookat, const float3& up,
-                      float fovY, float aspectRatio)
-        : m_eye(eye), m_lookat(lookat), m_up(up), m_fovY(fovY),
-          m_aspectRatio(aspectRatio) {}
+                      float fovY, float aspectRatio);
 
-    float3 direction() const { return normalize(m_lookat - m_eye); }
-    void setDirection(const float3& dir) {
-        m_lookat = m_eye + length(m_lookat - m_eye) * dir;
-    }
+    float3 direction() const;
+    void setDirection(const float3& dir);
 
     const float3& eye() const { return m_eye; }
     void setEye(const float3& val) { m_eye = val; }

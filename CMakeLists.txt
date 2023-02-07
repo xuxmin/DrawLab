@@ -41,6 +41,7 @@ include(configure_optix)
 OPTIX_add_sample_executable(drawlab
 
     src/editor/gui.cpp
+    src/editor/utils.cpp
 
     src/opengl/texture.cpp
     src/opengl/display.cpp
@@ -65,6 +66,7 @@ OPTIX_add_sample_executable(drawlab
     src/tracer/texture/texture.cpp
     src/tracer/texture/bitmap.cpp
 
+    src/tracer/backend/context.cpp
     src/tracer/backend/optix_renderer.cpp
     src/tracer/backend/cpu_renderer.cpp
     src/tracer/main.cpp

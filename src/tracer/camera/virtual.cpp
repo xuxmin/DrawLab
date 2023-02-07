@@ -23,8 +23,8 @@ public:
         float aspect = m_outputSize.x() / (float)m_outputSize.y();
 
         m_eye = propList.getVector("eye");
-        Vector3f m_lookat = propList.getVector("lookat");
-        Vector3f m_up = propList.getVector("up");
+        m_lookat = propList.getVector("lookat");
+        m_up = propList.getVector("up");
 
         m_W = m_lookat - m_eye;
 
@@ -102,11 +102,16 @@ public:
         camera.virtual_cam.U = make_float3(m_U[0], m_U[1], m_U[2]);
         camera.virtual_cam.V = make_float3(m_V[0], m_V[1], m_V[2]);
         camera.virtual_cam.W = make_float3(m_W[0], m_W[1], m_W[2]);
+        camera.virtual_cam.looat = make_float3(m_lookat[0], m_lookat[1], m_lookat[2]);
+        camera.virtual_cam.up = make_float3(m_up[0], m_up[1], m_up[2]);
+        camera.virtual_cam.fov = m_fov;
         return camera;
     }
 
 private:
     Vector3f m_eye;
+    Vector3f m_lookat;
+    Vector3f m_up;
     Vector3f m_U;
     Vector3f m_V;
     Vector3f m_W;

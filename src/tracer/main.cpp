@@ -45,6 +45,7 @@ int main(int argc, char** argv) {
             else if (backend == "optix") {
                 optix::OptixRenderer renderer(static_cast<Scene*>(root.get()));
                 renderer.renderAsync(sceneName, gui);
+                renderer.destroy();
             }
             else {
                 spdlog::critical("Fatal error: unknown backend:  {}", backend);

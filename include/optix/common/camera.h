@@ -14,6 +14,10 @@ struct Camera {
         float3 U;
         float3 V;
         float3 W;
+
+        float3 looat;
+        float3 up;
+        float fov;
     };
 
     Type type;
