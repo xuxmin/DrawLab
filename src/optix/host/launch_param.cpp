@@ -37,6 +37,11 @@ void LaunchParam::setupCamera(const Camera& camera) {
     dirty = true;
 }
 
+void LaunchParam::setupSampler(const int spp) {
+    m_params.spp = spp;
+    dirty = true;
+}
+
 void LaunchParam::updateParamsBuffer() {
     if (!dirty) {
         return;

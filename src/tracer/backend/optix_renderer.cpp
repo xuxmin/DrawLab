@@ -23,7 +23,7 @@ OptixRenderer::OptixRenderer(drawlab::Scene* scene, int device_id)
 
     spdlog::info("[OPTIX RENDERER] Step 3. Creating raygen programs ...");
     m_device_context->createRaygenProgramsAndBindSBT(
-        "optix/integrator/simple.cu", "__raygen__simple");
+        "optix/integrator/path.cu", "__raygen__path");
 
     spdlog::info("[OPTIX RENDERER] Step 4. Creating miss programs ...");
     m_device_context->createMissProgramsAndBindSBT(
@@ -82,6 +82,8 @@ void OptixRenderer::initLaunchParams() {
         lights.push_back(light);
     }
     m_launch_param->setupLights(lights);
+
+    m_launch_param->setupSampler(m_scene->getSampler()->getSampleCount());
 }
 
 void OptixRenderer::initContext() {

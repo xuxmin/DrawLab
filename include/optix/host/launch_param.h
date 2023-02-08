@@ -17,6 +17,8 @@ public:
 
     void setupCamera(const Camera& camera);
 
+    void setupSampler(const int spp);
+
     void updateParamsBuffer();
 
     void getColorData(float3* pixels) const;
