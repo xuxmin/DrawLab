@@ -4,7 +4,6 @@
 #include "optix/common/optix_params.h"
 #include "optix/common/vec_math.h"
 #include "optix/device/random.h"
-#include "optix/device/raygen.h"
 #include "optix/device/util.h"
 
 namespace optix {
