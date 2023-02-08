@@ -26,8 +26,9 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 #pragma once
-#include "optix/common/preprocessor.h"
 #include <cuda_runtime.h>
+#include "optix/common/vec_math.h"
+#include "optix/device/random.h"
 
 namespace optix {
 
@@ -54,6 +55,49 @@ struct Light {
         Point point;
         Area area;
     };
+
+    SUTIL_INLINE SUTIL_HOSTDEVICE void
+    sampleDirection(const float3& surface_pos, unsigned int seed,
+                         float3& direction, float& pdf,
+                         float3& spectrum) const {
+        if (type == Type::POINT) {
+            const float3 intensity = point.intensity;
+            const float3 light_pos = point.position;
+
+            float inv_dist = 1.0 / length(surface_pos - light_pos);
+
+            // do not normalize it!
+            direction = light_pos - surface_pos;
+            pdf = 1;
+            spectrum = intensity * inv_dist * inv_dist;
+        }
+    }
+};
+
+struct LightData {
+    Light* lights;
+    int light_num;
+
+    SUTIL_INLINE SUTIL_HOSTDEVICE void
+    sampleLightDirection(const float3& surface_pos, unsigned int seed,
+                         float3& direction, float& pdf,
+                         float3& spectrum) const {
+        if (light_num == 0) {
+            spectrum = make_float3(0.f);
+        }
+        else {
+            float light_pdf = 1.f / light_num;
+
+            // Randomly pick a light
+            int index = min((int)(rnd(seed) * light_num), light_num - 1);
+            const Light& light = lights[index];
+
+            light.sampleDirection(surface_pos, seed, direction, pdf, spectrum);
+
+            spectrum = spectrum * (float)light_num;
+            pdf = pdf * light_pdf;
+        }
+    }
 };
 
 }  // namespace optix

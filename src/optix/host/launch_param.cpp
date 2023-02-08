@@ -52,8 +52,8 @@ void LaunchParam::updateParamsBuffer() {
     m_params.color_buffer = (float3*)m_color_buffer.m_device_ptr;
 
     // light buffer
-    m_params.light_num = m_light_num;
-    m_params.lights = (Light*)m_light_buffer.m_device_ptr;
+    m_params.light_data.light_num = m_light_num;
+    m_params.light_data.lights = (Light*)m_light_buffer.m_device_ptr;
 
     // camera
     m_params.camera = m_camera;

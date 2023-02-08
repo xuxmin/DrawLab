@@ -29,7 +29,8 @@ struct Camera {
 
     SUTIL_INLINE SUTIL_HOSTDEVICE void
     sampleRay(const int width, const int height, const uint3 launch_idx,
-              float3& ray_origin, float3& ray_direction, unsigned int& seed) {
+              float3& ray_origin, float3& ray_direction,
+              unsigned int& seed) const {
         const int w = width;
         const int h = height;
 
@@ -47,7 +48,7 @@ struct Camera {
             ray_direction = normalize(d.x * U + d.y * V + W);
             ray_origin = eye;
         }
-    };
+    }
 };
 
 } // namespace optix
