@@ -4,7 +4,7 @@
 namespace optix {
 
 LaunchParam::LaunchParam(const DeviceContext& device_context)
-    : m_device_context(device_context), dirty(false) {
+    : m_device_context(device_context), dirty(false), m_frame_index(0) {
     m_params_buffer.alloc(sizeof(Params));
 }
 
@@ -46,6 +46,8 @@ void LaunchParam::updateParamsBuffer() {
     if (!dirty) {
         return;
     }
+    m_params.subframe_index = m_frame_index;
+
     // color buffer
     m_params.width = m_width;
     m_params.height = m_height;
@@ -68,6 +70,16 @@ void LaunchParam::updateParamsBuffer() {
 
 void LaunchParam::getColorData(float3* pixels) const {
     m_color_buffer.download(pixels, m_width * m_height);
+}
+
+void LaunchParam::resetFrameIndex() {
+    m_frame_index = 0;
+    dirty = true;
+}
+
+void LaunchParam::accFrameIndex() {
+    m_frame_index++;
+    dirty = true;
 }
 
 }  // namespace optix

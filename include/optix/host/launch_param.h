@@ -27,6 +27,9 @@ public:
     const int getHeight() const { return m_height; }
     const CUDABuffer& getParamsBuffer() const { return m_params_buffer; }
 
+    void resetFrameIndex();
+    void accFrameIndex();
+
 private:
     const DeviceContext& m_device_context;
 
@@ -36,6 +39,8 @@ private:
     int m_width;
     int m_height;
     CUDABuffer m_color_buffer;
+
+    int m_frame_index;
 
     int m_light_num;
     CUDABuffer m_light_buffer;
