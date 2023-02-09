@@ -31,10 +31,13 @@ OptixRenderer::OptixRenderer(drawlab::Scene* scene, int device_id)
 
     spdlog::info("[OPTIX RENDERER] Step 5. Creating optix accel ...");
     m_device_context->createAccel([&](OptixAccel* accel) {
-        for (auto mesh : m_scene->getMeshes()) {
+        const auto & meshs = m_scene->getMeshes();
+        const auto & light_idx = m_scene->getLightIdx();
+        for (int i = 0; i < meshs.size(); i++) {
             accel->addTriangleMesh(
-                mesh->getVertexPosition(), mesh->getVertexIndex(),
-                mesh->getVertexNormal(), mesh->getVertexTexCoord());
+                meshs[i]->getVertexPosition(), meshs[i]->getVertexIndex(),
+                meshs[i]->getVertexNormal(), meshs[i]->getVertexTexCoord(),
+                light_idx[i]);
         }
     });
 
@@ -122,6 +125,7 @@ void OptixRenderer::renderAsync(std::string filename, bool gui) {
         filename.erase(lastdot, std::string::npos);
 
     bitmap.savePNG(filename);
+    bitmap.saveEXR(filename);
     spdlog::info("Image rendered, and saved to {} ... done.", filename);
 }
 
@@ -131,14 +135,19 @@ void OptixRenderer::init() {
 
 void OptixRenderer::render() {
     
+    CUDA_SYNC_CHECK();
     auto t0 = std::chrono::steady_clock::now();
 
     if (context->camera_changed) {
+        context->camera_changed = false;
         m_launch_param->setupCamera(context->getOptixCamera());
+        m_launch_param->resetFrameIndex();
     }
 
+    m_launch_param->accFrameIndex();
     m_launch_param->updateParamsBuffer();
 
+    CUDA_SYNC_CHECK();
     auto t1 = std::chrono::steady_clock::now();
     context->state_update_time += t1 - t0;
     t0 = t1;
@@ -166,8 +175,19 @@ void OptixRenderer::render() {
     m_display->display(w, h, w, h, pbo);
 
     t1 = std::chrono::steady_clock::now();
+    context->display_time += t1 - t0;
     drawlab::displayStats(context->state_update_time, context->render_time,
                           context->display_time);
+
+    static char display_text[128];
+    sprintf(display_text,
+            "eye    : %5.1f %5.1f %5.1f\n"
+            "lookat : %5.1f %5.1f %5.1f\n"
+            "up     : %5.1f %5.1f %5.1f\n",
+            context->camera.eye().x, context->camera.eye().y, context->camera.eye().z,
+            context->camera.lookat().x, context->camera.lookat().y, context->camera.lookat().z,
+            context->camera.up().x, context->camera.up().y, context->camera.up().z);
+    drawlab::displayText(display_text, 10.f, 10.f);
 }
 
 void OptixRenderer::resize(size_t w, size_t h) {
@@ -175,6 +195,7 @@ void OptixRenderer::resize(size_t w, size_t h) {
     m_height = (int)h;
     m_launch_param->setupColorBuffer(m_width, m_height);
     context->camera.setAspectRatio(m_width / (float)m_height);
+    context->camera_changed = true;
 }
 
 void OptixRenderer::keyEvent(char key) {}

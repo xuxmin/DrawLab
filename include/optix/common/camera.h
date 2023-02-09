@@ -1,9 +1,9 @@
 #pragma once
-#include <cuda_runtime.h>
 #include "optix/common/vec_math.h"
+#include "optix/device/random.h"
+#include <cuda_runtime.h>
 
-
-namespace optix{
+namespace optix {
 
 struct Camera {
     enum Type {
@@ -28,13 +28,10 @@ struct Camera {
     };
 
     SUTIL_INLINE SUTIL_HOSTDEVICE void
-    sampleRay(const int width, const int height, const uint3 launch_idx,
-              float3& ray_origin, float3& ray_direction,
-              unsigned int& seed) const {
-        const int w = width;
-        const int h = height;
-
-        seed = launch_idx.y * w + launch_idx.x;
+    sampleRay(const int w, const int h, const uint3 idx, unsigned int seed,
+              float3& ray_origin, float3& ray_direction) const {
+        // The center of each pixel is at fraction (0.5,0.5)
+        const float2 subpixel_jitter = make_float2(rnd(seed), rnd(seed));
 
         if (type == Camera::VIRTUAL) {
             const float3 eye = virtual_cam.eye;
@@ -42,13 +39,17 @@ struct Camera {
             const float3 V = -virtual_cam.V;
             const float3 W = virtual_cam.W;
 
-            float2 d =
-                make_float2((float)launch_idx.x / w, (float)launch_idx.y / h);
-            d = 2.f * d - 1.f;
+            const float2 d =
+                2.0f * make_float2(
+                           (static_cast<float>(idx.x) + subpixel_jitter.x) /
+                               static_cast<float>(w),
+                           (static_cast<float>(idx.y) + subpixel_jitter.y) /
+                               static_cast<float>(h)) -
+                1.0f;
             ray_direction = normalize(d.x * U + d.y * V + W);
             ray_origin = eye;
         }
     }
 };
 
-} // namespace optix
+}  // namespace optix

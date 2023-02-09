@@ -15,7 +15,8 @@ static __forceinline__ __device__ void setPayloadOcclusion(bool occluded) {
 extern "C" __global__ void __miss__radiance() {
     RadiancePRD* prd = getPRD<RadiancePRD>();
     // set to constant white as background color
-    prd->radiance = make_float3(1.f, 0.f, 0.f);
+    prd->radiance = make_float3(0.f, 0.f, 0.f);
+    prd->done = true;
 }
 
 extern "C" __global__ void __miss__occlusion() {

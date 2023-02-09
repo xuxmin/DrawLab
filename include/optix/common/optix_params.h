@@ -5,7 +5,7 @@
 #include "optix/common/geometry_data.h"
 #include "optix/common/material_data.h"
 #include "optix/common/camera.h"
-#include "optix/common/light.h"
+#include "optix/common/light_data.h"
 
 
 namespace optix {
@@ -18,13 +18,16 @@ struct Params {
     float3* color_buffer;
     int width;
     int height;
+    int subframe_index;
+
+    // sample
+    int spp;
 
     // camera
     Camera camera;
 
     // lights
-    Light* lights;
-    int light_num;
+    LightData light_data;
 
     OptixTraversableHandle handle;
 };
@@ -36,6 +39,7 @@ struct MissData {};
 struct HitGroupData {
     GeometryData geometry_data;
     MaterialData material_data;
+    int light_idx;            // This is an area light bind to mesh
 };
 
 /**
@@ -58,13 +62,54 @@ typedef Record<RayGenData> RayGenRecord;
 typedef Record<MissData> MissRecord;
 typedef Record<HitGroupData> HitgroupRecord;
 
+
+// BSDF sample record in the prev path
+struct BSDFSampleRecord {
+    float3 fr;  // eval() / pdf() * cos(theta)
+    float eta;
+    float3 p;   // surface point position
+    float3 wo;  // sampled direction in world coordinate.
+    float pdf;
+    bool is_diffuse;
+
+    BSDFSampleRecord()
+    : fr(make_float3(1.f)), eta(1.f), pdf(0.f), is_diffuse(true) {
+        
+    }
+};
+
+enum EMeasure { EUnknownMeasure = 0, ESolidAngle, EDiscrete };
+
+struct BSDFQueryRecord {
+    /// Reference to the underlying surface interaction
+    const Intersection& its;
+    /// Incident direction (in the local frame)
+    float3 wi;
+    /// Outgoing direction (in the local frame)
+    float3 wo;
+    /// Relative refractive index in the sampled direction
+    float eta;
+    /// Measure associated with the sample
+    EMeasure measure;
+
+    BSDFQueryRecord(const Intersection& its, const float3& wi)
+        : its(its), wi(wi), eta(1.f), measure(EUnknownMeasure) {}
+
+    BSDFQueryRecord(const Intersection& its, const float3& wi, const float3& wo,
+                    EMeasure measure)
+        : its(its), wi(wi), wo(wo), eta(1.f), measure(measure) {}
+};
+
 /**
- * The payload is associated with each ray, and is passed to all 
- * the intersection, any-hit, closest-hit and miss programs that 
+ * The payload is associated with each ray, and is passed to all
+ * the intersection, any-hit, closest-hit and miss programs that
  * are executed during this invocation of trace.
-*/
+ */
 struct RadiancePRD {
-    float3       radiance;
+    float3 radiance;
+    bool done;
+    float seed;
+    BSDFSampleRecord sRec;
 };
 
 }  // namespace optix

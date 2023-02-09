@@ -29,6 +29,7 @@
 #include <cuda_runtime.h>
 #include "optix/common/vec_math.h"
 #include "optix/device/random.h"
+#include "optix/common/geometry_data.h"
 
 namespace optix {
 
@@ -56,21 +57,54 @@ struct Light {
         Area area;
     };
 
-    SUTIL_INLINE SUTIL_HOSTDEVICE void
-    sampleDirection(const float3& surface_pos, unsigned int seed,
-                         float3& direction, float& pdf,
-                         float3& spectrum) const {
+    SUTIL_INLINE SUTIL_HOSTDEVICE float3
+    sampleDirection(const Intersection& its, unsigned int seed, DirectionSampleRecord& dRec) const {
         if (type == Type::POINT) {
             const float3 intensity = point.intensity;
             const float3 light_pos = point.position;
-
-            float inv_dist = 1.0 / length(surface_pos - light_pos);
-
-            // do not normalize it!
-            direction = light_pos - surface_pos;
-            pdf = 1;
-            spectrum = intensity * inv_dist * inv_dist;
+            
+            dRec.o = its.p;
+            dRec.d = normalize(light_pos - its.p);
+            dRec.n = make_float3(0.f);
+            dRec.delta = true;
+            dRec.dist = length(light_pos - its.fp);
+            dRec.pdf = 1;
+            float inv_dist = (float)1.0 / dRec.dist;
+            return intensity * inv_dist * inv_dist;
         }
+    }
+
+    /**
+     * @brief Query the probability density of @ref sampleDirection()
+    */
+    float pdfDirection() const {
+        if (type == Type::POINT) {
+            return 0;
+        }
+        else if (type == Type::AREA) {
+            // TODO
+        }
+        return 0;
+    }
+
+    /**
+     * @brief Given a ray-surface intersection, return the emitted
+     * radiance or importance traveling along the reverse direction
+     * 
+     * @param its The intersection of ray and light.
+     * @param wi The ray direction from light to surface point
+     * @return  The emitted radiance or importance
+    */
+    SUTIL_INLINE SUTIL_HOSTDEVICE float3 eval(const Intersection& its,
+                                              float3 wi) const {
+        if (type == Type::POINT) {
+            return make_float3(0.f);
+        }
+        else if (type == Type::AREA) {
+            float cosTheta = dot(its.sn, wi);
+            return cosTheta > 0.f ? area.emission : make_float3(0.f);
+        }
+        return make_float3(0.f);
     }
 };
 
@@ -78,12 +112,11 @@ struct LightData {
     Light* lights;
     int light_num;
 
-    SUTIL_INLINE SUTIL_HOSTDEVICE void
-    sampleLightDirection(const float3& surface_pos, unsigned int seed,
-                         float3& direction, float& pdf,
-                         float3& spectrum) const {
+    SUTIL_INLINE SUTIL_HOSTDEVICE float3
+    sampleLightDirection(const Intersection& its, unsigned int seed,
+                         DirectionSampleRecord& dRec) const {
         if (light_num == 0) {
-            spectrum = make_float3(0.f);
+            return make_float3(0.f);
         }
         else {
             float light_pdf = 1.f / light_num;
@@ -92,11 +125,16 @@ struct LightData {
             int index = min((int)(rnd(seed) * light_num), light_num - 1);
             const Light& light = lights[index];
 
-            light.sampleDirection(surface_pos, seed, direction, pdf, spectrum);
+            float3 spec = light.sampleDirection(its, seed, dRec);
 
-            spectrum = spectrum * (float)light_num;
-            pdf = pdf * light_pdf;
+            spec = spec * (float)light_num;
+            dRec.pdf = dRec.pdf * light_pdf;
+            return spec;
         }
+    }
+
+    SUTIL_INLINE SUTIL_HOSTDEVICE float pdfLightDirection(int idx) const {
+        return lights[idx].pdfDirection() / light_num;
     }
 };
 

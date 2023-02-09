@@ -28,4 +28,25 @@ struct GeometryData {
     };
 };
 
+struct Intersection {
+    const GeometryData::TriangleMesh* mesh;
+    float3 sn;  // shading normal
+    float3 gn;  // geometry normal
+    float2 uv;
+    float3 p;
+    float3 bp;
+    float3 fp;
+    int light_idx;
+};
+
+struct DirectionSampleRecord {
+    float3 o;   // position
+    float3 d;   // direction
+    float3 n;   // normal in dst
+
+    float pdf;
+    float dist;
+    float delta;
+};
+
 }  // namespace optix
