@@ -1,5 +1,7 @@
 #pragma once
 
+#include "optix/common/vec_math.h"
+
 namespace optix {
 
 struct GeometryData {
@@ -40,13 +42,26 @@ struct Intersection {
 };
 
 struct DirectionSampleRecord {
-    float3 o;   // position
-    float3 d;   // direction
-    float3 n;   // normal in dst
+    const GeometryData::TriangleMesh* mesh;
+
+    float3 o;  // position
+    float3 d;  // direction
+    float3 n;  // normal in dst
 
     float pdf;
     float dist;
-    float delta;
+    bool delta;
+
+    DirectionSampleRecord() {}
+
+    DirectionSampleRecord(const float3& ori, const float3& dst, const float3 n,
+                          const GeometryData::TriangleMesh* mesh)
+        : o(ori), n(n), mesh(mesh) {
+        float3 vec = dst - ori;
+        d = normalize(vec);
+        dist = length(vec);
+        delta = false;
+    }
 };
 
 }  // namespace optix

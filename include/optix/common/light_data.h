@@ -26,10 +26,10 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 #pragma once
-#include <cuda_runtime.h>
+#include "optix/common/geometry_data.h"
 #include "optix/common/vec_math.h"
 #include "optix/device/random.h"
-#include "optix/common/geometry_data.h"
+#include <cuda_runtime.h>
 
 namespace optix {
 
@@ -58,11 +58,12 @@ struct Light {
     };
 
     SUTIL_INLINE SUTIL_HOSTDEVICE float3
-    sampleDirection(const Intersection& its, unsigned int seed, DirectionSampleRecord& dRec) const {
+    sampleDirection(const Intersection& its, unsigned int seed,
+                    DirectionSampleRecord& dRec) const {
         if (type == Type::POINT) {
             const float3 intensity = point.intensity;
             const float3 light_pos = point.position;
-            
+
             dRec.o = its.p;
             dRec.d = normalize(light_pos - its.p);
             dRec.n = make_float3(0.f);
@@ -72,12 +73,15 @@ struct Light {
             float inv_dist = (float)1.0 / dRec.dist;
             return intensity * inv_dist * inv_dist;
         }
+        else {
+            return make_float3(0.f);
+        }
     }
 
     /**
      * @brief Query the probability density of @ref sampleDirection()
-    */
-    float pdfDirection() const {
+     */
+    float pdfDirection(const DirectionSampleRecord& dRec) const {
         if (type == Type::POINT) {
             return 0;
         }
@@ -90,11 +94,11 @@ struct Light {
     /**
      * @brief Given a ray-surface intersection, return the emitted
      * radiance or importance traveling along the reverse direction
-     * 
+     *
      * @param its The intersection of ray and light.
      * @param wi The ray direction from light to surface point
      * @return  The emitted radiance or importance
-    */
+     */
     SUTIL_INLINE SUTIL_HOSTDEVICE float3 eval(const Intersection& its,
                                               float3 wi) const {
         if (type == Type::POINT) {
@@ -133,8 +137,9 @@ struct LightData {
         }
     }
 
-    SUTIL_INLINE SUTIL_HOSTDEVICE float pdfLightDirection(int idx) const {
-        return lights[idx].pdfDirection() / light_num;
+    SUTIL_INLINE SUTIL_HOSTDEVICE float
+    pdfLightDirection(int idx, const DirectionSampleRecord& dRec) const {
+        return lights[idx].pdfDirection(dRec) / light_num;
     }
 };
 

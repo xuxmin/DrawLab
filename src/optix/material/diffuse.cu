@@ -68,6 +68,7 @@ extern "C" __global__ void __closesthit__radiance() {
     const MaterialData& mat_data =
         reinterpret_cast<const MaterialData&>(rt_data->material_data);
     const float3 ray_dir = optixGetWorldRayDirection();
+    const float3 ray_ori = optixGetWorldRayOrigin();
     RadiancePRD* prd = getPRD<RadiancePRD>();
     unsigned int seed = prd->seed;
     Intersection its = getHitData();
@@ -79,7 +80,9 @@ extern "C" __global__ void __closesthit__radiance() {
         const BSDFSampleRecord& sRec = prd->sRec;
 
         float3 light_val = light.eval(its, -ray_dir);
-        float light_pdf = params.light_data.pdfLightDirection(its.light_idx);
+
+        DirectionSampleRecord dRec(ray_ori, its.p, its.sn, its.mesh);
+        float light_pdf = params.light_data.pdfLightDirection(its.light_idx, dRec);
         float bsdf_pdf = sRec.pdf;
         float mis = sRec.is_diffuse ? mis_weight(bsdf_pdf, light_pdf) : 1.f;
         
