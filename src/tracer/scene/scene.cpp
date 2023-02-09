@@ -37,7 +37,11 @@ void Scene::addChild(Object* obj) {
             m_meshes.push_back(mesh);
 
             if (mesh->isEmitter()) {
+                m_light_idx.push_back(m_emitters.size());
                 m_emitters.push_back(mesh->getEmitter());
+            }
+            else {
+                m_light_idx.push_back(-1);
             }
             break;
         }

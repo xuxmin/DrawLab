@@ -71,6 +71,7 @@ public:
 
     const std::vector<Emitter*>& getEmitters() const { return m_emitters; }
 
+    const std::vector<int>& getLightIdx() const { return m_light_idx; }
     /**
      * \brief Intersect a ray against all triangles stored in the scene
      * and return detailed intersection information
@@ -116,6 +117,7 @@ public:
 
 private:
     std::vector<Mesh*> m_meshes;
+    std::vector<int> m_light_idx;
     std::vector<Emitter*> m_emitters;
     Integrator* m_integrator = nullptr;
     Sampler* m_sampler = nullptr;

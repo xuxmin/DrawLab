@@ -13,6 +13,7 @@ private:
     std::vector<OptixBuildInput> m_build_inputs;
     uint32_t m_triangle_input_flags[1];
 
+    std::vector<int> m_light_idx;
     std::vector<CUDABuffer> m_vertex_buffers;
     std::vector<CUDABuffer> m_index_buffers;
     std::vector<CUDABuffer> m_normal_buffers;
@@ -32,7 +33,8 @@ public:
     void addTriangleMesh(const std::vector<float>& positions,
                          const std::vector<unsigned int>& indices,
                          const std::vector<float>& normals,
-                         const std::vector<float>& texcoords);
+                         const std::vector<float>& texcoords,
+                         int light_idx);
 
     ~OptixAccel();
 

@@ -27,8 +27,12 @@ OptixAccel::~OptixAccel() {
 void OptixAccel::addTriangleMesh(const std::vector<float>& positions,
                                  const std::vector<unsigned int>& indices,
                                  const std::vector<float>& normals,
-                                 const std::vector<float>& texcoords) {
+                                 const std::vector<float>& texcoords,
+                                 int light_idx) {
     size_t num = m_build_inputs.size();
+
+    m_light_idx.resize(num + 1);
+    m_light_idx[num] = light_idx;
 
     m_vertex_buffers.resize(num + 1);
     m_index_buffers.resize(num + 1);
@@ -162,6 +166,8 @@ void OptixAccel::packHitgroupRecord(optix::HitgroupRecord& rec,
     geo.triangle_mesh.normals = (float3*)m_normal_buffers[mesh_idx].devicePtr();
     geo.triangle_mesh.texcoords =
         (float2*)m_texcoord_buffers[mesh_idx].devicePtr();
+
+    rec.data.light_idx = m_light_idx[mesh_idx];
 }
 
 }  // namespace optix
