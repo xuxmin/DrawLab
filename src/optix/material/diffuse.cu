@@ -5,165 +5,136 @@
 #include "optix/common/vec_math.h"
 #include "optix/device/random.h"
 #include "optix/device/util.h"
+#include "optix/device/onb.h"
+#include "optix/device/wrap.h"
 
 
 namespace optix {
 
-/**
- * Launch-varying parameters.
- *
- * This params can be accessible from any module in a pipeline.
- * - declare with extern "C" and __constant__
- * - set in OptixPipelineCompileOptions
- * - filled in by optix upon optixLaunch
- */
 extern "C" __constant__ Params params;
 
+#define SFD static __forceinline__ __device__
 
-static __forceinline__ __device__ void setPayloadOcclusion(bool occluded) {
-    optixSetPayload_0(static_cast<unsigned int>(occluded));
+// Evaluate the BRDF model
+SFD float3 eval(const MaterialData& mat_data, const BSDFQueryRecord& bRec) {
+    float3 bsdf_val;
+    if (bRec.wi.z <= 0 || bRec.wo.z <= 0) {
+        bsdf_val = make_float3(0.f);
+    }
+
+    float4 albedo = mat_data.diffuse.albedo;
+    if (mat_data.diffuse.albedo_tex) {
+        albedo = tex2D<float4>(mat_data.diffuse.albedo_tex, bRec.its.uv.x, bRec.its.uv.y);
+    }
+    bsdf_val = make_float3(albedo) * M_1_PIf;
+    return bsdf_val;
 }
 
-static __forceinline__ __device__ bool
-traceOcclusion(OptixTraversableHandle handle, float3 ray_origin,
-               float3 ray_direction, float tmin, float tmax) {
-    unsigned int occluded = 0u;
-    optixTrace(handle, ray_origin, ray_direction, tmin, tmax,
-               0.0f,  // rayTime
-               OptixVisibilityMask(255), OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT,
-               RAY_TYPE_OCCLUSION,  // SBT offset
-               RAY_TYPE_COUNT,      // SBT stride
-               RAY_TYPE_OCCLUSION,  // missSBTIndex
-               occluded);
-    return occluded;
+SFD float pdf(const MaterialData& mat_data, const BSDFQueryRecord& bRec) {
+    if (bRec.wi.z <= 0 || bRec.wo.z <= 0) {
+        return 0.f;
+    }
+    // Note that wo is in local coordinates, so cosTheta(wo)
+    // actually just wo.z
+    return M_1_PIf * bRec.wo.z;
 }
 
-//---------------------------------------------------------------------
-// These program types are specified by prefixing the program’s name with the
-// following
-//  Ray generation          __raygen__
-//  Intersection            __intersection__
-//  Any-hit                 __anyhit__
-//  Closest-hit             __closesthit__
-//  Miss                    __miss__
-//  Direct callable         __direct_callable__
-//  Continuation callable   __continuation_callable__
-//  Exception               __exception__
-//
-// Each program may call a specific set of device-side intrinsics that
-// implement the actual ray-tracing-specific features
-//---------------------------------------------------------------------
+SFD float3 sample(const MaterialData& mat_data, unsigned int seed, BSDFQueryRecord& bRec) {
+    if (bRec.wi.z <= 0) {
+        return make_float3(0.f);
+    }
 
-//------------------------------------------------------------------------------
-// closest hit and anyhit programs for radiance-type rays.
-//
-// Note eventually we will have to create one pair of those for each
-// ray type and each geometry type we want to render; but this
-// simple example doesn't use any actual geometries yet, so we only
-// create a single, dummy, set of them (we do have to have at least
-// one group of them to set up the SBT)
-//------------------------------------------------------------------------------
+    const float z1 = rnd(seed);
+    const float z2 = rnd(seed);
+    bRec.wo = Wrap::squareToCosineHemisphere(make_float2(z1, z2));
+
+    bRec.eta = 1.f;
+
+    // Return eval() / pdf() * cos(theta) = albedo.
+    float4 albedo = mat_data.diffuse.albedo;
+    if (mat_data.diffuse.albedo_tex) {
+        albedo = tex2D<float4>(mat_data.diffuse.albedo_tex, bRec.its.uv.x, bRec.its.uv.y);
+    }
+    return make_float3(albedo.x, albedo.y, albedo.z);
+}
 
 extern "C" __global__ void __closesthit__occlusion() {
     setPayloadOcclusion(true);
 }
 
 extern "C" __global__ void __closesthit__radiance() {
+
     const HitGroupData* rt_data = (HitGroupData*)optixGetSbtDataPointer();
-    const GeometryData::TriangleMesh& mesh_data =
-        reinterpret_cast<const GeometryData::TriangleMesh&>(
-            rt_data->geometry_data.triangle_mesh);
     const MaterialData& mat_data =
         reinterpret_cast<const MaterialData&>(rt_data->material_data);
-
-    // ------------------------------------------------------------------
-    // gather some basic hit information
-    // ------------------------------------------------------------------
-    const int prim_idx = optixGetPrimitiveIndex();
-    const int3 index = mesh_data.indices[prim_idx];
     const float3 ray_dir = optixGetWorldRayDirection();
-    const float u = optixGetTriangleBarycentrics().x;
-    const float v = optixGetTriangleBarycentrics().y;
+    RadiancePRD* prd = getPRD<RadiancePRD>();
+    unsigned int seed = prd->seed;
+    Intersection its = getHitData();
 
-    // ------------------------------------------------------------------
-    // compute normal, using either shading normal (if avail), or
-    // geometry normal (fallback)
-    // ------------------------------------------------------------------
+    float3 radiance = make_float3(0.f);
 
-    const float3 v0 = mesh_data.positions[index.x];
-    const float3 v1 = mesh_data.positions[index.y];
-    const float3 v2 = mesh_data.positions[index.z];
-    float3 geometry_normal = normalize(cross(v1 - v0, v2 - v0));
-    float3 shading_normal = geometry_normal;
+    if (its.light_idx >= 0) {
+        const Light& light = params.light_data.lights[its.light_idx];
+        const BSDFSampleRecord& sRec = prd->sRec;
 
-    if (mesh_data.normals) {
-        shading_normal = (1.f - u - v) * mesh_data.normals[index.x] +
-                         u * mesh_data.normals[index.y] +
-                         v * mesh_data.normals[index.z];
+        float3 light_val = light.eval(its, -ray_dir);
+        float light_pdf = params.light_data.pdfLightDirection(its.light_idx);
+        float bsdf_pdf = sRec.pdf;
+        float mis = sRec.is_diffuse ? mis_weight(bsdf_pdf, light_pdf) : 1.f;
+        
+        radiance += mis * light_val;
     }
 
-    // ------------------------------------------------------------------
-    // face-forward and normalize normals
-    // ------------------------------------------------------------------
-    geometry_normal = faceforward(geometry_normal, -ray_dir, geometry_normal);
-    if (dot(geometry_normal, shading_normal) < 0.f)
-        shading_normal -=
-            2.f * dot(geometry_normal, shading_normal) * geometry_normal;
-    shading_normal = normalize(shading_normal);
+    // --------------------- Emitter sampling ---------------------
+    DirectionSampleRecord dRec;
+    float3 light_val = params.light_data.sampleLightDirection(its, seed, dRec);
 
-    // ------------------------------------------------------------------
-    // compute diffuse material color, including diffuse texture, if
-    // available
-    // ------------------------------------------------------------------
-    float4 diffuseColor = mat_data.diffuse.albedo;
-    if (mat_data.diffuse.albedo_tex) {
-        const float2 tc = (1.f - u - v) * mesh_data.texcoords[index.x] +
-                          u * mesh_data.texcoords[index.y] +
-                          v * mesh_data.texcoords[index.z];
-
-        float4 fromTexture =
-            tex2D<float4>(mat_data.diffuse.albedo_tex, tc.x, tc.y);
-        diffuseColor *= fromTexture;
-    }
-
-    // ------------------------------------------------------------------
-    // compute shadow
-    // ------------------------------------------------------------------
-    const float3 surfPos = (1.f - u - v) * v0 + u * v1 + v * v2;
-
-    const float3 lightPos = params.lights[0].point.position;
-    const float3 lightDir = lightPos - surfPos;
-    const float4 lightColor = make_float4(params.lights[0].point.intensity) / 100.f;
-    const float Ldist = length(lightPos - surfPos);
-
-    // trace shadow ray:
+    // Trace occlusion
     const bool occluded = traceOcclusion(
-        params.handle, surfPos + 1e-3f * geometry_normal, lightDir,
-        0.01f,         // tmin
-        Ldist - 0.01f  // tmax
+        params.handle, its.p + 1e-3f * its.gn, dRec.d,
+        0.01f,                      // tmin
+        dRec.dist - 0.01f   // tmax
     );
 
-    // ------------------------------------------------------------------
-    // perform some simple "NdotD" shading
-    // ------------------------------------------------------------------
+    Onb onb(its.sn);
+    const float3 wi = onb.transform(-ray_dir);
+    const float3 wo = onb.transform(dRec.d);
+    BSDFQueryRecord bRec(its, wi, wo, ESolidAngle);
+    if (!occluded && dRec.pdf > 0) {
 
-    const float cosDN = 0.2f + .8f * fabsf(dot(ray_dir, shading_normal));
-    RadiancePRD* prd = getPRD<RadiancePRD>();
+        float3 bsdf_val = eval(mat_data, bRec);
 
-    if (occluded) {
-        prd->radiance = make_float3(0.f);
+        // Determine density of sampling that same direction using BSDF
+        // sampling
+        float bsdf_pdf = pdf(mat_data, bRec);
+        float light_pdf = dRec.pdf;
+        float weight = dRec.delta ? 1 : mis_weight(light_pdf, bsdf_pdf);
+
+        radiance += weight * bsdf_val * light_val;
     }
-    else {
-        prd->radiance = make_float3(cosDN * diffuseColor * lightColor);
-    }
+
+    // ----------------------- BSDF sampling ----------------------
+    BSDFQueryRecord bsdf_bRec(its, wi);
+    float3 fr = sample(mat_data, seed, bsdf_bRec);
+
+    // Record throughput, eta
+    prd->sRec.fr = fr;
+    prd->sRec.eta = bsdf_bRec.eta;
+
+    // BSDF sampled ray direction, also be used as the next path
+    // direction
+    prd->sRec.p = its.p;
+    prd->sRec.wo = onb.transform(bsdf_bRec.wo);
+    prd->sRec.pdf = pdf(mat_data, bsdf_bRec);
+
+    prd->sRec.is_diffuse = true;
+
+    prd->radiance = radiance;
 }
 
-extern "C" __global__ void
-__anyhit__radiance() { /*! for this simple example, this will remain empty */
-}
+extern "C" __global__ void __anyhit__radiance() {}
 
-extern "C" __global__ void
-__anyhit__occlusion() { /*! for this simple example, this will remain empty */
-}
+extern "C" __global__ void __anyhit__occlusion() {}
 
 }  // namespace optix

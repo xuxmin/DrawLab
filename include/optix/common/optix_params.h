@@ -73,7 +73,7 @@ struct BSDFSampleRecord {
     bool is_diffuse;
 
     BSDFSampleRecord()
-    : fr(make_float3(1.f)), eta(1.f), pdf(0.f), is_diffuse(true) {
+    : fr(make_float3(1.f)), eta(1.f), pdf(0.f), is_diffuse(false) {
         
     }
 };

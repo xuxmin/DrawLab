@@ -8,10 +8,6 @@
 
 namespace optix {
 
-static __forceinline__ __device__ void setPayloadOcclusion(bool occluded) {
-    optixSetPayload_0(static_cast<unsigned int>(occluded));
-}
-
 extern "C" __global__ void __miss__radiance() {
     RadiancePRD* prd = getPRD<RadiancePRD>();
     // set to constant white as background color

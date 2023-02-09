@@ -29,6 +29,25 @@ template <typename T> static __forceinline__ __device__ T* getPRD() {
     return reinterpret_cast<T*>(unpackPointer(u0, u1));
 }
 
+
+static __forceinline__ __device__ void setPayloadOcclusion(bool occluded) {
+    optixSetPayload_0(static_cast<unsigned int>(occluded));
+}
+
+static __forceinline__ __device__ bool
+traceOcclusion(OptixTraversableHandle handle, float3 ray_origin,
+               float3 ray_direction, float tmin, float tmax) {
+    unsigned int occluded = 0u;
+    optixTrace(handle, ray_origin, ray_direction, tmin, tmax,
+               0.0f,  // rayTime
+               OptixVisibilityMask(255), OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT,
+               RAY_TYPE_OCCLUSION,  // SBT offset
+               RAY_TYPE_COUNT,      // SBT stride
+               RAY_TYPE_OCCLUSION,  // missSBTIndex
+               occluded);
+    return occluded;
+}
+
 static __forceinline__ __device__ float mis_weight(float pdf_a, float pdf_b) {
     pdf_a *= pdf_a;
     pdf_b *= pdf_b;
