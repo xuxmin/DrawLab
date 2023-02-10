@@ -18,6 +18,12 @@ struct Wrap {
         float z = sqrtf(1 - p.x * p.x - p.y * p.y);
         return make_float3(p.x, p.y, z);
     }
+
+    static __forceinline__ __device__ float3
+    squareToUniformTriangle(const float2& sample) {
+        float t = sqrtf(1 - sample.x);
+        return make_float3(1 - t, t * sample.y, t - t * sample.y);
+    }
 };
 
 }  // namespace optix

@@ -56,7 +56,8 @@ public:
     }
 
     void getOptixLight(optix::Light& light) const {
-        throw Exception("Not implement yet.");
+        light.type = optix::Light::Type::AREA;
+        light.area.intensity = make_float3(m_radiance[0], m_radiance[1], m_radiance[2]);
     }
 
 private:

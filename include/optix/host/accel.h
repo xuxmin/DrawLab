@@ -3,6 +3,7 @@
 #include "optix/common/optix_params.h"
 #include "optix/host/cuda_buffer.h"
 #include <vector>
+#include <map>
 
 namespace optix {
 
@@ -13,7 +14,9 @@ private:
     std::vector<OptixBuildInput> m_build_inputs;
     uint32_t m_triangle_input_flags[1];
 
+    std::vector<float> m_pdf;
     std::vector<int> m_light_idx;
+    std::map<int, int> m_emitted_mesh;    // light_idx -> mesh_idx
     std::vector<CUDABuffer> m_vertex_buffers;
     std::vector<CUDABuffer> m_index_buffers;
     std::vector<CUDABuffer> m_normal_buffers;
@@ -34,13 +37,15 @@ public:
                          const std::vector<unsigned int>& indices,
                          const std::vector<float>& normals,
                          const std::vector<float>& texcoords,
-                         int light_idx);
+                         int light_idx, float pdf);
 
     ~OptixAccel();
 
     OptixTraversableHandle build();
 
     void packHitgroupRecord(HitgroupRecord& record, int mesh_idx) const;
+
+    void packEmittedMesh(std::vector<Light>& lights) const;
 };
 
 }  // namespace optix

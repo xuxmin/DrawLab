@@ -37,7 +37,7 @@ OptixRenderer::OptixRenderer(drawlab::Scene* scene, int device_id)
             accel->addTriangleMesh(
                 meshs[i]->getVertexPosition(), meshs[i]->getVertexIndex(),
                 meshs[i]->getVertexNormal(), meshs[i]->getVertexTexCoord(),
-                light_idx[i]);
+                light_idx[i], meshs[i]->pdfPosition());
         }
     });
 
@@ -84,6 +84,7 @@ void OptixRenderer::initLaunchParams() {
         emitter->getOptixLight(light);
         lights.push_back(light);
     }
+    m_device_context->getAccel()->packEmittedMesh(lights);
     m_launch_param->setupLights(lights);
 
     m_launch_param->setupSampler(m_scene->getSampler()->getSampleCount());

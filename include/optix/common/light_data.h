@@ -44,10 +44,8 @@ struct Light {
     };
 
     struct Area {
-        float3 corner;
-        float3 v1, v2;
-        float3 normal;
-        float3 emission;
+        GeometryData::TriangleMesh triangle_mesh;
+        float3 intensity;
     };
 
     Type type;
@@ -74,7 +72,25 @@ struct Light {
             return intensity * inv_dist * inv_dist;
         }
         else {
-            return make_float3(0.f);
+            float3 position, normal;
+            area.triangle_mesh.samplePosition(seed, position, normal);
+
+            float3 vec = position - its.p;
+            dRec.o = its.p;
+            dRec.d = normalize(vec);
+            dRec.dist = length(vec);
+            dRec.delta = false;
+            dRec.n = normal;
+            dRec.mesh = nullptr;
+
+            float pA = area.triangle_mesh.pdfPosition();
+            float dp = fmaxf(dot(normal, -dRec.d), 0.f);
+            float pw = dp != 0 ? pA * dRec.dist * dRec.dist / dp : 0;
+            dRec.pdf = pw;
+
+            return pw != 0 ?
+                       area.intensity * fmaxf(dot(its.sn, dRec.d), 0.f) / pw :
+                       make_float3(0.f);
         }
     }
 
@@ -86,7 +102,10 @@ struct Light {
             return 0;
         }
         else if (type == Type::AREA) {
-            // TODO
+            float pA = area.triangle_mesh.pdfPosition();
+            float dp = fmaxf(dot(dRec.n, -dRec.d), 0.f);
+            float pw = dp != 0 ? pA * dRec.dist * dRec.dist / dp : 0;
+            return pw;
         }
         return 0;
     }
@@ -106,7 +125,7 @@ struct Light {
         }
         else if (type == Type::AREA) {
             float cosTheta = dot(its.sn, wi);
-            return cosTheta > 0.f ? area.emission : make_float3(0.f);
+            return cosTheta > 0.f ? area.intensity : make_float3(0.f);
         }
         return make_float3(0.f);
     }

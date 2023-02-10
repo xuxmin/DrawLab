@@ -67,7 +67,7 @@ public:
 
     const OptixPipeline getPipeline() const { return m_pipeline; }
 
-    OptixShaderBindingTable& getSBT() { return m_sbt; }
+    const OptixAccel* getAccel() {return m_accel; }
 
     const OptixTraversableHandle& getHandle() const {return m_as_handle; }
 

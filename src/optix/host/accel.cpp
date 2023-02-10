@@ -1,10 +1,11 @@
 #include "optix/host/accel.h"
+#include <spdlog/spdlog.h>
 
 namespace optix {
 
 OptixAccel::OptixAccel(const OptixDeviceContext& device_context)
     : m_device_context(device_context) {
-    m_triangle_input_flags[0] = OPTIX_GEOMETRY_FLAG_NONE;
+    m_triangle_input_flags[0] = OPTIX_GEOMETRY_FLAG_DISABLE_ANYHIT;
 }
 
 OptixAccel::~OptixAccel() {
@@ -28,11 +29,17 @@ void OptixAccel::addTriangleMesh(const std::vector<float>& positions,
                                  const std::vector<unsigned int>& indices,
                                  const std::vector<float>& normals,
                                  const std::vector<float>& texcoords,
-                                 int light_idx) {
+                                 int light_idx, float pdf) {
     size_t num = m_build_inputs.size();
 
     m_light_idx.resize(num + 1);
     m_light_idx[num] = light_idx;
+    if (light_idx >= 0) {
+        m_emitted_mesh[light_idx] = num;
+    }
+
+    m_pdf.resize(num + 1);
+    m_pdf[num] = pdf;
 
     m_vertex_buffers.resize(num + 1);
     m_index_buffers.resize(num + 1);
@@ -46,6 +53,15 @@ void OptixAccel::addTriangleMesh(const std::vector<float>& positions,
     CUDABuffer& index_buffer = m_index_buffers[num];
     CUDABuffer& normal_buffer = m_normal_buffers[num];
     CUDABuffer& texcoord_buffer = m_texcoord_buffers[num];
+
+    // pad positions
+    // std::vector<float> pad_positions(positions.size() / 3 * 4);
+    // for (int i = 0; i < positions.size() / 3; i++) {
+    //     pad_positions[i * 4] = positions[i * 3];
+    //     pad_positions[i * 4 + 1] = positions[i * 3 + 1];
+    //     pad_positions[i * 4 + 2] = positions[i * 3 + 2];
+    //     pad_positions[i * 4 + 3] = 0;
+    // }
 
     vertex_buffer.allocAndUpload(positions);
     index_buffer.allocAndUpload(indices);
@@ -166,8 +182,26 @@ void OptixAccel::packHitgroupRecord(optix::HitgroupRecord& rec,
     geo.triangle_mesh.normals = (float3*)m_normal_buffers[mesh_idx].devicePtr();
     geo.triangle_mesh.texcoords =
         (float2*)m_texcoord_buffers[mesh_idx].devicePtr();
-
+    geo.triangle_mesh.face_num = m_index_buffers[mesh_idx].m_size_in_bytes / sizeof(int3);
+    geo.triangle_mesh.pdf = m_pdf[mesh_idx];
     rec.data.light_idx = m_light_idx[mesh_idx];
+}
+
+void OptixAccel::packEmittedMesh(std::vector<Light>& lights) const {
+
+    for (auto em : m_emitted_mesh) {
+        const int light_idx = em.first;
+        const int mesh_idx = em.second;
+        if (lights[light_idx].type != Light::Type::AREA) {
+            throw Exception("Error in packEmittedMesh");
+        }
+        lights[light_idx].area.triangle_mesh.positions = (float3*)m_vertex_buffers[mesh_idx].devicePtr();
+        lights[light_idx].area.triangle_mesh.indices = (int3*)m_index_buffers[mesh_idx].devicePtr();
+        lights[light_idx].area.triangle_mesh.normals = (float3*)m_normal_buffers[mesh_idx].devicePtr();
+        lights[light_idx].area.triangle_mesh.texcoords = (float2*)m_texcoord_buffers[mesh_idx].devicePtr();
+        lights[light_idx].area.triangle_mesh.face_num = m_index_buffers[mesh_idx].m_size_in_bytes / sizeof(int3);
+        lights[light_idx].area.triangle_mesh.pdf = m_pdf[mesh_idx];
+    }
 }
 
 }  // namespace optix
