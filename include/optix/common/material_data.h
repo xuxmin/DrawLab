@@ -5,7 +5,7 @@
 namespace optix {
 
 struct MaterialData {
-    enum Type { DIFFUSE = 0 };
+    enum Type { DIFFUSE = 0, MICROFACET, MIRROR};
 
     struct Diffuse {
         float4 albedo;
@@ -14,10 +14,19 @@ struct MaterialData {
         cudaTextureObject_t albedo_tex;
     };
 
+    struct Microfacet {
+        float alpha;
+        float intIOR;
+        float extIOR;
+        float ks;
+        float3 kd;
+    };
+
     Type type;
 
     union {
         Diffuse diffuse;
+        Microfacet microfacet;
     };
 };
 

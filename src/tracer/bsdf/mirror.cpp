@@ -1,5 +1,6 @@
 #include "core/math/frame.h"
 #include "tracer/bsdf.h"
+#include "optix/material/mirror.h"
 
 namespace drawlab {
 
@@ -35,11 +36,11 @@ public:
     std::string toString() const { return "Mirror[]"; }
 
     const optix::Material* createOptixMaterial(optix::DeviceContext& context) const {
-        return nullptr;
+        return new optix::Mirror("Mirror", context);
     }
 
     std::string getMaterialId() const {
-        return "";
+        return "Mirror";
     }
 };
 
