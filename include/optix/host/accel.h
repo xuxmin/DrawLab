@@ -2,28 +2,39 @@
 
 #include "optix/common/optix_params.h"
 #include "optix/host/cuda_buffer.h"
-#include <vector>
 #include <map>
+#include <vector>
 
 namespace optix {
 
 class OptixAccel {
+public:
+    struct TriangleMesh {
+        const std::vector<float>& positions;
+        const std::vector<unsigned int>& indices;
+        const std::vector<float>& normals;
+        const std::vector<float>& texcoords;
+        const int light_idx;
+        const float pdf;
+
+        TriangleMesh(const std::vector<float>& positions,
+                     const std::vector<unsigned int>& indices,
+                     const std::vector<float>& normals,
+                     const std::vector<float>& texcoords, const int light_idx,
+                     const float pdf)
+            : positions(positions), indices(indices), normals(normals),
+              texcoords(texcoords), pdf(pdf), light_idx(light_idx) {}
+    };
+
 private:
     const OptixDeviceContext& m_device_context;
+    std::vector<TriangleMesh> m_meshs;
 
-    std::vector<OptixBuildInput> m_build_inputs;
-    uint32_t m_triangle_input_flags[1];
-
-    std::vector<float> m_pdf;
-    std::vector<int> m_light_idx;
-    std::map<int, int> m_emitted_mesh;    // light_idx -> mesh_idx
+    std::map<int, int> m_emitted_mesh;  // light_idx -> mesh_idx
     std::vector<CUDABuffer> m_vertex_buffers;
     std::vector<CUDABuffer> m_index_buffers;
     std::vector<CUDABuffer> m_normal_buffers;
     std::vector<CUDABuffer> m_texcoord_buffers;
-
-    std::vector<CUdeviceptr> d_vertices;
-    std::vector<CUdeviceptr> d_indices;
 
     //! buffer that keeps the (final, compacted) accel structure
     optix::CUDABuffer m_as_buffer;
@@ -36,8 +47,8 @@ public:
     void addTriangleMesh(const std::vector<float>& positions,
                          const std::vector<unsigned int>& indices,
                          const std::vector<float>& normals,
-                         const std::vector<float>& texcoords,
-                         int light_idx, float pdf);
+                         const std::vector<float>& texcoords, int light_idx,
+                         float pdf);
 
     ~OptixAccel();
 
