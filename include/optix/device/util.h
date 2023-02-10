@@ -34,6 +34,18 @@ static __forceinline__ __device__ void setPayloadOcclusion(bool occluded) {
     optixSetPayload_0(static_cast<unsigned int>(occluded));
 }
 
+static __forceinline__ __device__ bool invalid_color(float3 color) {
+    return isnan(color.x) || isnan(color.y) || isnan(color.z);
+}
+
+static __forceinline__ __device__ bool LOG(float3 color) {
+    printf("%lf %lf %lf\n", color.x, color.y, color.z);
+}
+
+static __forceinline__ __device__ bool LOG(float var) {
+    printf("%lf\n", var);
+}
+
 static __forceinline__ __device__ bool
 traceOcclusion(OptixTraversableHandle handle, float3 ray_origin,
                float3 ray_direction, float tmin, float tmax) {

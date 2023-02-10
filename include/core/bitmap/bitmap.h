@@ -39,6 +39,9 @@ public:
     /// Simply resize image
     void resize(int new_height, int new_width);
 
+    // Test any invalid pixel
+    void colorNan(Color3f invalid_color);
+
 private:
     int m_width;
     int m_height;

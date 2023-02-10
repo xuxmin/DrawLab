@@ -234,4 +234,15 @@ void Bitmap::resize(int new_height, int new_width) {
     m_width = new_width;
 }
 
+void Bitmap::colorNan(Color3f invalid_color) {
+    for (int i = 0; i < m_height; i++) {
+        for (int j = 0; j < m_width; j++) {
+            if (!getPixel(i, j).isValid()) {
+                setPixel(i, j, invalid_color);
+                spdlog::warn("There is invalid pixel ({}, {}) in the bitmap!", j, i);
+            }
+        }
+    }
+}
+
 }  // namespace drawlab

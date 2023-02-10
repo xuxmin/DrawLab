@@ -86,6 +86,10 @@ extern "C" __global__ void __raygen__path() {
         accum_color = lerp(accum_color_prev, accum_color, a);
     }
 
+    if (invalid_color(accum_color)) {
+        printf("Invalid pixel found! idx: (%d, %d), frame_idx {%d}\n", idx.x, idx.y, subframe_index);
+    }
+
     params.color_buffer[image_index] = accum_color;
 }
 }  // namespace optix

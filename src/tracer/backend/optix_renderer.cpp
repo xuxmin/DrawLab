@@ -125,6 +125,7 @@ void OptixRenderer::renderAsync(std::string filename, bool gui) {
     if (lastdot != std::string::npos)
         filename.erase(lastdot, std::string::npos);
 
+    bitmap.colorNan(drawlab::Color3f(10.f, 0.f, 0.f));
     bitmap.savePNG(filename);
     bitmap.saveEXR(filename);
     spdlog::info("Image rendered, and saved to {} ... done.", filename);

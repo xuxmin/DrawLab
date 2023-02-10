@@ -134,6 +134,10 @@ extern "C" __global__ void __closesthit__radiance() {
     prd->sRec.is_diffuse = true;
 
     prd->radiance = radiance;
+
+    if (prd->sRec.pdf <= 0.f || fmaxf(prd->sRec.fr) <= 0.f) {
+        prd->done = true;
+    }
 }
 
 extern "C" __global__ void __anyhit__radiance() {}
