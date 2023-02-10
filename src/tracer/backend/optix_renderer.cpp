@@ -96,7 +96,7 @@ void OptixRenderer::initContext() {
     const drawlab::Camera* camera = m_scene->getCamera();
     drawlab::Vector2i outputSize = camera->getOutputSize();
     m_width = outputSize[0], m_height = outputSize[1];
-    float aspect = m_width / m_height;
+    float aspect = (float)m_width / m_height;
 
     context->initCameraState(camera->getOptixCamera(), aspect);
 }
