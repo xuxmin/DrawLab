@@ -105,7 +105,7 @@ extern "C" __global__ void __closesthit__radiance() {
     // BSDF sampled ray direction, also be used as the next path
     // direction
     prd->sRec.p = its.p;
-    prd->sRec.wo = onb.transform(bsdf_bRec.wo);
+    prd->sRec.wo = onb.inverse_transform(bsdf_bRec.wo);
     prd->sRec.pdf = pdf(mat_data, bsdf_bRec);
 
     prd->sRec.is_diffuse = false;       // HERE!!!!!!!!!!!!!!!!!!!!
