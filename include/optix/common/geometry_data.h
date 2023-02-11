@@ -55,7 +55,7 @@ struct GeometryData {
 
             float3 bary = Wrap::squareToUniformTriangle(
                 make_float2(rnd(seed), rnd(seed)));
-            position = bary.x * p0 + bary * p1 + bary * p2;
+            position = bary.x * p0 + bary.y * p1 + bary.z * p2;
 
             if (normals) {
                 const float3& n0 = normals[index.x];
