@@ -1,3 +1,4 @@
+#include "optix/material/dielectric.h"
 #include "core/base/common.h"
 #include "core/math/frame.h"
 #include "tracer/bsdf.h"
@@ -65,11 +66,11 @@ public:
     }
 
     const optix::Material* createOptixMaterial(optix::DeviceContext& context) const {
-        return nullptr;
+        return new optix::Dielectric("dielectric", context, m_intIOR, m_extIOR);
     }
 
     std::string getMaterialId() const {
-        return "";
+        return "Dielectric";
     }
 
 private:

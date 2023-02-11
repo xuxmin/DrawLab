@@ -5,7 +5,7 @@
 namespace optix {
 
 struct MaterialData {
-    enum Type { DIFFUSE = 0, MICROFACET, MIRROR};
+    enum Type { DIFFUSE = 0, MICROFACET, MIRROR, DIELECTRIC};
 
     struct Diffuse {
         float4 albedo;
@@ -22,11 +22,17 @@ struct MaterialData {
         float3 kd;
     };
 
+    struct Dielectric {
+        float intIOR;
+        float extIOR;
+    };
+
     Type type;
 
     union {
         Diffuse diffuse;
         Microfacet microfacet;
+        Dielectric dielectric;
     };
 };
 
