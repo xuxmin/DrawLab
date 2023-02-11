@@ -72,15 +72,13 @@ extern "C" __global__ void __raygen__path() {
 
             ray_origin = prd.sRec.p;
             ray_direction = prd.sRec.wo;
-
-            ++depth;
         }
     } while (--i);
 
     const unsigned int image_index = idx.x + idx.y * params.width;
     float3 accum_color = result / static_cast<float>(params.spp);
 
-    if (subframe_index > 0) {
+    if (subframe_index > 1) {
         const float a = 1.0f / static_cast<float>(subframe_index + 1);
         const float3 accum_color_prev = params.color_buffer[image_index];
         accum_color = lerp(accum_color_prev, accum_color, a);
