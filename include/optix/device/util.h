@@ -38,12 +38,20 @@ static __forceinline__ __device__ bool invalid_color(float3 color) {
     return isnan(color.x) || isnan(color.y) || isnan(color.z);
 }
 
-static __forceinline__ __device__ bool LOG(float3 color) {
+static __forceinline__ __device__ void LOG(float3 color) {
     printf("%lf %lf %lf\n", color.x, color.y, color.z);
 }
 
-static __forceinline__ __device__ bool LOG(float var) {
+static __forceinline__ __device__ void LOG(float var) {
     printf("%lf\n", var);
+}
+
+static __forceinline__ __device__ void LOG(const char* msg, int var) {
+    printf("%s %d\n ", msg, var);
+}
+
+static __forceinline__ __device__ void LOG(const char* msg, float3 var) {
+    printf("%s %lf %lf %lf\n ", msg, var.x, var.y, var.z);
 }
 
 static __forceinline__ __device__ bool
@@ -100,9 +108,9 @@ static __forceinline__ __device__ Intersection getHitData() {
     }
 
     // face-forward and normalize normals
-    gN = faceforward(gN, -ray_dir, gN);
-    if (dot(gN, sN) < 0.f)
-        sN -= 2.f * dot(gN, sN) * gN;
+    // gN = faceforward(gN, -ray_dir, gN);
+    // if (dot(gN, sN) < 0.f)
+    //     sN -= 2.f * dot(gN, sN) * gN;
     sN = normalize(sN);
 
     // ------------------------------------------------------------------
@@ -130,6 +138,50 @@ static __forceinline__ __device__ Intersection getHitData() {
     its.fp = fp;    // front hit point;
     its.light_idx = rt_data->light_idx;
     return its;
+}
+
+static __forceinline__ __device__ float fresnel(float cosThetaI, float extIOR,
+                                                float intIOR) {
+    float etaI = extIOR, etaT = intIOR;
+
+    if (extIOR == intIOR)
+        return 0.0f;
+
+    /* Swap the indices of refraction if the interaction starts
+       at the inside of the object */
+    if (cosThetaI < 0.0f) {
+        float t = etaI;
+        etaI = etaT;
+        etaT = t;
+        cosThetaI = -cosThetaI;
+    }
+
+    /* Using Snell's law, calculate the squared sine of the
+       angle between the normal and the transmitted ray */
+    float eta = etaI / etaT,
+          sinThetaTSqr = eta * eta * (1 - cosThetaI * cosThetaI);
+
+    if (sinThetaTSqr > 1.0f)
+        return 1.0f; /* Total internal reflection! */
+
+    float cosThetaT = sqrtf(1.0f - sinThetaTSqr);
+
+    float Rs = (etaI * cosThetaI - etaT * cosThetaT) /
+               (etaI * cosThetaI + etaT * cosThetaT);
+    float Rp = (etaT * cosThetaI - etaI * cosThetaT) /
+               (etaT * cosThetaI + etaI * cosThetaT);
+
+    return (Rs * Rs + Rp * Rp) / 2.0f;
+}
+
+static __forceinline__ __device__ float3 refract(const float3& wi, float eta) {
+    float cosThetaI = wi.z;
+    bool outside = cosThetaI > 0.f;
+    eta = outside ? eta : 1 / eta;
+    float cosThetaTSquare = 1 - eta * eta * (1 - cosThetaI * cosThetaI);
+    float cosThetaT = sqrtf(cosThetaTSquare);
+    cosThetaT = outside ? -cosThetaT : cosThetaT;
+    return make_float3(-eta * wi.x, -eta * wi.y, cosThetaT);
 }
 
 }  // namespace optix
