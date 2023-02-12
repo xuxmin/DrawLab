@@ -105,20 +105,13 @@ public:
     /// @brief Return the optix Material object
     const optix::Material*
     getOptixMaterial(optix::DeviceContext& context) const {
-        std::string mat_id = getMaterialId();
-        const optix::Material* mat = context.getMaterial(mat_id);
-        if (mat != nullptr) {
-            return mat;
-        }
         const optix::Material* optix_mat = createOptixMaterial(context);
-        context.addMaterial(mat_id, optix_mat);
+        context.addMaterial(optix_mat);
         return optix_mat;
     }
 
     virtual const optix::Material*
     createOptixMaterial(optix::DeviceContext& context) const = 0;
-
-    virtual std::string getMaterialId() const = 0;
 };
 
 }  // namespace drawlab

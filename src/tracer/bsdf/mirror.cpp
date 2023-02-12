@@ -38,10 +38,6 @@ public:
     const optix::Material* createOptixMaterial(optix::DeviceContext& context) const {
         return new optix::Mirror("Mirror", context);
     }
-
-    std::string getMaterialId() const {
-        return "Mirror";
-    }
 };
 
 REGISTER_CLASS(Mirror, "mirror");

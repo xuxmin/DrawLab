@@ -101,13 +101,6 @@ OptixProgramGroup DeviceContext::createHitgroupPrograms(OptixModule ch_module,
                                                         OptixModule ah_module,
                                                         std::string ch_func,
                                                         std::string ah_func) {
-    std::string key = std::to_string(int(ch_module)) +
-                      std::to_string(int(ah_module)) + ch_func + ah_func;
-    
-    if (m_hitgroup_pgs.existed(key)) {
-        return m_hitgroup_pgs.get(key);
-    }
-
     OptixProgramGroup hitgroupPG;
 
     OptixProgramGroupOptions pgOptions = {};
@@ -124,7 +117,7 @@ OptixProgramGroup DeviceContext::createHitgroupPrograms(OptixModule ch_module,
                                             &pgOptions, log, &sizeof_log,
                                             &hitgroupPG));
 
-    m_hitgroup_pgs.add(key, hitgroupPG);
+    m_hitgroup_pgs.push_back(hitgroupPG);
 
     return hitgroupPG;
 }
@@ -241,8 +234,8 @@ void DeviceContext::createPipeline() {
         programGroups.push_back(pg);
     }
     // Add hitgroup programs
-    for (auto pg : m_hitgroup_pgs.getResources()) {
-        programGroups.push_back(pg.second);
+    for (auto pg : m_hitgroup_pgs) {
+        programGroups.push_back(pg);
     }
 
     char log[2048];
@@ -270,40 +263,14 @@ void DeviceContext::createPipeline() {
                                   1));
 }
 
-const Texture* DeviceContext::getTexture(std::string tex_id) const {
-    if (m_textures.find(tex_id) == m_textures.end()) {
-        return nullptr;
-    }
-    return m_textures.at(tex_id);
+
+void DeviceContext::addTexture(const Texture* texture) {
+    m_textures.push_back(texture);
 }
 
-void DeviceContext::addTexture(std::string tex_id, const Texture* texture) {
-    if (m_textures.find(tex_id) != m_textures.end()) {
-        spdlog::warn("[DEVICE CONTEXT] DeviceContext::addTexture: The tex_id "
-                     "{} already in "
-                     "pool, override it!",
-                     tex_id);
-    }
-    m_textures[tex_id] = texture;
-    spdlog::info("[DEVICE CONTEXT] Add texture {} to DeviceContext", tex_id);
-}
 
-const Material* DeviceContext::getMaterial(std::string mat_id) const {
-    if (m_materials.find(mat_id) == m_materials.end()) {
-        return nullptr;
-    }
-    return m_materials.at(mat_id);
-}
-
-void DeviceContext::addMaterial(std::string mat_id, const Material* material) {
-    if (m_materials.find(mat_id) != m_materials.end()) {
-        spdlog::warn("[DEVICE CONTEXT] DeviceContext::addMaterial: The mat_id "
-                     "{} already in "
-                     "pool, override it!",
-                     mat_id);
-    }
-    m_materials[mat_id] = material;
-    spdlog::info("[DEVICE CONTEXT] Add material {} to DeviceContext", mat_id);
+void DeviceContext::addMaterial(const Material* material) {
+    m_materials.push_back(material);
 }
 
 void DeviceContext::createAccel(std::function<void(OptixAccel*)> init) {
@@ -343,12 +310,12 @@ void DeviceContext::destroy() {
 
     // Release material
     for (auto mat : m_materials) {
-        delete mat.second;
+        delete mat;
     }
 
     // Release Texture
     for (auto tex : m_textures) {
-        delete tex.second;
+        delete tex;
     }
 
     OPTIX_CHECK(optixDeviceContextDestroy(m_optix_context));

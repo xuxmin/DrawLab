@@ -124,10 +124,6 @@ public:
         return nullptr;
     }
 
-    std::string getMaterialId() const {
-        return "";
-    }
-
 private:
     float m_alpha;
     float m_intIOR, m_extIOR;

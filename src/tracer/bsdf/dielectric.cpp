@@ -69,10 +69,6 @@ public:
         return new optix::Dielectric("dielectric", context, m_intIOR, m_extIOR);
     }
 
-    std::string getMaterialId() const {
-        return "Dielectric";
-    }
-
 private:
     float m_intIOR, m_extIOR;
 };

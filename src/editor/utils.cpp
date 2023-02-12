@@ -1,5 +1,6 @@
 #include "editor/utils.h"
 #include "imgui/imgui.h"
+#include <stdio.h>
 
 namespace drawlab {
 

@@ -55,15 +55,9 @@ public:
 
     const CUstream& getStream() const { return m_stream; }
 
-    /// @brief Return texture from pool
-    const Texture* getTexture(std::string tex_id) const;
+    void addTexture(const Texture* texture);
 
-    /// @brief Add texture to device context
-    void addTexture(std::string tex_id, const Texture* texture);
-
-    const Material* getMaterial(std::string mat_id) const;
-
-    void addMaterial(std::string mat_id, const Material* material);
+    void addMaterial(const Material* material);
 
     const OptixPipeline getPipeline() const { return m_pipeline; }
 
@@ -71,7 +65,7 @@ public:
 
     const OptixTraversableHandle& getHandle() const {return m_as_handle; }
 
-    void DeviceContext::createAccel(std::function<void(OptixAccel*)> init);
+    void createAccel(std::function<void(OptixAccel*)> init);
 
 private:
     int m_device_id;
@@ -92,14 +86,14 @@ private:
     OptixAccel* m_accel;
     OptixTraversableHandle m_as_handle;
 
-    std::map<std::string, const Texture*> m_textures;
-    std::map<std::string, const Material*> m_materials;
+    std::vector<const Texture*> m_textures;
+    std::vector<const Material*> m_materials;
 
     OptixModule m_raygen_module;
     OptixModule m_miss_module;
     OptixProgramGroup m_raygen_pg;
     std::vector<OptixProgramGroup> m_miss_pgs;
-    ResourceManager<OptixProgramGroup> m_hitgroup_pgs;
+    std::vector<OptixProgramGroup> m_hitgroup_pgs;
 
     OptixPipeline m_pipeline;
 

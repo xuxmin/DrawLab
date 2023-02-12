@@ -103,10 +103,6 @@ public:
         return optix_mat;
     }
 
-    std::string getMaterialId() const {
-        return "Diffuse" + std::to_string(int(m_albedo));
-    }
-
 private:
     // Color3f m_albedo;
     const Texture* m_albedo;

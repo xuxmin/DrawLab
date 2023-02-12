@@ -56,11 +56,6 @@ public:
     }
 
     const optix::Texture* getOptixTexture(optix::DeviceContext& context) const {
-        std::string tex_id = m_filename + std::to_string(int(m_bitmap));
-        const optix::Texture* texture = context.getTexture(tex_id);
-        if (texture != nullptr) {
-            return texture;
-        }
 
         // Create a texture
         int width = m_bitmap->getWidth();
@@ -79,7 +74,7 @@ public:
             optix::CUDATextureAddressMode::CUDA_TEXTURE_WRAP,
             optix::CUDATextureColorSpace::CUDA_COLOR_SPACE_LINEAR, temp.data());
 
-        context.addTexture(tex_id, optix_texture);
+        context.addTexture(optix_texture);
 
         return optix_texture;
     }
