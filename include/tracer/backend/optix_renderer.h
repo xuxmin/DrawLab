@@ -36,7 +36,7 @@ protected:
     DeviceContext* m_device_context;
     LaunchParam* m_launch_param;
 
-    Context* context;
+    Context* m_context;
 
 private:
     void initLaunchParams();

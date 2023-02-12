@@ -13,7 +13,7 @@
 namespace optix {
 
 OptixRenderer::OptixRenderer(drawlab::Scene* scene, int device_id)
-    : m_scene(scene) {
+    : m_scene(scene), m_display(nullptr) {
     spdlog::info("[OPTIX RENDERER] Step 1. Initializing optix ...");
     optix::initOptix();
 
@@ -59,10 +59,14 @@ OptixRenderer::OptixRenderer(drawlab::Scene* scene, int device_id)
 }
 
 void OptixRenderer::destroy() {
-    delete m_device_context;
-    delete m_launch_param;
-    delete context;
-    delete m_display;
+    if (m_device_context)
+        delete m_device_context;
+    if (m_launch_param)
+        delete m_launch_param;
+    if (m_context)
+        delete m_context;
+    if (m_display)
+        delete m_display;
 }
 
 OptixRenderer::~OptixRenderer() {
@@ -91,14 +95,14 @@ void OptixRenderer::initLaunchParams() {
 }
 
 void OptixRenderer::initContext() {
-    context = new Context();
+    m_context = new Context();
 
     const drawlab::Camera* camera = m_scene->getCamera();
     drawlab::Vector2i outputSize = camera->getOutputSize();
     m_width = outputSize[0], m_height = outputSize[1];
     float aspect = (float)m_width / m_height;
 
-    context->initCameraState(camera->getOptixCamera(), aspect);
+    m_context->initCameraState(camera->getOptixCamera(), aspect);
 }
 
 void OptixRenderer::renderAsync(std::string filename, bool gui) {
@@ -128,7 +132,7 @@ void OptixRenderer::renderAsync(std::string filename, bool gui) {
     bitmap.colorNan(drawlab::Color3f(10.f, 0.f, 0.f));
     bitmap.savePNG(filename);
     bitmap.saveEXR(filename);
-    spdlog::info("Image rendered, and saved to {} ... done.", filename);
+    spdlog::info("[OPTIX RENDERER] Image rendered, and saved to {} ... done.", filename);
 }
 
 void OptixRenderer::init() {
@@ -140,9 +144,9 @@ void OptixRenderer::render() {
     CUDA_SYNC_CHECK();
     auto t0 = std::chrono::steady_clock::now();
 
-    if (context->camera_changed) {
-        context->camera_changed = false;
-        m_launch_param->setupCamera(context->getOptixCamera());
+    if (m_context->camera_changed) {
+        m_context->camera_changed = false;
+        m_launch_param->setupCamera(m_context->getOptixCamera());
         m_launch_param->resetFrameIndex();
     }
 
@@ -151,7 +155,7 @@ void OptixRenderer::render() {
 
     CUDA_SYNC_CHECK();
     auto t1 = std::chrono::steady_clock::now();
-    context->state_update_time += t1 - t0;
+    m_context->state_update_time += t1 - t0;
     t0 = t1;
 
     m_device_context->launch(*m_launch_param);
@@ -161,7 +165,7 @@ void OptixRenderer::render() {
     // example, this will have to do)
     CUDA_SYNC_CHECK();
     t1 = std::chrono::steady_clock::now();
-    context->render_time += t1 - t0;
+    m_context->render_time += t1 - t0;
     t0 = t1;
 
     const int w = drawlab::GUI::window_width;
@@ -177,18 +181,18 @@ void OptixRenderer::render() {
     m_display->display(w, h, w, h, pbo);
 
     t1 = std::chrono::steady_clock::now();
-    context->display_time += t1 - t0;
-    drawlab::displayStats(context->state_update_time, context->render_time,
-                          context->display_time);
+    m_context->display_time += t1 - t0;
+    drawlab::displayStats(m_context->state_update_time, m_context->render_time,
+                          m_context->display_time);
 
     static char display_text[128];
     sprintf(display_text,
             "eye    : %5.1f %5.1f %5.1f\n"
             "lookat : %5.1f %5.1f %5.1f\n"
             "up     : %5.1f %5.1f %5.1f\n",
-            context->camera.eye().x, context->camera.eye().y, context->camera.eye().z,
-            context->camera.lookat().x, context->camera.lookat().y, context->camera.lookat().z,
-            context->camera.up().x, context->camera.up().y, context->camera.up().z);
+            m_context->camera.eye().x, m_context->camera.eye().y, m_context->camera.eye().z,
+            m_context->camera.lookat().x, m_context->camera.lookat().y, m_context->camera.lookat().z,
+            m_context->camera.up().x, m_context->camera.up().y, m_context->camera.up().z);
     drawlab::displayText(display_text, 10.f, 10.f);
 }
 
@@ -196,43 +200,43 @@ void OptixRenderer::resize(size_t w, size_t h) {
     m_width = (int)w;
     m_height = (int)h;
     m_launch_param->setupColorBuffer(m_width, m_height);
-    context->camera.setAspectRatio(m_width / (float)m_height);
-    context->camera_changed = true;
+    m_context->camera.setAspectRatio(m_width / (float)m_height);
+    m_context->camera_changed = true;
 }
 
 void OptixRenderer::keyEvent(char key) {}
 
 void OptixRenderer::cursorEvent(float x, float y) {
-    if (context->mouse_botton == GLFW_MOUSE_BUTTON_LEFT) {
-        context->trackball.setViewMode(Trackball::LookAtFixed);
-        context->trackball.updateTracking(
+    if (m_context->mouse_botton == GLFW_MOUSE_BUTTON_LEFT) {
+        m_context->trackball.setViewMode(Trackball::LookAtFixed);
+        m_context->trackball.updateTracking(
             static_cast<int>(x), static_cast<int>(y),
             drawlab::GUI::window_width, drawlab::GUI::window_height);
-        context->camera_changed = true;
+        m_context->camera_changed = true;
     }
-    else if (context->mouse_botton == GLFW_MOUSE_BUTTON_RIGHT) {
-        context->trackball.setViewMode(Trackball::EyeFixed);
-        context->trackball.updateTracking(
+    else if (m_context->mouse_botton == GLFW_MOUSE_BUTTON_RIGHT) {
+        m_context->trackball.setViewMode(Trackball::EyeFixed);
+        m_context->trackball.updateTracking(
             static_cast<int>(x), static_cast<int>(y),
             drawlab::GUI::window_width, drawlab::GUI::window_height);
-        context->camera_changed = true;
+        m_context->camera_changed = true;
     }
 }
 
 void OptixRenderer::scrollEvent(float offset_x, float offset_y) {
-    if (context->trackball.wheelEvent((int)offset_y))
-        context->camera_changed = true;
+    if (m_context->trackball.wheelEvent((int)offset_y))
+        m_context->camera_changed = true;
 }
 
 void OptixRenderer::mouseButtonEvent(int button, int event, float xpos,
                                      float ypos) {
     if (event == GLFW_PRESS) {
-        context->mouse_botton = button;
-        context->trackball.startTracking(static_cast<int>(xpos),
+        m_context->mouse_botton = button;
+        m_context->trackball.startTracking(static_cast<int>(xpos),
                                          static_cast<int>(ypos));
     }
     else {
-        context->mouse_botton = -1;
+        m_context->mouse_botton = -1;
     }
 }
 }  // namespace optix

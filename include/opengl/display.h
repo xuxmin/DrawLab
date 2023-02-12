@@ -12,6 +12,8 @@ public:
 
     Display(BufferImageFormat format = BufferImageFormat::FLOAT3);
 
+    ~Display();
+
     void display(const int screenResX, const int screenResY,
                  const int framebufResX, const int framebuf_ResY,
                  const unsigned int pbo) const;
