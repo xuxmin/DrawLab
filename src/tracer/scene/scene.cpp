@@ -34,14 +34,29 @@ void Scene::addChild(Object* obj) {
         case EMesh: {
             Mesh* mesh = static_cast<Mesh*>(obj);
             m_accel->addMesh(mesh);
+            
+            // Add mesh
             m_meshes.push_back(mesh);
 
+            // Add emitter
             if (mesh->isEmitter()) {
-                m_light_idx.push_back(m_emitters.size());
+                m_mesh_light_idx.push_back(m_emitters.size());
                 m_emitters.push_back(mesh->getEmitter());
             }
             else {
-                m_light_idx.push_back(-1);
+                m_mesh_light_idx.push_back(-1);
+            }
+
+            // Add BSDF
+            int idx = 0;
+            for (idx = 0; idx < m_bsdfs.size(); idx++) {
+                if (mesh->getBSDF() == m_bsdfs[idx]) {
+                    m_mesh_bsdf_idx.push_back(idx);
+                }
+            }
+            if (idx == m_bsdfs.size()) {
+                m_mesh_bsdf_idx.push_back(idx);
+                m_bsdfs.push_back(mesh->getBSDF());
             }
             break;
         }

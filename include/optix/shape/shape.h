@@ -28,7 +28,7 @@ struct Intersection {
     int light_idx;
 };
 
-struct DirectionSampleRecord {
+struct LightSampleRecord {
     const TriangleMesh* mesh;
 
     float3 o;  // position
@@ -39,9 +39,9 @@ struct DirectionSampleRecord {
     float dist;
     bool delta;
 
-    DirectionSampleRecord() {}
+    LightSampleRecord() {}
 
-    DirectionSampleRecord(const float3& ori, const float3& dst, const float3 n,
+    LightSampleRecord(const float3& ori, const float3& dst, const float3 n,
                           const TriangleMesh* mesh)
         : o(ori), n(n), mesh(mesh) {
         float3 vec = dst - ori;
@@ -49,6 +49,41 @@ struct DirectionSampleRecord {
         dist = length(vec);
         delta = false;
     }
+};
+
+// BSDF sample record in the prev path
+struct BSDFSampleRecord {
+    float3 fr;  // eval() / pdf() * cos(theta)
+    float eta;
+    float3 p;   // surface point position
+    float3 wo;  // sampled direction in world coordinate.
+    float pdf;
+    bool is_diffuse;
+
+    BSDFSampleRecord()
+        : fr(make_float3(1.f)), eta(1.f), pdf(0.f), is_diffuse(false) {}
+};
+
+enum EMeasure { EUnknownMeasure = 0, ESolidAngle, EDiscrete };
+
+struct BSDFQueryRecord {
+    /// Reference to the underlying surface interaction
+    const Intersection& its;
+    /// Incident direction (in the local frame)
+    float3 wi;
+    /// Outgoing direction (in the local frame)
+    float3 wo;
+    /// Relative refractive index in the sampled direction
+    float eta;
+    /// Measure associated with the sample
+    EMeasure measure;
+
+    BSDFQueryRecord(const Intersection& its, const float3& wi)
+        : its(its), wi(wi), eta(1.f), measure(EUnknownMeasure) {}
+
+    BSDFQueryRecord(const Intersection& its, const float3& wi, const float3& wo,
+                    EMeasure measure)
+        : its(its), wi(wi), wo(wo), eta(1.f), measure(measure) {}
 };
 
 }  // namespace optix

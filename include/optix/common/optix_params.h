@@ -42,16 +42,6 @@ struct HitGroupData {
     int light_idx;  // This is an area light bind to mesh
 };
 
-/**
- * The SBT(shader binding table) connects geometric data to programs
- *
- * header: Opaque to the application, filled in by optixSbtRecordPackHeader.
- *      uased by Optix 7 to identify different behaviour, such as any-hit,
- *      intersection...
- *
- * data: Opaque to NVIDIA OptiX 7. can store program parameter values.
- */
-/*! SBT record for a raygen program */
 template <typename T> struct Record {
     __align__(
         OPTIX_SBT_RECORD_ALIGNMENT) char header[OPTIX_SBT_RECORD_HEADER_SIZE];
@@ -61,41 +51,6 @@ template <typename T> struct Record {
 typedef Record<RayGenData> RayGenRecord;
 typedef Record<MissData> MissRecord;
 typedef Record<HitGroupData> HitgroupRecord;
-
-// BSDF sample record in the prev path
-struct BSDFSampleRecord {
-    float3 fr;  // eval() / pdf() * cos(theta)
-    float eta;
-    float3 p;   // surface point position
-    float3 wo;  // sampled direction in world coordinate.
-    float pdf;
-    bool is_diffuse;
-
-    BSDFSampleRecord()
-        : fr(make_float3(1.f)), eta(1.f), pdf(0.f), is_diffuse(false) {}
-};
-
-enum EMeasure { EUnknownMeasure = 0, ESolidAngle, EDiscrete };
-
-struct BSDFQueryRecord {
-    /// Reference to the underlying surface interaction
-    const Intersection& its;
-    /// Incident direction (in the local frame)
-    float3 wi;
-    /// Outgoing direction (in the local frame)
-    float3 wo;
-    /// Relative refractive index in the sampled direction
-    float eta;
-    /// Measure associated with the sample
-    EMeasure measure;
-
-    BSDFQueryRecord(const Intersection& its, const float3& wi)
-        : its(its), wi(wi), eta(1.f), measure(EUnknownMeasure) {}
-
-    BSDFQueryRecord(const Intersection& its, const float3& wi, const float3& wo,
-                    EMeasure measure)
-        : its(its), wi(wi), wo(wo), eta(1.f), measure(measure) {}
-};
 
 /**
  * The payload is associated with each ray, and is passed to all

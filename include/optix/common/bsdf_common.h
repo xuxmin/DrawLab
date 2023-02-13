@@ -1,11 +1,12 @@
 #pragma once
 
+#include "optix/common/optix_params.h"
 #include <cuda_runtime.h>
 #include <optix.h>
-#include "optix/common/optix_params.h"
-
 
 namespace optix {
+
+
 
 static __forceinline__ __device__ void* unpackPointer(unsigned int i0,
                                                       unsigned int i1) {
@@ -28,29 +29,8 @@ template <typename T> static __forceinline__ __device__ T* getPRD() {
     return reinterpret_cast<T*>(unpackPointer(u0, u1));
 }
 
-
 static __forceinline__ __device__ void setPayloadOcclusion(bool occluded) {
     optixSetPayload_0(static_cast<unsigned int>(occluded));
-}
-
-static __forceinline__ __device__ bool invalid_color(float3 color) {
-    return isnan(color.x) || isnan(color.y) || isnan(color.z);
-}
-
-static __forceinline__ __device__ void LOG(float3 color) {
-    printf("%lf %lf %lf\n", color.x, color.y, color.z);
-}
-
-static __forceinline__ __device__ void LOG(float var) {
-    printf("%lf\n", var);
-}
-
-static __forceinline__ __device__ void LOG(const char* msg, int var) {
-    printf("%s %d\n ", msg, var);
-}
-
-static __forceinline__ __device__ void LOG(const char* msg, float3 var) {
-    printf("%s %lf %lf %lf\n ", msg, var.x, var.y, var.z);
 }
 
 static __forceinline__ __device__ bool
@@ -67,6 +47,24 @@ traceOcclusion(OptixTraversableHandle handle, float3 ray_origin,
     return occluded;
 }
 
+static __forceinline__ __device__ bool invalid_color(float3 color) {
+    return isnan(color.x) || isnan(color.y) || isnan(color.z);
+}
+
+static __forceinline__ __device__ void LOG(float3 color) {
+    printf("%lf %lf %lf\n", color.x, color.y, color.z);
+}
+
+static __forceinline__ __device__ void LOG(float var) { printf("%lf\n", var); }
+
+static __forceinline__ __device__ void LOG(const char* msg, int var) {
+    printf("%s %d\n ", msg, var);
+}
+
+static __forceinline__ __device__ void LOG(const char* msg, float3 var) {
+    printf("%s %lf %lf %lf\n ", msg, var.x, var.y, var.z);
+}
+
 static __forceinline__ __device__ float mis_weight(float pdf_a, float pdf_b) {
     pdf_a *= pdf_a;
     pdf_b *= pdf_b;
@@ -78,11 +76,10 @@ static __forceinline__ __device__ Intersection getHitData() {
     // ------------------------------------------------------------------
     // Gather basic hit information
     // ------------------------------------------------------------------
-    
+
     const HitGroupData* rt_data = (HitGroupData*)optixGetSbtDataPointer();
-    const TriangleMesh& mesh =
-        reinterpret_cast<const TriangleMesh&>(
-            rt_data->geometry_data.triangle_mesh);
+    const TriangleMesh& mesh = reinterpret_cast<const TriangleMesh&>(
+        rt_data->geometry_data.triangle_mesh);
     const int prim_idx = optixGetPrimitiveIndex();
     const int3 index = mesh.indices[prim_idx];
     const float3 ray_dir = optixGetWorldRayDirection();
@@ -96,8 +93,8 @@ static __forceinline__ __device__ Intersection getHitData() {
     const float3 v0 = mesh.positions[index.x];
     const float3 v1 = mesh.positions[index.y];
     const float3 v2 = mesh.positions[index.z];
-    float3 gN = normalize(cross(v1 - v0, v2 - v0));     // geometry normal
-    float3 sN = gN;                                     // shading normal
+    float3 gN = normalize(cross(v1 - v0, v2 - v0));  // geometry normal
+    float3 sN = gN;                                  // shading normal
 
     if (mesh.normals) {
         const float3 n0 = mesh.normals[index.x];
@@ -123,7 +120,8 @@ static __forceinline__ __device__ Intersection getHitData() {
         texcoord = (1.f - u - v) * t0 + u * t1 + v * t2;
     }
 
-    const float3 hitpoint = optixGetWorldRayOrigin() + optixGetRayTmax()*ray_dir;
+    const float3 hitpoint =
+        optixGetWorldRayOrigin() + optixGetRayTmax() * ray_dir;
 
     its.mesh = &mesh;
     its.sn = sN;

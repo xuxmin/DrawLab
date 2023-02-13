@@ -5,13 +5,15 @@
 
 namespace optix {
 
+struct LightSampleRecord;
+
 struct Point {
     float3 intensity;
     float3 position;
 
     SUTIL_INLINE SUTIL_HOSTDEVICE float3
     sampleDirection(const Intersection& its, unsigned int seed,
-                    DirectionSampleRecord& dRec) const {
+                    LightSampleRecord& dRec) const {
         const float3 intensity = intensity;
         const float3 light_pos = position;
 
@@ -25,7 +27,7 @@ struct Point {
         return intensity * inv_dist * inv_dist;
     }
 
-    float pdfDirection(const DirectionSampleRecord& dRec) const { return 0; }
+    float pdfDirection(const LightSampleRecord& dRec) const { return 0; }
 
     /**
      * @brief Given a ray-surface intersection, return the emitted

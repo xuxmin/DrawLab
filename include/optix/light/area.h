@@ -5,13 +5,15 @@
 
 namespace optix {
 
+struct LightSampleRecord;
+
 struct Area {
     TriangleMesh triangle_mesh;
     float3 intensity;
 
     SUTIL_INLINE SUTIL_HOSTDEVICE float3
     sampleDirection(const Intersection& its, unsigned int seed,
-                    DirectionSampleRecord& dRec) const {
+                    LightSampleRecord& dRec) const {
         float3 position, normal;
         triangle_mesh.samplePosition(seed, position, normal);
 
@@ -32,7 +34,7 @@ struct Area {
                          make_float3(0.f);
     }
 
-    float pdfDirection(const DirectionSampleRecord& dRec) const {
+    float pdfDirection(const LightSampleRecord& dRec) const {
         float pA = triangle_mesh.pdfPosition();
         float dp = fmaxf(dot(dRec.n, -dRec.d), 0.f);
         float pw = dp != 0 ? pA * dRec.dist * dRec.dist / dp : 0;

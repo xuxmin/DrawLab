@@ -4,7 +4,7 @@
 #include "optix/common/optix_params.h"
 #include "optix/math/vec_math.h"
 #include "optix/math/random.h"
-#include "optix/device/util.h"
+#include "optix/common/bsdf_common.h"
 #include "optix/math/onb.h"
 #include "optix/math/wrap.h"
 
@@ -81,7 +81,7 @@ extern "C" __global__ void __closesthit__radiance() {
 
         float3 light_val = light.eval(its, -ray_dir);
 
-        DirectionSampleRecord dRec(ray_ori, its.p, its.sn, its.mesh);
+        LightSampleRecord dRec(ray_ori, its.p, its.sn, its.mesh);
         float light_pdf = params.light_data.pdfLightDirection(its.light_idx, dRec);
         float bsdf_pdf = sRec.pdf;
         float mis = sRec.is_diffuse ? mis_weight(bsdf_pdf, light_pdf) : 1.f;
@@ -90,7 +90,7 @@ extern "C" __global__ void __closesthit__radiance() {
     }
 
     // --------------------- Emitter sampling ---------------------
-    DirectionSampleRecord dRec;
+    LightSampleRecord dRec;
     float3 light_val = params.light_data.sampleLightDirection(its, seed, dRec);
 
     // Trace occlusion

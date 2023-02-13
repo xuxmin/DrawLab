@@ -9,6 +9,7 @@
 #include "tracer/integrator.h"
 #include "tracer/mesh.h"
 #include "tracer/sampler.h"
+#include <set>
 
 namespace drawlab {
 
@@ -71,7 +72,11 @@ public:
 
     const std::vector<Emitter*>& getEmitters() const { return m_emitters; }
 
-    const std::vector<int>& getLightIdx() const { return m_light_idx; }
+    const std::vector<int>& getMeshLightIdx() const { return m_mesh_light_idx; }
+
+    const std::vector<int>& getMeshBsdfIdx() const { return m_mesh_bsdf_idx; }
+
+    const std::vector<const BSDF*>& getBSDFs() const { return m_bsdfs; }
     /**
      * \brief Intersect a ray against all triangles stored in the scene
      * and return detailed intersection information
@@ -117,8 +122,10 @@ public:
 
 private:
     std::vector<Mesh*> m_meshes;
-    std::vector<int> m_light_idx;
+    std::vector<int> m_mesh_light_idx;
+    std::vector<int> m_mesh_bsdf_idx;
     std::vector<Emitter*> m_emitters;
+    std::vector<const BSDF*> m_bsdfs;
     Integrator* m_integrator = nullptr;
     Sampler* m_sampler = nullptr;
     Camera* m_camera = nullptr;

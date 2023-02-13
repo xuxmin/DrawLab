@@ -23,7 +23,7 @@ struct Light {
 
     SUTIL_INLINE SUTIL_HOSTDEVICE float3
     sampleDirection(const Intersection& its, unsigned int seed,
-                    DirectionSampleRecord& dRec) const {
+                    LightSampleRecord& dRec) const {
         if (type == Type::POINT) {
             return point.sampleDirection(its, seed, dRec);
         }
@@ -36,7 +36,7 @@ struct Light {
     /**
      * @brief Query the probability density of @ref sampleDirection()
      */
-    float pdfDirection(const DirectionSampleRecord& dRec) const {
+    float pdfDirection(const LightSampleRecord& dRec) const {
         if (type == Type::POINT) {
             return point.pdfDirection(dRec);
         }
@@ -72,7 +72,7 @@ struct LightArray {
 
     SUTIL_INLINE SUTIL_HOSTDEVICE float3
     sampleLightDirection(const Intersection& its, unsigned int& seed,
-                         DirectionSampleRecord& dRec) const {
+                         LightSampleRecord& dRec) const {
         if (light_num == 0) {
             return make_float3(0.f);
         }
@@ -92,7 +92,7 @@ struct LightArray {
     }
 
     SUTIL_INLINE SUTIL_HOSTDEVICE float
-    pdfLightDirection(int idx, const DirectionSampleRecord& dRec) const {
+    pdfLightDirection(int idx, const LightSampleRecord& dRec) const {
         return lights[idx].pdfDirection(dRec) / light_num;
     }
 };

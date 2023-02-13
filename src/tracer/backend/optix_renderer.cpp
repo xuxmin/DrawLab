@@ -32,7 +32,7 @@ OptixRenderer::OptixRenderer(drawlab::Scene* scene, int device_id)
     spdlog::info("[OPTIX RENDERER] Step 5. Creating optix accel ...");
     m_device_context->createAccel([&](OptixAccel* accel) {
         const auto & meshs = m_scene->getMeshes();
-        const auto & light_idx = m_scene->getLightIdx();
+        const auto & light_idx = m_scene->getMeshLightIdx();
         for (int i = 0; i < meshs.size(); i++) {
             accel->addTriangleMesh(
                 meshs[i]->getVertexPosition(), meshs[i]->getVertexIndex(),

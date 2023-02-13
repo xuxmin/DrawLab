@@ -4,7 +4,7 @@
 #include "optix/common/optix_params.h"
 #include "optix/math/vec_math.h"
 #include "optix/math/random.h"
-#include "optix/device/util.h"
+#include "optix/common/bsdf_common.h"
 
 namespace optix {
 
