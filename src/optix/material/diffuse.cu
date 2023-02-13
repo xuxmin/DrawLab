@@ -39,7 +39,7 @@ SFD float pdf(const MaterialData& mat_data, const BSDFQueryRecord& bRec) {
     return M_1_PIf * bRec.wo.z;
 }
 
-SFD float3 sample(const MaterialData& mat_data, unsigned int seed, BSDFQueryRecord& bRec) {
+SFD float3 sample(const MaterialData& mat_data, unsigned int& seed, BSDFQueryRecord& bRec) {
     if (bRec.wi.z <= 0) {
         return make_float3(0.f);
     }
@@ -55,7 +55,7 @@ SFD float3 sample(const MaterialData& mat_data, unsigned int seed, BSDFQueryReco
     if (mat_data.diffuse.albedo_tex) {
         albedo = tex2D<float4>(mat_data.diffuse.albedo_tex, bRec.its.uv.x, bRec.its.uv.y);
     }
-    return make_float3(albedo.x, albedo.y, albedo.z);
+    return make_float3(albedo);
 }
 
 extern "C" __global__ void __closesthit__occlusion() {
@@ -70,8 +70,8 @@ extern "C" __global__ void __closesthit__radiance() {
     const float3 ray_dir = optixGetWorldRayDirection();
     const float3 ray_ori = optixGetWorldRayOrigin();
     RadiancePRD* prd = getPRD<RadiancePRD>();
-    unsigned int seed = prd->seed;
-    Intersection its = getHitData();
+    unsigned int& seed = prd->seed;
+    const Intersection its = getHitData();
 
     float3 radiance = make_float3(0.f);
 

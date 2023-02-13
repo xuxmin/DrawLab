@@ -136,7 +136,7 @@ struct LightData {
     int light_num;
 
     SUTIL_INLINE SUTIL_HOSTDEVICE float3
-    sampleLightDirection(const Intersection& its, unsigned int seed,
+    sampleLightDirection(const Intersection& its, unsigned int& seed,
                          DirectionSampleRecord& dRec) const {
         if (light_num == 0) {
             return make_float3(0.f);

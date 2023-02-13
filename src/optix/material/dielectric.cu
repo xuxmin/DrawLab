@@ -23,7 +23,7 @@ SFD float pdf(const MaterialData& mat_data, const BSDFQueryRecord& bRec) {
     return 0.0f;
 }
 
-SFD float3 sample(const MaterialData& mat_data, unsigned int seed,
+SFD float3 sample(const MaterialData& mat_data, unsigned int& seed,
                   BSDFQueryRecord& bRec) {
     bRec.measure = EDiscrete;
     float cosThetai = bRec.wi.z;
@@ -54,7 +54,7 @@ extern "C" __global__ void __closesthit__radiance() {
     const float3 ray_dir = optixGetWorldRayDirection();
     const float3 ray_ori = optixGetWorldRayOrigin();
     RadiancePRD* prd = getPRD<RadiancePRD>();
-    unsigned int seed = prd->seed;
+    unsigned int& seed = prd->seed;
     Intersection its = getHitData();
 
     float3 radiance = make_float3(0.f);

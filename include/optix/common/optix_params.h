@@ -39,7 +39,7 @@ struct MissData {};
 struct HitGroupData {
     GeometryData geometry_data;
     MaterialData material_data;
-    int light_idx;            // This is an area light bind to mesh
+    int light_idx;  // This is an area light bind to mesh
 };
 
 /**
@@ -62,7 +62,6 @@ typedef Record<RayGenData> RayGenRecord;
 typedef Record<MissData> MissRecord;
 typedef Record<HitGroupData> HitgroupRecord;
 
-
 // BSDF sample record in the prev path
 struct BSDFSampleRecord {
     float3 fr;  // eval() / pdf() * cos(theta)
@@ -73,9 +72,7 @@ struct BSDFSampleRecord {
     bool is_diffuse;
 
     BSDFSampleRecord()
-    : fr(make_float3(1.f)), eta(1.f), pdf(0.f), is_diffuse(false) {
-        
-    }
+        : fr(make_float3(1.f)), eta(1.f), pdf(0.f), is_diffuse(false) {}
 };
 
 enum EMeasure { EUnknownMeasure = 0, ESolidAngle, EDiscrete };
@@ -108,8 +105,21 @@ struct BSDFQueryRecord {
 struct RadiancePRD {
     float3 radiance;
     bool done;
-    float seed;
     BSDFSampleRecord sRec;
+
+    /**
+     * The initial seed of each path.
+     *
+     * We assign a initial seed for each path for the convenience of debuging.
+     *
+     * Notice:
+     * 1. rnd(seed) takes the reference of seed as input, each call of rnd(seed)
+     * will change the value of the seed.
+     * 2. Initialize the seed at raygen programs
+     * 3. Don't copy the seed value to a new variable, use REFERENCE instead!!!
+     * 4. Each time call rnd(seed), make sure the prd.seed is changed!!!
+     */
+    unsigned int seed;
 };
 
 }  // namespace optix
