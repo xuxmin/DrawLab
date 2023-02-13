@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/math/vector.h"
-#include "optix/common/camera.h"
+#include "optix/camera/camera.h"
 #include "optix/host/trackball.h"
 #include <chrono>
 

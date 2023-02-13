@@ -2,8 +2,8 @@
 #include <optix_device.h>
 
 #include "optix/common/optix_params.h"
-#include "optix/common/vec_math.h"
-#include "optix/device/random.h"
+#include "optix/math/vec_math.h"
+#include "optix/math/random.h"
 #include "optix/device/util.h"
 
 namespace optix {
@@ -35,6 +35,8 @@ extern "C" __global__ void __raygen__path() {
     float3 result = make_float3(0.f);
     int i = params.spp;
     do {
+        seed = tea<4>(idx.y * w + idx.x, i);
+
         float3 ray_origin, ray_direction;
         params.camera.sampleRay(w, h, idx, seed, ray_origin, ray_direction);
 

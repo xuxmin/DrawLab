@@ -27,7 +27,7 @@
 //
 
 #include "optix/host/camera.h"
-#include "optix/common/vec_math.h"
+#include "optix/math/vec_math.h"
 
 namespace optix {
 

@@ -156,8 +156,8 @@ OptixTraversableHandle OptixAccel::build() {
 
 void OptixAccel::packHitgroupRecord(optix::HitgroupRecord& rec,
                                     int mesh_idx) const {
-    optix::GeometryData& geo = rec.data.geometry_data;
-    geo.type = optix::GeometryData::TRIANGLE_MESH;
+    optix::Shape& geo = rec.data.geometry_data;
+    geo.type = optix::Shape::TRIANGLE_MESH;
     geo.triangle_mesh.positions =
         (float3*)m_vertex_buffers[mesh_idx].devicePtr();
     geo.triangle_mesh.indices = (int3*)m_index_buffers[mesh_idx].devicePtr();

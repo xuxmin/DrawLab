@@ -2,11 +2,11 @@
 #include <optix_device.h>
 
 #include "optix/common/optix_params.h"
-#include "optix/common/vec_math.h"
-#include "optix/device/random.h"
+#include "optix/math/vec_math.h"
+#include "optix/math/random.h"
 #include "optix/device/util.h"
-#include "optix/device/onb.h"
-#include "optix/device/wrap.h"
+#include "optix/math/onb.h"
+#include "optix/math/wrap.h"
 
 
 namespace optix {

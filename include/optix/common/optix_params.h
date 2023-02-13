@@ -2,10 +2,10 @@
 
 #include <cuda_runtime.h>
 #include <optix.h>
-#include "optix/common/geometry_data.h"
+#include "optix/shape/shape.h"
 #include "optix/common/material_data.h"
-#include "optix/common/camera.h"
-#include "optix/common/light_data.h"
+#include "optix/camera/camera.h"
+#include "optix/light/light.h"
 
 
 namespace optix {
@@ -27,7 +27,7 @@ struct Params {
     Camera camera;
 
     // lights
-    LightData light_data;
+    LightArray light_data;
 
     OptixTraversableHandle handle;
 };
@@ -37,7 +37,7 @@ struct RayGenData {};
 struct MissData {};
 
 struct HitGroupData {
-    GeometryData geometry_data;
+    Shape geometry_data;
     MaterialData material_data;
     int light_idx;  // This is an area light bind to mesh
 };

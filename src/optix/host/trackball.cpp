@@ -1,5 +1,5 @@
 #include "optix/host/trackball.h"
-#include "optix/common/vec_math.h"
+#include "optix/math/vec_math.h"
 #include <iostream>
 
 namespace optix {

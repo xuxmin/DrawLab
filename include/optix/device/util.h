@@ -3,7 +3,6 @@
 #include <cuda_runtime.h>
 #include <optix.h>
 #include "optix/common/optix_params.h"
-#include "optix/device/intersection_refinement.h"
 
 
 namespace optix {
@@ -81,8 +80,8 @@ static __forceinline__ __device__ Intersection getHitData() {
     // ------------------------------------------------------------------
     
     const HitGroupData* rt_data = (HitGroupData*)optixGetSbtDataPointer();
-    const GeometryData::TriangleMesh& mesh =
-        reinterpret_cast<const GeometryData::TriangleMesh&>(
+    const TriangleMesh& mesh =
+        reinterpret_cast<const TriangleMesh&>(
             rt_data->geometry_data.triangle_mesh);
     const int prim_idx = optixGetPrimitiveIndex();
     const int3 index = mesh.indices[prim_idx];
@@ -125,17 +124,12 @@ static __forceinline__ __device__ Intersection getHitData() {
     }
 
     const float3 hitpoint = optixGetWorldRayOrigin() + optixGetRayTmax()*ray_dir;
-    float3 bp, fp;
-
-    refine_and_offset_hitpoint(hitpoint, ray_dir, gN, v0, bp, fp);
 
     its.mesh = &mesh;
     its.sn = sN;
     its.gn = gN;
     its.uv = texcoord;
     its.p = hitpoint;
-    its.bp = bp;    // back hit point
-    its.fp = fp;    // front hit point;
     its.light_idx = rt_data->light_idx;
     return its;
 }
