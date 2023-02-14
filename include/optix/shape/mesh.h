@@ -1,6 +1,7 @@
 #pragma once
 
 #include "optix/math/wrap.h"
+#include "optix/math/random.h"
 
 namespace optix {
 

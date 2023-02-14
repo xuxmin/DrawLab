@@ -256,7 +256,7 @@ void DeviceContext::createCallableProgramsAndBindSBT(std::vector<std::string> cu
     m_callable_pgs.resize(func_names.size());
 
     for (int mat_id = 0; mat_id < material_num; mat_id++) {
-        OptixModule callable_module = createModuleFromCU(cu_files[mat_id]);
+        m_callable_modules[mat_id] = createModuleFromCU(cu_files[mat_id]);
         
         OptixProgramGroupOptions pgOptions = {};
         OptixProgramGroupDesc pgDesc = {};
@@ -265,7 +265,7 @@ void DeviceContext::createCallableProgramsAndBindSBT(std::vector<std::string> cu
             int idx = mat_id*3+func_id;
 
             pgDesc.kind = OPTIX_PROGRAM_GROUP_KIND_CALLABLES;
-            pgDesc.callables.moduleDC = callable_module;
+            pgDesc.callables.moduleDC = m_callable_modules[mat_id];
             pgDesc.callables.entryFunctionNameDC = func_names[idx].c_str();
             char log[2048];  // For error reporting from OptiX creation functions
             size_t sizeof_log = sizeof(log);

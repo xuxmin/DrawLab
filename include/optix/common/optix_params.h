@@ -3,7 +3,6 @@
 #include <cuda_runtime.h>
 #include <optix.h>
 #include "optix/shape/shape.h"
-#include "optix/common/material_data.h"
 #include "optix/material/material.h"
 #include "optix/camera/camera.h"
 #include "optix/light/light.h"
