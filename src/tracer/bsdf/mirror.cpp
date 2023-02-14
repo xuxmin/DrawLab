@@ -35,9 +35,15 @@ public:
 
     std::string toString() const { return "Mirror[]"; }
 
-    const optix::Material* createOptixMaterial(optix::DeviceContext& context) const {
-        return new optix::Mirror("Mirror", context);
+    void createOptixBSDF(optix::DeviceContext& context,
+                         optix::Material& bsdf) const {
+        bsdf.is_diffuse = false;
     }
+
+    optix::Material::Type getOptixBSDFType() const {
+        return optix::Material::MIRROR;
+    }
+
 };
 
 REGISTER_CLASS(Mirror, "mirror");

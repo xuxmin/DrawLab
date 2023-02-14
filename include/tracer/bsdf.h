@@ -3,7 +3,8 @@
 #include "core/base/common.h"
 #include "core/math/math.h"
 #include "core/parser/object.h"
-#include "optix/host/material.h"
+#include "optix/material/material.h"
+#include "optix/host/device_context.h"
 
 namespace drawlab {
 
@@ -102,16 +103,9 @@ public:
      */
     virtual bool isDiffuse() const { return false; }
 
-    /// @brief Return the optix Material object
-    const optix::Material*
-    getOptixMaterial(optix::DeviceContext& context) const {
-        const optix::Material* optix_mat = createOptixMaterial(context);
-        context.addMaterial(optix_mat);
-        return optix_mat;
-    }
+    virtual void createOptixBSDF(optix::DeviceContext& context, optix::Material& bsdf) const = 0;
 
-    virtual const optix::Material*
-    createOptixMaterial(optix::DeviceContext& context) const = 0;
+    virtual optix::Material::Type getOptixBSDFType() const = 0;
 };
 
 }  // namespace drawlab

@@ -87,20 +87,25 @@ public:
 
     EClassType getClassType() const { return EBSDF; }
 
-    const optix::Material*
-    createOptixMaterial(optix::DeviceContext& context) const {
-        optix::Material* optix_mat = nullptr;
+    void createOptixBSDF(optix::DeviceContext& context,
+                         optix::Material& bsdf) const {
+        bsdf.type = optix::Material::DIFFUSE;
         if (m_albedo->isConstant()) {
             Color3f color = m_albedo->eval(Intersection());
-            optix_mat = new optix::Diffuse(
-                "diffuse", context,
-                make_float4(color[0], color[1], color[2], 1.f));
+            bsdf.diffuse.albedo =
+                make_float4(color[0], color[1], color[2], 1.f);
+            bsdf.diffuse.albedo_tex = 0;
         }
         else {
-            optix_mat = new optix::Diffuse("diffuse", context,
-                                           m_albedo->getOptixTexture(context));
+            bsdf.diffuse.albedo_tex =
+                m_albedo->getOptixTexture(context)->getObject();
         }
-        return optix_mat;
+        bsdf.diffuse.normal_tex = 0;
+        bsdf.is_diffuse = true;
+    }
+
+    optix::Material::Type getOptixBSDFType() const {
+        return optix::Material::DIFFUSE;
     }
 
 private:

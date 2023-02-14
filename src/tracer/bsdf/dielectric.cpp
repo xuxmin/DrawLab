@@ -65,8 +65,17 @@ public:
                            m_intIOR, m_extIOR);
     }
 
-    const optix::Material* createOptixMaterial(optix::DeviceContext& context) const {
-        return new optix::Dielectric("dielectric", context, m_intIOR, m_extIOR);
+    void createOptixBSDF(optix::DeviceContext& context,
+                         optix::Material& bsdf) const {
+        bsdf.type = optix::Material::DIELECTRIC;
+        bsdf.dielectric.extIOR = m_extIOR;
+        bsdf.dielectric.intIOR = m_intIOR;
+        bsdf.diffuse.normal_tex = 0;
+        bsdf.is_diffuse = false;
+    }
+
+    optix::Material::Type getOptixBSDFType() const {
+        return optix::Material::DIELECTRIC;
     }
 
 private:

@@ -15,6 +15,8 @@ public:
 
     void setupLights(const std::vector<Light>& lights);
 
+    void setupMaterials(const std::vector<Material>& materials);
+
     void setupCamera(const Camera& camera);
 
     void setupSampler(const int spp);
@@ -44,6 +46,9 @@ private:
 
     int m_light_num;
     CUDABuffer m_light_buffer;
+
+    int m_material_num;
+    CUDABuffer m_material_buffer;
 
     Camera m_camera;
 

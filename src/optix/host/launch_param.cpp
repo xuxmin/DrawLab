@@ -31,6 +31,13 @@ void LaunchParam::setupLights(const std::vector<Light>& lights) {
     dirty = true;
 }
 
+void LaunchParam::setupMaterials(const std::vector<Material>& materials) {
+    m_material_num = materials.size();
+    m_material_buffer.allocAndUpload(materials);
+
+    dirty = true;
+}
+
 void LaunchParam::setupCamera(const Camera& camera) {
     m_camera = camera;
 
@@ -54,8 +61,12 @@ void LaunchParam::updateParamsBuffer() {
     m_params.color_buffer = (float3*)m_color_buffer.m_device_ptr;
 
     // light buffer
-    m_params.light_data.light_num = m_light_num;
-    m_params.light_data.lights = (Light*)m_light_buffer.m_device_ptr;
+    m_params.light_buffer.light_num = m_light_num;
+    m_params.light_buffer.lights = (Light*)m_light_buffer.m_device_ptr;
+
+    // material buffer
+    m_params.material_buffer.material_num = m_material_num;
+    m_params.material_buffer.materials = (Material*)m_material_buffer.m_device_ptr;
 
     // camera
     m_params.camera = m_camera;

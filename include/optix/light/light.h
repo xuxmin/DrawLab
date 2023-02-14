@@ -66,7 +66,7 @@ struct Light {
     }
 };
 
-struct LightArray {
+struct LightBuffer {
     Light* lights;
     int light_num;
 

@@ -4,6 +4,7 @@
 #include <optix.h>
 #include "optix/shape/shape.h"
 #include "optix/common/material_data.h"
+#include "optix/material/material.h"
 #include "optix/camera/camera.h"
 #include "optix/light/light.h"
 
@@ -27,19 +28,21 @@ struct Params {
     Camera camera;
 
     // lights
-    LightArray light_data;
+    LightBuffer light_buffer;
+
+    // materials
+    MaterialBuffer material_buffer;
 
     OptixTraversableHandle handle;
 };
 
-struct RayGenData {};
-
-struct MissData {};
+struct EmptyData {};
 
 struct HitGroupData {
     Shape geometry_data;
-    MaterialData material_data;
-    int light_idx;  // This is an area light bind to mesh
+    // MaterialData material_data;
+    int light_idx;      // This is an area light bind to mesh
+    int material_idx;
 };
 
 template <typename T> struct Record {
@@ -48,9 +51,10 @@ template <typename T> struct Record {
     T data;
 };
 
-typedef Record<RayGenData> RayGenRecord;
-typedef Record<MissData> MissRecord;
+typedef Record<EmptyData> RayGenRecord;
+typedef Record<EmptyData> MissRecord;
 typedef Record<HitGroupData> HitgroupRecord;
+typedef Record<EmptyData> CallablesRecord;
 
 /**
  * The payload is associated with each ray, and is passed to all

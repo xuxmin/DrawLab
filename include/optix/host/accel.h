@@ -15,15 +15,17 @@ public:
         const std::vector<float>& normals;
         const std::vector<float>& texcoords;
         const int light_idx;
+        const int material_idx;
         const float pdf;
 
         TriangleMesh(const std::vector<float>& positions,
                      const std::vector<unsigned int>& indices,
                      const std::vector<float>& normals,
                      const std::vector<float>& texcoords, const int light_idx,
-                     const float pdf)
+                     const int material_idx, const float pdf)
             : positions(positions), indices(indices), normals(normals),
-              texcoords(texcoords), pdf(pdf), light_idx(light_idx) {}
+              texcoords(texcoords), pdf(pdf), light_idx(light_idx),
+              material_idx(material_idx) {}
     };
 
 private:
@@ -47,7 +49,8 @@ public:
     void addTriangleMesh(const std::vector<float>& positions,
                          const std::vector<unsigned int>& indices,
                          const std::vector<float>& normals,
-                         const std::vector<float>& texcoords, int light_idx,
+                         const std::vector<float>& texcoords,
+                         int light_idx, int material_idx,
                          float pdf);
 
     ~OptixAccel();
@@ -57,6 +60,8 @@ public:
     void packHitgroupRecord(HitgroupRecord& record, int mesh_idx) const;
 
     void packEmittedMesh(std::vector<Light>& lights) const;
+
+    int getShapeNum() const { return m_meshs.size(); }
 };
 
 }  // namespace optix

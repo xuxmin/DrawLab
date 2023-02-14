@@ -120,8 +120,13 @@ public:
                            "]",
                            m_alpha, m_intIOR, m_extIOR, m_kd.toString(), m_ks);
     }
-    const optix::Material* createOptixMaterial(optix::DeviceContext& context) const {
-        return nullptr;
+
+    void createOptixBSDF(optix::DeviceContext& context,
+                         optix::Material& bsdf) const {
+    }
+
+    optix::Material::Type getOptixBSDFType() const {
+        return optix::Material::MICROFACET;
     }
 
 private:

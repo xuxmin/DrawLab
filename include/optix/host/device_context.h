@@ -36,7 +36,13 @@ public:
 
     void createMissProgramsAndBindSBT(const char* cu_file, std::vector<const char*> func);
 
-    void createHitProgramsAndBindSBT(int shape_num, int ray_type_num, std::function<const Material*(int)> getMaterial);
+    void createHitProgramsAndBindSBT(
+        std::string cu_file,
+        const std::vector<std::pair<int, const char*>> closet_hits,
+        const std::vector<std::pair<int, const char*>> any_hits);
+
+    // Each cu_file corresponds to a material, and has three funcs: eval, pdf, sample
+    void createCallableProgramsAndBindSBT(std::vector<std::string> cu_files, std::vector<std::string> func_names);
 
     void createPipeline();
 
@@ -56,8 +62,6 @@ public:
     const CUstream& getStream() const { return m_stream; }
 
     void addTexture(const Texture* texture);
-
-    void addMaterial(const Material* material);
 
     const OptixPipeline getPipeline() const { return m_pipeline; }
 
@@ -87,19 +91,22 @@ private:
     OptixTraversableHandle m_as_handle;
 
     std::vector<const Texture*> m_textures;
-    std::vector<const Material*> m_materials;
 
     OptixModule m_raygen_module;
     OptixModule m_miss_module;
+    OptixModule m_hit_module;
+    std::vector<OptixModule> m_callable_modules;
     OptixProgramGroup m_raygen_pg;
     std::vector<OptixProgramGroup> m_miss_pgs;
     std::vector<OptixProgramGroup> m_hitgroup_pgs;
+    std::vector<OptixProgramGroup> m_callable_pgs;
 
     OptixPipeline m_pipeline;
 
     CUDABuffer m_raygen_record_buffer;
     CUDABuffer m_miss_record_buffer;
     CUDABuffer m_hitgroup_record_buffer;
+    CUDABuffer m_callable_record_buffer;
     /**
      * The shader binding table (SBT) is an array that contains information
      * about the location of programs and their parameters

@@ -117,8 +117,6 @@ OptixProgramGroup DeviceContext::createHitgroupPrograms(OptixModule ch_module,
                                             &pgOptions, log, &sizeof_log,
                                             &hitgroupPG));
 
-    m_hitgroup_pgs.push_back(hitgroupPG);
-
     return hitgroupPG;
 }
 
@@ -199,21 +197,39 @@ void DeviceContext::createMissProgramsAndBindSBT(
 }
 
 void DeviceContext::createHitProgramsAndBindSBT(
-    int shape_num, int ray_type_num,
-    std::function<const Material*(int)> getMaterial) {
+        std::string cu_file,
+        const std::vector<std::pair<int, const char*>> closet_hits,
+        const std::vector<std::pair<int, const char*>> any_hits) {
+    
+    int shape_num = m_accel->getShapeNum();
+    int ray_type_count = closet_hits.size();
+
+    m_hitgroup_pgs.resize(ray_type_count);
+
+    m_hit_module = createModuleFromCU(cu_file);
+
+    for (int i = 0; i < closet_hits.size(); i++) {
+        OptixProgramGroupOptions pgOptions = {};
+        OptixProgramGroupDesc pgDesc = {};
+        pgDesc.kind = OPTIX_PROGRAM_GROUP_KIND_HITGROUP;
+        pgDesc.hitgroup.moduleCH = m_hit_module;
+        pgDesc.hitgroup.moduleAH = m_hit_module;
+        pgDesc.hitgroup.entryFunctionNameCH = closet_hits[i].second;
+        pgDesc.hitgroup.entryFunctionNameAH = any_hits[i].second;
+
+        char log[2048];
+        size_t sizeof_log = sizeof(log);
+        OPTIX_CHECK_LOG(optixProgramGroupCreate(m_optix_context, &pgDesc, 1,
+                                                &pgOptions, log, &sizeof_log,
+                                                &m_hitgroup_pgs[i]));
+    }
 
     std::vector<HitgroupRecord> hitgroupRecords;
     for (int shape_id = 0; shape_id < shape_num; shape_id++) {
-        for (int ray_id = 0; ray_id < ray_type_num; ray_id++) {
+        for (int ray_id = 0; ray_id < ray_type_count; ray_id++) {
             HitgroupRecord rec;
-            const Material* mat = getMaterial(shape_id);
-
-            OPTIX_CHECK(
-                optixSbtRecordPackHeader(mat->getHitgroupPGs(ray_id), &rec));
-
+            OPTIX_CHECK(optixSbtRecordPackHeader(m_hitgroup_pgs[ray_id], &rec));
             m_accel->packHitgroupRecord(rec, shape_id);
-            mat->packHitgroupRecord(rec);
-
             hitgroupRecords.push_back(rec);
         }
     }
@@ -222,6 +238,54 @@ void DeviceContext::createHitProgramsAndBindSBT(
     m_sbt.hitgroupRecordBase = m_hitgroup_record_buffer.devicePtr();
     m_sbt.hitgroupRecordStrideInBytes = sizeof(HitgroupRecord);
     m_sbt.hitgroupRecordCount = (int)hitgroupRecords.size();
+}
+
+void DeviceContext::createCallableProgramsAndBindSBT(std::vector<std::string> cu_files,
+                                      std::vector<std::string> func_names) {
+    if (m_callable_modules.size() != 0) {
+        throw Exception(
+            "DeviceContext::createCallableProgramsAndBindSBT() can be called only once!");
+    }
+
+    int material_num = cu_files.size();
+    if (material_num * MATERIAL_CALLABLE_NUM != func_names.size()) {
+        throw Exception("The size of func_names doesn't match to the size of cu_files!");
+    }
+
+    m_callable_modules.resize(material_num);
+    m_callable_pgs.resize(func_names.size());
+
+    for (int mat_id = 0; mat_id < material_num; mat_id++) {
+        OptixModule callable_module = createModuleFromCU(cu_files[mat_id]);
+        
+        OptixProgramGroupOptions pgOptions = {};
+        OptixProgramGroupDesc pgDesc = {};
+        
+        for (int func_id = 0; func_id < MATERIAL_CALLABLE_NUM; func_id++) {
+            int idx = mat_id*3+func_id;
+
+            pgDesc.kind = OPTIX_PROGRAM_GROUP_KIND_CALLABLES;
+            pgDesc.callables.moduleDC = callable_module;
+            pgDesc.callables.entryFunctionNameDC = func_names[idx].c_str();
+            char log[2048];  // For error reporting from OptiX creation functions
+            size_t sizeof_log = sizeof(log);
+            OPTIX_CHECK_LOG(optixProgramGroupCreate(m_optix_context, &pgDesc,
+                                                    1,  // num program groups
+                                                    &pgOptions, log, &sizeof_log,
+                                                    &m_callable_pgs[idx]));
+        }
+    }
+
+    std::vector<CallablesRecord> callableRecords;
+    for (int i = 0; i < m_callable_pgs.size(); i++) {
+        CallablesRecord rec;
+        OPTIX_CHECK(optixSbtRecordPackHeader(m_callable_pgs[i], &rec));
+        callableRecords.push_back(rec);
+    }
+    m_miss_record_buffer.allocAndUpload(callableRecords);
+    m_sbt.callablesRecordBase = m_miss_record_buffer.devicePtr();
+    m_sbt.callablesRecordStrideInBytes = sizeof(CallablesRecord);
+    m_sbt.callablesRecordCount = (int)callableRecords.size();
 }
 
 void DeviceContext::createPipeline() {
@@ -235,6 +299,11 @@ void DeviceContext::createPipeline() {
     }
     // Add hitgroup programs
     for (auto pg : m_hitgroup_pgs) {
+        programGroups.push_back(pg);
+    }
+
+    // Add callable programs
+    for (auto pg : m_callable_pgs) {
         programGroups.push_back(pg);
     }
 
@@ -268,10 +337,6 @@ void DeviceContext::addTexture(const Texture* texture) {
     m_textures.push_back(texture);
 }
 
-
-void DeviceContext::addMaterial(const Material* material) {
-    m_materials.push_back(material);
-}
 
 void DeviceContext::createAccel(std::function<void(OptixAccel*)> init) {
     if (m_accel) {
@@ -308,10 +373,16 @@ void DeviceContext::destroy() {
     m_miss_pgs.clear();
     OPTIX_CHECK(optixModuleDestroy(m_miss_module));
 
-    // Release material
-    for (auto mat : m_materials) {
-        delete mat;
+    // Release callable module and programs
+    for (auto call_pgs : m_callable_pgs) {
+        OPTIX_CHECK(optixProgramGroupDestroy(call_pgs));
     }
+    m_callable_pgs.clear();
+
+    for (auto module : m_callable_modules) {
+        OPTIX_CHECK(optixModuleDestroy(module));
+    }
+    m_callable_modules.clear();
 
     // Release Texture
     for (auto tex : m_textures) {

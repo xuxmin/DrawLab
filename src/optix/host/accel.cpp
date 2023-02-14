@@ -27,9 +27,9 @@ void OptixAccel::addTriangleMesh(const std::vector<float>& positions,
                                  const std::vector<unsigned int>& indices,
                                  const std::vector<float>& normals,
                                  const std::vector<float>& texcoords,
-                                 int light_idx, float pdf) {
-    m_meshs.push_back(
-        TriangleMesh(positions, indices, normals, texcoords, light_idx, pdf));
+                                 int light_idx, int material_idx, float pdf) {
+    m_meshs.push_back(TriangleMesh(positions, indices, normals, texcoords,
+                                   light_idx, material_idx, pdf));
 }
 
 OptixTraversableHandle OptixAccel::build() {
@@ -168,6 +168,7 @@ void OptixAccel::packHitgroupRecord(optix::HitgroupRecord& rec,
         m_index_buffers[mesh_idx].m_size_in_bytes / sizeof(int3);
     geo.triangle_mesh.pdf = m_meshs[mesh_idx].pdf;
     rec.data.light_idx = m_meshs[mesh_idx].light_idx;
+    rec.data.material_idx = m_meshs[mesh_idx].material_idx;
 }
 
 void OptixAccel::packEmittedMesh(std::vector<Light>& lights) const {

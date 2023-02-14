@@ -9,6 +9,7 @@
 #include <GLFW/glfw3.h>
 #include <optix_function_table_definition.h>
 #include <spdlog/spdlog.h>
+#include "optix/host/material_table.h"
 
 namespace optix {
 
@@ -23,33 +24,48 @@ OptixRenderer::OptixRenderer(drawlab::Scene* scene, int device_id)
 
     spdlog::info("[OPTIX RENDERER] Step 3. Creating raygen programs ...");
     m_device_context->createRaygenProgramsAndBindSBT(
-        "optix/integrator/path.cu", "__raygen__path");
+        "optix/cuda/integrator/path.cu", "__raygen__path");
 
     spdlog::info("[OPTIX RENDERER] Step 4. Creating miss programs ...");
     m_device_context->createMissProgramsAndBindSBT(
-        "optix/miss/miss.cu", {"__miss__radiance", "__miss__occlusion"});
+        "optix/cuda/miss.cu", {"__miss__radiance", "__miss__occlusion"});
 
     spdlog::info("[OPTIX RENDERER] Step 5. Creating optix accel ...");
     m_device_context->createAccel([&](OptixAccel* accel) {
         const auto & meshs = m_scene->getMeshes();
         const auto & light_idx = m_scene->getMeshLightIdx();
+        const auto & material_idx = m_scene->getMeshBsdfIdx();
         for (int i = 0; i < meshs.size(); i++) {
             accel->addTriangleMesh(
                 meshs[i]->getVertexPosition(), meshs[i]->getVertexIndex(),
                 meshs[i]->getVertexNormal(), meshs[i]->getVertexTexCoord(),
-                light_idx[i], meshs[i]->pdfPosition());
+                light_idx[i], material_idx[i], meshs[i]->pdfPosition());
         }
     });
 
     spdlog::info("[OPTIX RENDERER] Step 6. Creating hitgroup programs ...");
     const std::vector<drawlab::Mesh*> meshs = m_scene->getMeshes();
     m_device_context->createHitProgramsAndBindSBT(
-        meshs.size(), RAY_TYPE_COUNT, [&](int shape_id) {
-            return meshs[shape_id]->getBSDF()->getOptixMaterial(
-                *m_device_context);
-        });
+        "optix/cuda/hitgroup_pgs.cu",
+        {{0, "__closesthit__radiance"}, {1, "__closesthit__occlusion"}},
+        {{0, "__anyhit__radiance"}, {1, "__anyhit__occlusion"}});
 
-    spdlog::info("[OPTIX RENDERER] Step 7. Setting up optix pipeline ...");
+    spdlog::info("[OPTIX RENDERER] Step 7. Creating callable programs ...");
+    const std::vector<const drawlab::BSDF*> bsdfs = m_scene->getBSDFs();
+    std::vector<std::string> cu_files;
+    std::vector<std::string> func_names;
+    for (auto bsdf : bsdfs) {
+
+        auto type = bsdf->getOptixBSDFType();
+        cu_files.push_back(MaterialCUFiles[type]);
+        auto funcs = MaterialCallableFuncs[type];
+        for (auto func : funcs) {
+            func_names.push_back(func);
+        }
+    }
+    m_device_context->createCallableProgramsAndBindSBT(cu_files, func_names);
+
+    spdlog::info("[OPTIX RENDERER] Step 8. Setting up optix pipeline ...");
     m_device_context->createPipeline();
 
     initLaunchParams();
@@ -90,6 +106,14 @@ void OptixRenderer::initLaunchParams() {
     }
     m_device_context->getAccel()->packEmittedMesh(lights);
     m_launch_param->setupLights(lights);
+
+    std::vector<Material> mats;
+    for (const auto bsdf : m_scene->getBSDFs()) {
+        Material mat;
+        bsdf->createOptixBSDF(*m_device_context, mat);
+        mats.push_back(mat);
+    }
+    m_launch_param->setupMaterials(mats);
 
     m_launch_param->setupSampler(m_scene->getSampler()->getSampleCount());
 }
