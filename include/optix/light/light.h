@@ -1,10 +1,10 @@
 #pragma once
 
+#include "optix/light/area.h"
+#include "optix/light/point.h"
 #include "optix/math/random.h"
 #include "optix/math/vec_math.h"
 #include "optix/shape/shape.h"
-#include "optix/light/area.h"
-#include "optix/light/point.h"
 #include <cuda_runtime.h>
 
 namespace optix {

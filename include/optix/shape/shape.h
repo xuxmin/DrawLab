@@ -1,8 +1,6 @@
 #pragma once
 
 #include "optix/math/vec_math.h"
-#include "optix/math/random.h"
-#include "optix/math/wrap.h"
 #include "optix/shape/mesh.h"
 
 namespace optix {
@@ -42,7 +40,7 @@ struct LightSampleRecord {
     LightSampleRecord() {}
 
     LightSampleRecord(const float3& ori, const float3& dst, const float3 n,
-                          const TriangleMesh* mesh)
+                      const TriangleMesh* mesh)
         : o(ori), n(n), mesh(mesh) {
         float3 vec = dst - ori;
         d = normalize(vec);

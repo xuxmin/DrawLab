@@ -5,8 +5,6 @@
 
 namespace optix {
 
-struct LightSampleRecord;
-
 struct Area {
     TriangleMesh triangle_mesh;
     float3 intensity;

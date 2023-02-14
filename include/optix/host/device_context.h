@@ -5,7 +5,6 @@
 #include "optix/host/sutil.h"
 #include "optix/host/texture.h"
 #include "optix/host/accel.h"
-#include "optix/host/resource_manager.h"
 #include <cuda_runtime.h>
 #include <map>
 #include <functional>
@@ -13,7 +12,6 @@
 
 namespace optix {
 
-class Material;
 class LaunchParam;
 
 

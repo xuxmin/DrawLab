@@ -1,10 +1,7 @@
 #pragma once
 
-#include <cuda_runtime.h>
-
 namespace optix {
 
-struct Mirror {
-};
+struct Mirror {};
 
 }  // namespace optix

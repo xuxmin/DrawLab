@@ -282,8 +282,8 @@ void DeviceContext::createCallableProgramsAndBindSBT(std::vector<std::string> cu
         OPTIX_CHECK(optixSbtRecordPackHeader(m_callable_pgs[i], &rec));
         callableRecords.push_back(rec);
     }
-    m_miss_record_buffer.allocAndUpload(callableRecords);
-    m_sbt.callablesRecordBase = m_miss_record_buffer.devicePtr();
+    m_callable_record_buffer.allocAndUpload(callableRecords);
+    m_sbt.callablesRecordBase = m_callable_record_buffer.devicePtr();
     m_sbt.callablesRecordStrideInBytes = sizeof(CallablesRecord);
     m_sbt.callablesRecordCount = (int)callableRecords.size();
 }
@@ -395,6 +395,7 @@ void DeviceContext::destroy() {
     m_raygen_record_buffer.free();
     m_miss_record_buffer.free();
     m_hitgroup_record_buffer.free();
+    m_callable_record_buffer.free();
 
     // Release OptixAccel
     delete m_accel;
