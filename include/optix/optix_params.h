@@ -55,29 +55,4 @@ typedef Record<EmptyData> MissRecord;
 typedef Record<HitGroupData> HitgroupRecord;
 typedef Record<EmptyData> CallablesRecord;
 
-/**
- * The payload is associated with each ray, and is passed to all
- * the intersection, any-hit, closest-hit and miss programs that
- * are executed during this invocation of trace.
- */
-struct RadiancePRD {
-    float3 radiance;
-    bool done;
-    BSDFSampleRecord sRec;
-
-    /**
-     * The initial seed of each path.
-     *
-     * We assign a initial seed for each path for the convenience of debuging.
-     *
-     * Notice:
-     * 1. rnd(seed) takes the reference of seed as input, each call of rnd(seed)
-     * will change the value of the seed.
-     * 2. Initialize the seed at raygen programs
-     * 3. Don't copy the seed value to a new variable, use REFERENCE instead!!!
-     * 4. Each time call rnd(seed), make sure the prd.seed is changed!!!
-     */
-    unsigned int seed;
-};
-
 }  // namespace optix

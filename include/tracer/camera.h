@@ -2,7 +2,7 @@
 
 #include "core/base/common.h"
 #include "tracer/rfilter.h"
-#include "optix/common/optix_params.h"
+#include "optix/optix_params.h"
 
 
 namespace drawlab {

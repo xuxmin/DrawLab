@@ -1,5 +1,5 @@
 #pragma once
-#include "optix/common/optix_params.h"
+#include "optix/optix_params.h"
 #include "optix/host/cuda_buffer.h"
 #include "optix/host/device_context.h"
 #include "optix/host/launch_param.h"

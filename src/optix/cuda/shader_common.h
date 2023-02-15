@@ -1,74 +1,19 @@
 #pragma once
 
-#include "optix/common/optix_params.h"
+#include "optix/optix_params.h"
 #include <cuda_runtime.h>
 #include <optix.h>
 
 namespace optix {
 
-
-
-static __forceinline__ __device__ void* unpackPointer(unsigned int i0,
-                                                      unsigned int i1) {
-    const unsigned long long uptr =
-        static_cast<unsigned long long>(i0) << 32 | i1;
-    void* ptr = reinterpret_cast<void*>(uptr);
-    return ptr;
-}
-
-static __forceinline__ __device__ void packPointer(void* ptr, unsigned int& i0,
-                                                   unsigned int& i1) {
-    const unsigned long long uptr = reinterpret_cast<unsigned long long>(ptr);
-    i0 = uptr >> 32;
-    i1 = uptr & 0x00000000ffffffff;
-}
-
-template <typename T> static __forceinline__ __device__ T* getPRD() {
-    const unsigned int u0 = optixGetPayload_0();
-    const unsigned int u1 = optixGetPayload_1();
-    return reinterpret_cast<T*>(unpackPointer(u0, u1));
-}
-
-static __forceinline__ __device__ void setPayloadOcclusion(bool occluded) {
-    optixSetPayload_0(static_cast<unsigned int>(occluded));
-}
-
-static __forceinline__ __device__ bool
-traceOcclusion(OptixTraversableHandle handle, float3 ray_origin,
-               float3 ray_direction, float tmin, float tmax) {
-    unsigned int occluded = 0u;
-    optixTrace(handle, ray_origin, ray_direction, tmin, tmax,
-               0.0f,  // rayTime
-               OptixVisibilityMask(255), OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT,
-               RAY_TYPE_OCCLUSION,  // SBT offset
-               RAY_TYPE_COUNT,      // SBT stride
-               RAY_TYPE_OCCLUSION,  // missSBTIndex
-               occluded);
-    return occluded;
-}
-
-static __forceinline__ __device__ bool invalid_color(float3 color) {
+__forceinline__ __device__ bool invalid_color(float3 color) {
     return isnan(color.x) || isnan(color.y) || isnan(color.z);
 }
 
-static __forceinline__ __device__ void LOG(float3 color) {
-    printf("%lf %lf %lf\n", color.x, color.y, color.z);
-}
-
-static __forceinline__ __device__ void LOG(float var) { printf("%lf\n", var); }
-
-static __forceinline__ __device__ void LOG(const char* msg, int var) {
-    printf("%s %d\n ", msg, var);
-}
-
-static __forceinline__ __device__ void LOG(const char* msg, float3 var) {
-    printf("%s %lf %lf %lf\n ", msg, var.x, var.y, var.z);
-}
-
-static __forceinline__ __device__ float mis_weight(float pdf_a, float pdf_b) {
-    pdf_a *= pdf_a;
-    pdf_b *= pdf_b;
-    return pdf_a / (pdf_a + pdf_b);
+__forceinline__ __host__ __device__ float powerHeuristic(const float a,
+                                                         const float b) {
+    const float t = a * a;
+    return t / (t + b * b);
 }
 
 static __forceinline__ __device__ Intersection getHitData() {

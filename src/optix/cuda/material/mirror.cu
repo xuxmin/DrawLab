@@ -1,7 +1,7 @@
-#include "optix/common/bsdf_common.h"
 #include "optix/math/random.h"
 #include "optix/math/vec_math.h"
 #include "optix/math/wrap.h"
+#include "../shader_common.h"
 
 namespace optix {
 

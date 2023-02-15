@@ -29,7 +29,7 @@
 
 #pragma once
 
-#include "optix/common/preprocessor.h"
+#include "optix/preprocessor.h"
 #include <vector_functions.h>
 #include <vector_types.h>
 

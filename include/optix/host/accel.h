@@ -1,6 +1,6 @@
 #pragma once
 
-#include "optix/common/optix_params.h"
+#include "optix/optix_params.h"
 #include "optix/host/cuda_buffer.h"
 #include <map>
 #include <vector>

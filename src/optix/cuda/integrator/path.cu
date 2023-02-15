@@ -1,10 +1,11 @@
 #include <optix.h>
 #include <optix_device.h>
 
-#include "optix/common/optix_params.h"
+#include "optix/optix_params.h"
 #include "optix/math/vec_math.h"
 #include "optix/math/random.h"
-#include "optix/common/bsdf_common.h"
+#include "../per_ray_data.h"
+#include "../shader_common.h"
 
 namespace optix {
 

@@ -1,5 +1,4 @@
 #include "optix/host/device_context.h"
-#include "optix/host/material.h"
 #include "optix/host/sutil.h"
 #include "optix/host/launch_param.h"
 #include <spdlog/spdlog.h>

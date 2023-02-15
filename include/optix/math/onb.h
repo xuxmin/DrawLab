@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cuda_runtime.h>
+#include "optix/math/vec_math.h"
 
 namespace optix {
 

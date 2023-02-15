@@ -1,10 +1,11 @@
 #include <optix.h>
 #include <optix_device.h>
 
-#include "optix/common/bsdf_common.h"
-#include "optix/common/optix_params.h"
+#include "optix/optix_params.h"
 #include "optix/math/onb.h"
 #include "optix/math/vec_math.h"
+#include "per_ray_data.h"
+#include "shader_common.h"
 
 namespace optix {
 
@@ -37,7 +38,7 @@ extern "C" __global__ void __closesthit__radiance() {
         float light_pdf =
             params.light_buffer.pdfLightDirection(its.light_idx, dRec);
         float bsdf_pdf = sRec.pdf;
-        float mis = sRec.is_diffuse ? mis_weight(bsdf_pdf, light_pdf) : 1.f;
+        float mis = sRec.is_diffuse ? powerHeuristic(bsdf_pdf, light_pdf) : 1.f;
 
         radiance += mis * light_val;
     }
@@ -71,7 +72,7 @@ extern "C" __global__ void __closesthit__radiance() {
                 3 * rt_data->material_idx + MATERIAL_CALLABLE_PDF, mat_data,
                 bRec);
         float light_pdf = dRec.pdf;
-        float weight = dRec.delta ? 1 : mis_weight(light_pdf, bsdf_pdf);
+        float weight = dRec.delta ? 1 : powerHeuristic(light_pdf, bsdf_pdf);
 
         radiance += weight * bsdf_val * light_val;
     }

@@ -28,7 +28,7 @@
 
 #pragma once
 
-#include "optix/common/preprocessor.h"
+#include "optix/preprocessor.h"
 
 template<unsigned int N>
 static SUTIL_INLINE SUTIL_HOSTDEVICE unsigned int tea( unsigned int val0, unsigned int val1 )
