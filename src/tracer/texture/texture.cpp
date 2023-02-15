@@ -28,7 +28,7 @@ std::shared_ptr<Bitmap> Texture::getBitmap(const Vector2i &) const {
     throw Exception("Texture::getBitmap(): not implemented!");
 }
 
-const optix::Texture* Texture::getOptixTexture(optix::DeviceContext& context) const {
+const optix::CUDATexture* Texture::createCUDATexture() const {
     throw Exception("Texture::getOptixTexture(): not implemented!");
 }
 

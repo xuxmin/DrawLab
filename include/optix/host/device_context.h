@@ -3,7 +3,7 @@
 #include "optix/optix_params.h"
 #include "optix/host/cuda_buffer.h"
 #include "optix/host/sutil.h"
-#include "optix/host/texture.h"
+#include "optix/host/cuda_texture.h"
 #include "optix/host/accel.h"
 #include <cuda_runtime.h>
 #include <map>
@@ -19,16 +19,10 @@ class DeviceContext {
 public:
     DeviceContext(int deviceID);
 
-    void destroy();
-
     ~DeviceContext();
 
-    /// @brief  configures the optixPipeline link options and compile options,
+    // Configures the optixPipeline link options and compile options,
     void configurePipelineOptions();
-
-    std::string getDeviceName() const;
-
-    const int getDeviceId() const;
 
     void createRaygenProgramsAndBindSBT(std::string cu_file, const char* func);
 
@@ -44,22 +38,12 @@ public:
 
     void createPipeline();
 
-    OptixModule createModuleFromCU(std::string cu_file) const;
-
-    OptixProgramGroup createHitgroupPrograms(OptixModule ch_module,
-                                             OptixModule ah_module,
-                                             std::string ch_func,
-                                             std::string ah_func);
-
-    OptixProgramGroup createHitgroupPrograms(OptixModule module,
-                                             std::string ch_func,
-                                             std::string ah_func);
 
     void launch(const LaunchParam& launch_params);
 
     const CUstream& getStream() const { return m_stream; }
 
-    void addTexture(const Texture* texture);
+    // void addTexture(const Texture* texture);
 
     const OptixPipeline getPipeline() const { return m_pipeline; }
 
@@ -70,10 +54,16 @@ public:
     void createAccel(std::function<void(OptixAccel*)> init);
 
 private:
+
+    // Load *.cu file and create OptixModule object
+    OptixModule createModuleFromCU(std::string cu_file) const;
+
+private:
     int m_device_id;
+    // CUDA stream and CUDA context
     CUstream m_stream = nullptr;
     CUcontext m_cuda_context = nullptr;
-    /// the optix context that our pipeline will run in.
+    // The optix context that our pipeline will run in.
     OptixDeviceContext m_optix_context = nullptr;
 
     // Two option structs control the parameters of the compilation process:
@@ -88,7 +78,7 @@ private:
     OptixAccel* m_accel;
     OptixTraversableHandle m_as_handle;
 
-    std::vector<const Texture*> m_textures;
+    // std::vector<const Texture*> m_textures;
 
     OptixModule m_raygen_module;
     OptixModule m_miss_module;

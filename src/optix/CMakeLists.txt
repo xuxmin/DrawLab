@@ -1,7 +1,7 @@
 set(TARGET_NAME "optixlib")
 set(SOURCES
     host/sutil.cpp
-    host/texture.cpp
+    host/cuda_texture.cpp
     host/device_context.cpp
     host/material.cpp
     host/accel.cpp

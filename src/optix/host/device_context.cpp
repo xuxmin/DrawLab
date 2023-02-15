@@ -1,6 +1,6 @@
 #include "optix/host/device_context.h"
-#include "optix/host/sutil.h"
 #include "optix/host/launch_param.h"
+#include "optix/host/sutil.h"
 #include <spdlog/spdlog.h>
 
 namespace optix {
@@ -23,8 +23,7 @@ static void context_log_cb(unsigned int level, const char* tag,
     else {
         spd_level = 6;  // disable -> off
     }
-    spdlog::log((spdlog::level::level_enum)spd_level, "[{:>14}] {}", tag,
-                message);
+    spdlog::log((spdlog::level::level_enum)spd_level, "[{:>14}] {}", tag, message);
 }
 
 DeviceContext::DeviceContext(int deviceID)
@@ -32,8 +31,10 @@ DeviceContext::DeviceContext(int deviceID)
     CUDA_CHECK(cudaSetDevice(deviceID));
     CUDA_CHECK(cudaStreamCreate(&m_stream));
 
-    spdlog::info("[DeviceContext] Create device context on device: {}",
-                 getDeviceName());
+    cudaDeviceProp prop;
+    cudaGetDeviceProperties(&prop, m_device_id);
+
+    spdlog::info("[DeviceContext] Create device context on device: {}", prop.name);
 
     CUresult cuRes = cuCtxGetCurrent(&m_cuda_context);
     if (cuRes != CUDA_SUCCESS)
@@ -48,17 +49,8 @@ DeviceContext::DeviceContext(int deviceID)
 
     // Associate a CUDA context (and therefore a specific GPU) with this
     // device context
-    OPTIX_CHECK(
-        optixDeviceContextCreate(m_cuda_context, &options, &m_optix_context));
+    OPTIX_CHECK(optixDeviceContextCreate(m_cuda_context, &options, &m_optix_context));
 }
-
-std::string DeviceContext::getDeviceName() const {
-    cudaDeviceProp prop;
-    cudaGetDeviceProperties(&prop, getDeviceId());
-    return prop.name;
-}
-
-const int DeviceContext::getDeviceId() const { return m_device_id; }
 
 void DeviceContext::configurePipelineOptions() {
     m_module_compile_options.maxRegisterCount =
@@ -96,40 +88,11 @@ OptixModule DeviceContext::createModuleFromCU(std::string cu_file) const {
     return module;
 }
 
-OptixProgramGroup DeviceContext::createHitgroupPrograms(OptixModule ch_module,
-                                                        OptixModule ah_module,
-                                                        std::string ch_func,
-                                                        std::string ah_func) {
-    OptixProgramGroup hitgroupPG;
-
-    OptixProgramGroupOptions pgOptions = {};
-    OptixProgramGroupDesc pgDesc = {};
-    pgDesc.kind = OPTIX_PROGRAM_GROUP_KIND_HITGROUP;
-    pgDesc.hitgroup.moduleCH = ch_module;
-    pgDesc.hitgroup.moduleAH = ah_module;
-    pgDesc.hitgroup.entryFunctionNameCH = ch_func.c_str();
-    pgDesc.hitgroup.entryFunctionNameAH = ah_func.c_str();
-
-    char log[2048];
-    size_t sizeof_log = sizeof(log);
-    OPTIX_CHECK_LOG(optixProgramGroupCreate(m_optix_context, &pgDesc, 1,
-                                            &pgOptions, log, &sizeof_log,
-                                            &hitgroupPG));
-
-    return hitgroupPG;
-}
-
-OptixProgramGroup DeviceContext::createHitgroupPrograms(OptixModule module,
-                                                        std::string ch_func,
-                                                        std::string ah_func) {
-    return createHitgroupPrograms(module, module, ch_func, ah_func);
-}
-
 void DeviceContext::createRaygenProgramsAndBindSBT(std::string cu_file,
                                                    const char* func) {
     if (m_raygen_pg != nullptr) {
-        throw Exception(
-            "DeviceContext::createRaygenProgramsAndBindSBT() can be called only once!");
+        throw Exception("DeviceContext::createRaygenProgramsAndBindSBT() can "
+                        "be called only once!");
     }
     // Create module
     m_raygen_module = createModuleFromCU(cu_file);
@@ -196,10 +159,9 @@ void DeviceContext::createMissProgramsAndBindSBT(
 }
 
 void DeviceContext::createHitProgramsAndBindSBT(
-        std::string cu_file,
-        const std::vector<std::pair<int, const char*>> closet_hits,
-        const std::vector<std::pair<int, const char*>> any_hits) {
-    
+    std::string cu_file,
+    const std::vector<std::pair<int, const char*>> closet_hits,
+    const std::vector<std::pair<int, const char*>> any_hits) {
     int shape_num = m_accel->getShapeNum();
     int ray_type_count = closet_hits.size();
 
@@ -239,16 +201,17 @@ void DeviceContext::createHitProgramsAndBindSBT(
     m_sbt.hitgroupRecordCount = (int)hitgroupRecords.size();
 }
 
-void DeviceContext::createCallableProgramsAndBindSBT(std::vector<std::string> cu_files,
-                                      std::vector<std::string> func_names) {
+void DeviceContext::createCallableProgramsAndBindSBT(
+    std::vector<std::string> cu_files, std::vector<std::string> func_names) {
     if (m_callable_modules.size() != 0) {
-        throw Exception(
-            "DeviceContext::createCallableProgramsAndBindSBT() can be called only once!");
+        throw Exception("DeviceContext::createCallableProgramsAndBindSBT() can "
+                        "be called only once!");
     }
 
     int material_num = cu_files.size();
     if (material_num * MATERIAL_CALLABLE_NUM != func_names.size()) {
-        throw Exception("The size of func_names doesn't match to the size of cu_files!");
+        throw Exception(
+            "The size of func_names doesn't match to the size of cu_files!");
     }
 
     m_callable_modules.resize(material_num);
@@ -256,22 +219,23 @@ void DeviceContext::createCallableProgramsAndBindSBT(std::vector<std::string> cu
 
     for (int mat_id = 0; mat_id < material_num; mat_id++) {
         m_callable_modules[mat_id] = createModuleFromCU(cu_files[mat_id]);
-        
+
         OptixProgramGroupOptions pgOptions = {};
         OptixProgramGroupDesc pgDesc = {};
-        
+
         for (int func_id = 0; func_id < MATERIAL_CALLABLE_NUM; func_id++) {
-            int idx = mat_id*3+func_id;
+            int idx = mat_id * 3 + func_id;
 
             pgDesc.kind = OPTIX_PROGRAM_GROUP_KIND_CALLABLES;
             pgDesc.callables.moduleDC = m_callable_modules[mat_id];
             pgDesc.callables.entryFunctionNameDC = func_names[idx].c_str();
-            char log[2048];  // For error reporting from OptiX creation functions
+            char
+                log[2048];  // For error reporting from OptiX creation functions
             size_t sizeof_log = sizeof(log);
-            OPTIX_CHECK_LOG(optixProgramGroupCreate(m_optix_context, &pgDesc,
-                                                    1,  // num program groups
-                                                    &pgOptions, log, &sizeof_log,
-                                                    &m_callable_pgs[idx]));
+            OPTIX_CHECK_LOG(optixProgramGroupCreate(
+                m_optix_context, &pgDesc,
+                1,  // num program groups
+                &pgOptions, log, &sizeof_log, &m_callable_pgs[idx]));
         }
     }
 
@@ -331,11 +295,9 @@ void DeviceContext::createPipeline() {
                                   1));
 }
 
-
-void DeviceContext::addTexture(const Texture* texture) {
-    m_textures.push_back(texture);
-}
-
+// void DeviceContext::addTexture(const Texture* texture) {
+//     m_textures.push_back(texture);
+// }
 
 void DeviceContext::createAccel(std::function<void(OptixAccel*)> init) {
     if (m_accel) {
@@ -357,7 +319,7 @@ void DeviceContext::launch(const LaunchParam& launch_params) {
                             1));
 }
 
-void DeviceContext::destroy() {
+DeviceContext::~DeviceContext() {
     // Release pipeline
     OPTIX_CHECK(optixPipelineDestroy(m_pipeline));
 
@@ -384,9 +346,9 @@ void DeviceContext::destroy() {
     m_callable_modules.clear();
 
     // Release Texture
-    for (auto tex : m_textures) {
-        delete tex;
-    }
+    // for (auto tex : m_textures) {
+    //     delete tex;
+    // }
 
     OPTIX_CHECK(optixDeviceContextDestroy(m_optix_context));
 
@@ -398,10 +360,6 @@ void DeviceContext::destroy() {
 
     // Release OptixAccel
     delete m_accel;
-}
-
-DeviceContext::~DeviceContext() {
-    destroy();
 }
 
 }  // namespace optix

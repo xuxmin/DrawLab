@@ -103,9 +103,11 @@ public:
      */
     virtual bool isDiffuse() const { return false; }
 
-    virtual void createOptixBSDF(optix::DeviceContext& context, optix::Material& bsdf) const = 0;
+    virtual void createOptixMaterial(
+        optix::Material& material,
+        std::vector<const optix::CUDATexture*>& textures) const = 0;
 
-    virtual optix::Material::Type getOptixBSDFType() const = 0;
+    virtual optix::Material::Type getOptixMaterialType() const = 0;
 };
 
 }  // namespace drawlab

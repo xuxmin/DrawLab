@@ -14,14 +14,11 @@ struct Point {
     SUTIL_INLINE SUTIL_HOSTDEVICE float3
     sampleDirection(const Intersection& its, unsigned int seed,
                     LightSampleRecord& dRec) const {
-        const float3 intensity = intensity;
-        const float3 light_pos = position;
-
         dRec.o = its.p;
-        dRec.d = normalize(light_pos - its.p);
+        dRec.d = normalize(position - its.p);
         dRec.n = make_float3(0.f);
         dRec.delta = true;
-        dRec.dist = length(light_pos - its.p);
+        dRec.dist = length(position - its.p);
         dRec.pdf = 1;
         float inv_dist = (float)1.0 / dRec.dist;
         return intensity * inv_dist * inv_dist;

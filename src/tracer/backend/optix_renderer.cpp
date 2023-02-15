@@ -56,7 +56,7 @@ OptixRenderer::OptixRenderer(drawlab::Scene* scene, int device_id)
     std::vector<std::string> func_names;
     for (auto bsdf : bsdfs) {
 
-        auto type = bsdf->getOptixBSDFType();
+        auto type = bsdf->getOptixMaterialType();
         cu_files.push_back(MaterialCUFiles[type]);
         auto funcs = MaterialCallableFuncs[type];
         for (auto func : funcs) {
@@ -108,12 +108,14 @@ void OptixRenderer::initLaunchParams() {
     m_launch_param->setupLights(lights);
 
     std::vector<Material> mats;
+    std::vector<const CUDATexture*> texs;
     for (const auto bsdf : m_scene->getBSDFs()) {
         Material mat;
-        bsdf->createOptixBSDF(*m_device_context, mat);
+        bsdf->createOptixMaterial(mat, texs);
         mats.push_back(mat);
     }
     m_launch_param->setupMaterials(mats);
+    m_launch_param->setupTextures(texs);
 
     m_launch_param->setupSampler(m_scene->getSampler()->getSampleCount());
 }

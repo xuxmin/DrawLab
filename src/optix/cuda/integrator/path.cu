@@ -36,6 +36,9 @@ extern "C" __global__ void __raygen__path() {
     float3 result = make_float3(0.f);
     int i = params.spp;
     do {
+        // if (idx.x != 500 || idx.y != 500 || i != params.spp) {
+        //     break;
+        // }
         seed = tea<4>(idx.y * w + idx.x, i);
 
         float3 ray_origin, ray_direction;

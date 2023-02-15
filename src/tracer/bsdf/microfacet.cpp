@@ -121,11 +121,13 @@ public:
                            m_alpha, m_intIOR, m_extIOR, m_kd.toString(), m_ks);
     }
 
-    void createOptixBSDF(optix::DeviceContext& context,
-                         optix::Material& bsdf) const {
+    void createOptixMaterial(
+        optix::Material& mat,
+        std::vector<const optix::CUDATexture*>& textures) const {
+        mat.is_diffuse = false;
     }
 
-    optix::Material::Type getOptixBSDFType() const {
+    optix::Material::Type getOptixMaterialType() const {
         return optix::Material::MICROFACET;
     }
 

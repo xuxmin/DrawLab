@@ -1,5 +1,6 @@
 #include "optix/optix_params.h"
 #include "optix/host/cuda_buffer.h"
+#include "optix/host/cuda_texture.h"
 
 namespace optix {
 
@@ -16,6 +17,8 @@ public:
     void setupLights(const std::vector<Light>& lights);
 
     void setupMaterials(const std::vector<Material>& materials);
+    
+    void setupTextures(std::vector<const CUDATexture*>& textures);
 
     void setupCamera(const Camera& camera);
 
@@ -49,6 +52,8 @@ private:
 
     int m_material_num;
     CUDABuffer m_material_buffer;
+
+    std::vector<const CUDATexture*> m_cuda_textures;
 
     Camera m_camera;
 

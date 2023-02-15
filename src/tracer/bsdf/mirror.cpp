@@ -35,12 +35,13 @@ public:
 
     std::string toString() const { return "Mirror[]"; }
 
-    void createOptixBSDF(optix::DeviceContext& context,
-                         optix::Material& bsdf) const {
-        bsdf.is_diffuse = false;
+    void createOptixMaterial(
+        optix::Material& mat,
+        std::vector<const optix::CUDATexture*>& textures) const {
+        mat.is_diffuse = false;
     }
 
-    optix::Material::Type getOptixBSDFType() const {
+    optix::Material::Type getOptixMaterialType() const {
         return optix::Material::MIRROR;
     }
 

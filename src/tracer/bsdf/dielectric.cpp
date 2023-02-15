@@ -65,16 +65,17 @@ public:
                            m_intIOR, m_extIOR);
     }
 
-    void createOptixBSDF(optix::DeviceContext& context,
-                         optix::Material& bsdf) const {
-        bsdf.type = optix::Material::DIELECTRIC;
-        bsdf.dielectric.extIOR = m_extIOR;
-        bsdf.dielectric.intIOR = m_intIOR;
-        bsdf.diffuse.normal_tex = 0;
-        bsdf.is_diffuse = false;
+    void createOptixMaterial(
+        optix::Material& mat,
+        std::vector<const optix::CUDATexture*>& textures) const {
+        mat.type = optix::Material::DIELECTRIC;
+        mat.dielectric.extIOR = m_extIOR;
+        mat.dielectric.intIOR = m_intIOR;
+        mat.diffuse.normal_tex = 0;
+        mat.is_diffuse = false;
     }
 
-    optix::Material::Type getOptixBSDFType() const {
+    optix::Material::Type getOptixMaterialType() const {
         return optix::Material::DIELECTRIC;
     }
 

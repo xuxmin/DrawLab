@@ -38,6 +38,11 @@ void LaunchParam::setupMaterials(const std::vector<Material>& materials) {
     dirty = true;
 }
 
+void LaunchParam::setupTextures(std::vector<const CUDATexture*>& textures) {
+    m_cuda_textures = textures;
+    dirty = true;
+}
+
 void LaunchParam::setupCamera(const Camera& camera) {
     m_camera = camera;
 

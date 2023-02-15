@@ -30,16 +30,16 @@ enum class CUDATextureColorSpace {
     CUDA_COLOR_SPACE_SRGB
 };
 
-class Texture {
+class CUDATexture {
 public:
-    Texture(uint32_t width, uint32_t height,
+    CUDATexture(uint32_t width, uint32_t height,
             uint32_t linePitchInBytes,
             CUDATexelFormat texelFormat,
             CUDATextureFilterMode filterMode,
             CUDATextureAddressMode addressMode,
             CUDATextureColorSpace colorSpace, const void* texels);
     
-    ~Texture();
+    ~CUDATexture();
 
     const cudaTextureObject_t getObject() const;
 

@@ -87,24 +87,25 @@ public:
 
     EClassType getClassType() const { return EBSDF; }
 
-    void createOptixBSDF(optix::DeviceContext& context,
-                         optix::Material& bsdf) const {
-        bsdf.type = optix::Material::DIFFUSE;
+    void createOptixMaterial(
+        optix::Material& mat,
+        std::vector<const optix::CUDATexture*>& textures) const {
+        mat.type = optix::Material::DIFFUSE;
         if (m_albedo->isConstant()) {
             Color3f color = m_albedo->eval(Intersection());
-            bsdf.diffuse.albedo =
-                make_float4(color[0], color[1], color[2], 1.f);
-            bsdf.diffuse.albedo_tex = 0;
+            mat.diffuse.albedo = make_float4(color[0], color[1], color[2], 1.f);
+            mat.diffuse.albedo_tex = 0;
         }
         else {
-            bsdf.diffuse.albedo_tex =
-                m_albedo->getOptixTexture(context)->getObject();
+            const optix::CUDATexture* tex = m_albedo->createCUDATexture();
+            textures.push_back(tex);
+            mat.diffuse.albedo_tex = tex->getObject();
         }
-        bsdf.diffuse.normal_tex = 0;
-        bsdf.is_diffuse = true;
+        mat.diffuse.normal_tex = 0;
+        mat.is_diffuse = true;
     }
 
-    optix::Material::Type getOptixBSDFType() const {
+    optix::Material::Type getOptixMaterialType() const {
         return optix::Material::DIFFUSE;
     }
 

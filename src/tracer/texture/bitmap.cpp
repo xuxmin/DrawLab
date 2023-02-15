@@ -55,7 +55,7 @@ public:
         return std::shared_ptr<Bitmap>(m_bitmap);
     }
 
-    const optix::Texture* getOptixTexture(optix::DeviceContext& context) const {
+    const optix::CUDATexture* createCUDATexture() const {
 
         // Create a texture
         int width = m_bitmap->getWidth();
@@ -68,15 +68,13 @@ public:
             temp[4 * i + 3] = m_bitmap->getPtr()[3 * i + 2];
         }
 
-        optix::Texture* optix_texture = new optix::Texture(
+        optix::CUDATexture* texture = new optix::CUDATexture(
             width, height, 0, optix::CUDATexelFormat::CUDA_TEXEL_FORMAT_RGBA8,
             optix::CUDATextureFilterMode::CUDA_TEXTURE_LINEAR,
             optix::CUDATextureAddressMode::CUDA_TEXTURE_WRAP,
             optix::CUDATextureColorSpace::CUDA_COLOR_SPACE_LINEAR, temp.data());
 
-        context.addTexture(optix_texture);
-
-        return optix_texture;
+        return texture;
     }
 
 protected:

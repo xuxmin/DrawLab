@@ -1,9 +1,9 @@
-#include "optix/host/texture.h"
+#include "optix/host/cuda_texture.h"
 #include "optix/host/sutil.h"
 
 namespace optix {
 
-Texture::Texture(uint32_t width, uint32_t height, uint32_t linePitchInBytes,
+CUDATexture::CUDATexture(uint32_t width, uint32_t height, uint32_t linePitchInBytes,
                  CUDATexelFormat texelFormat, CUDATextureFilterMode filterMode,
                  CUDATextureAddressMode addressMode,
                  CUDATextureColorSpace colorSpace, const void* texels)
@@ -93,11 +93,11 @@ Texture::Texture(uint32_t width, uint32_t height, uint32_t linePitchInBytes,
                                        nullptr));
 }
 
-const cudaTextureObject_t Texture::getObject() const {
+const cudaTextureObject_t CUDATexture::getObject() const {
     return m_texture_object;
 }
 
-Texture::~Texture() {
+CUDATexture::~CUDATexture() {
     cudaDestroyTextureObject(m_texture_object);
     cudaFreeArray(m_texture_array);
 }

@@ -193,7 +193,7 @@ public:
     /// @brief Return the all vertex normal
     const std::vector<float>& getVertexNormal() const { return m_N; }
 
-    const std::vector<float> getVertexTexCoord() const { return m_UV; }
+    const std::vector<float>& getVertexTexCoord() const { return m_UV; }
 
     /// @brief Return whether the mesh has texcoord
     bool hasTexCoord() const { return m_UV.size() > 0; }
