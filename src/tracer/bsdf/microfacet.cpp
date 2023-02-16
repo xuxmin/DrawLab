@@ -125,6 +125,7 @@ public:
         optix::Material& mat,
         std::vector<const optix::CUDATexture*>& textures) const {
         mat.is_diffuse = false;
+        mat.type = optix::Material::MICROFACET;
     }
 
     optix::Material::Type getOptixMaterialType() const {

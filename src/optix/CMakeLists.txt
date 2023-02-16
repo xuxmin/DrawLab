@@ -4,10 +4,11 @@ set(SOURCES
     host/cuda_texture.cpp
     host/device_context.cpp
     host/material.cpp
-    host/accel.cpp
-    host/launch_param.cpp
+    host/optix_accel.cpp
     host/camera.cpp
     host/trackball.cpp
+    host/optix_scene.cpp
+    host/param_buffer.cpp
 )
 
 find_package(CUDA REQUIRED)

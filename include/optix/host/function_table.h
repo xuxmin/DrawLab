@@ -1,6 +1,7 @@
 #pragma once
 
 #include "optix/material/material.h"
+#include "optix/integrator/integrator.h"
 #include <map>
 
 namespace optix {
@@ -23,6 +24,13 @@ static std::map<int, std::vector<std::string>> MaterialCallableFuncs = {
     {
         Material::Type::DIELECTRIC, 
         {"__direct_callable__dielectric_eval", "__direct_callable__dielectric_pdf", "__direct_callable__dielectric_sample"}
+    }
+};
+
+static std::map<int, std::vector<const char*>> IntegratorTables = {
+    {
+        Integrator::Type::PATH, 
+        {"optix/cuda/integrator/path.cu", "__raygen__path"}
     }
 };
 

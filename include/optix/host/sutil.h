@@ -8,6 +8,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <spdlog/spdlog.h>
 
 //------------------------------------------------------------------------------
 //
@@ -41,7 +42,8 @@ private:
             std::stringstream ss;                                              \
             ss << "Optix call '" << #call << "' failed: " __FILE__ ":"         \
                << __LINE__ << ")\n";                                           \
-            throw optix::Exception(res, ss.str().c_str());                            \
+            spdlog::critical(ss.str());                                        \
+            exit(-1);                                                          \
         }                                                                      \
     } while (0)
 
@@ -57,7 +59,8 @@ private:
                << log                                                          \
                << (sizeof_log_returned > sizeof(log) ? "<TRUNCATED>" : "")     \
                << "\n";                                                        \
-            throw optix::Exception(res, ss.str().c_str());                            \
+            spdlog::critical(ss.str());                                        \
+            exit(-1);                                                          \
         }                                                                      \
     } while (0)
 
@@ -75,7 +78,8 @@ private:
             ss << "CUDA call (" << #call << " ) failed with error: '"          \
                << cudaGetErrorString(error) << "' (" __FILE__ << ":"           \
                << __LINE__ << ")\n";                                           \
-            throw optix::Exception(ss.str().c_str());                                 \
+            spdlog::critical(ss.str());                                        \
+            exit(-1);                                                          \
         }                                                                      \
     } while (0)
 
@@ -88,7 +92,8 @@ private:
             ss << "CUDA error on synchronize with error '"                     \
                << cudaGetErrorString(error) << "' (" __FILE__ << ":"           \
                << __LINE__ << ")\n";                                           \
-            throw optix::Exception(ss.str().c_str());                                 \
+            spdlog::critical(ss.str());                                        \
+            exit(-1);                                                          \
         }                                                                      \
     } while (0)
 
@@ -101,7 +106,8 @@ private:
             std::cerr << "CUDA call (" << #call << " ) failed with error: '"   \
                       << cudaGetErrorString(error) << "' (" __FILE__ << ":"    \
                       << __LINE__ << ")\n";                                    \
-            std::terminate();                                                  \
+            spdlog::critical(ss.str());                                        \
+            exit(-1);                                                          \
         }                                                                      \
     } while (0)
 

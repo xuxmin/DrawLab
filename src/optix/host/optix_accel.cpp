@@ -1,5 +1,5 @@
-#include "optix/host/accel.h"
 #include <spdlog/spdlog.h>
+#include "optix/host/optix_accel.h"
 
 namespace optix {
 
@@ -23,38 +23,31 @@ OptixAccel::~OptixAccel() {
     m_as_buffer.free();
 }
 
-void OptixAccel::addTriangleMesh(const std::vector<float>& positions,
-                                 const std::vector<unsigned int>& indices,
-                                 const std::vector<float>& normals,
-                                 const std::vector<float>& texcoords,
-                                 int light_idx, int material_idx, float pdf) {
-    m_meshs.push_back(TriangleMesh(positions, indices, normals, texcoords,
-                                   light_idx, material_idx, pdf));
-}
+OptixTraversableHandle OptixAccel::build(const std::vector<OptixSceneMesh>& meshs) {
+    m_scene_meshs = &meshs;
+    
+    std::vector<OptixBuildInput> build_inputs(meshs.size());
+    std::vector<uint32_t> triangleInputFlags(meshs.size());
+    std::vector<CUdeviceptr> d_vertices(meshs.size());
+    std::vector<CUdeviceptr> d_indices(meshs.size());
 
-OptixTraversableHandle OptixAccel::build() {
-    std::vector<OptixBuildInput> build_inputs(m_meshs.size());
-    std::vector<uint32_t> triangleInputFlags(m_meshs.size());
-    std::vector<CUdeviceptr> d_vertices(m_meshs.size());
-    std::vector<CUdeviceptr> d_indices(m_meshs.size());
+    m_vertex_buffers.resize(meshs.size());
+    m_index_buffers.resize(meshs.size());
+    m_normal_buffers.resize(meshs.size());
+    m_texcoord_buffers.resize(meshs.size());
 
-    m_vertex_buffers.resize(m_meshs.size());
-    m_index_buffers.resize(m_meshs.size());
-    m_normal_buffers.resize(m_meshs.size());
-    m_texcoord_buffers.resize(m_meshs.size());
-
-    for (int i = 0; i < m_meshs.size(); i++) {
-        if (m_meshs[i].light_idx >= 0) {
-            m_emitted_mesh[m_meshs[i].light_idx] = i;
+    for (int i = 0; i < meshs.size(); i++) {
+        if (meshs[i].light_idx >= 0) {
+            m_emitted_mesh[meshs[i].light_idx] = i;
         }
 
-        m_vertex_buffers[i].allocAndUpload(m_meshs[i].positions);
-        m_index_buffers[i].allocAndUpload(m_meshs[i].indices);
-        if (m_meshs[i].normals.size() > 0) {
-            m_normal_buffers[i].allocAndUpload(m_meshs[i].normals);
+        m_vertex_buffers[i].allocAndUpload(meshs[i].positions);
+        m_index_buffers[i].allocAndUpload(meshs[i].indices);
+        if (meshs[i].normals.size() > 0) {
+            m_normal_buffers[i].allocAndUpload(meshs[i].normals);
         }
-        if (m_meshs[i].texcoords.size() > 0) {
-            m_texcoord_buffers[i].allocAndUpload(m_meshs[i].texcoords);
+        if (meshs[i].texcoords.size() > 0) {
+            m_texcoord_buffers[i].allocAndUpload(meshs[i].texcoords);
         }
 
         d_vertices[i] = m_vertex_buffers[i].devicePtr();
@@ -67,12 +60,12 @@ OptixTraversableHandle OptixAccel::build() {
         buildInput.type = OPTIX_BUILD_INPUT_TYPE_TRIANGLES;
         triInput.vertexFormat = OPTIX_VERTEX_FORMAT_FLOAT3;
         triInput.vertexStrideInBytes = sizeof(float) * 3;
-        triInput.numVertices = m_meshs[i].positions.size() / 3;
+        triInput.numVertices = meshs[i].positions.size() / 3;
         triInput.vertexBuffers = &d_vertices[i];
 
         triInput.indexFormat = OPTIX_INDICES_FORMAT_UNSIGNED_INT3;
         triInput.vertexStrideInBytes = sizeof(unsigned int) * 3;
-        triInput.numIndexTriplets = m_meshs[i].indices.size() / 3;
+        triInput.numIndexTriplets = meshs[i].indices.size() / 3;
         triInput.indexBuffer = d_indices[i];
 
         triInput.preTransform = 0;
@@ -166,9 +159,9 @@ void OptixAccel::packHitgroupRecord(optix::HitgroupRecord& rec,
         (float2*)m_texcoord_buffers[mesh_idx].devicePtr();
     geo.triangle_mesh.face_num =
         m_index_buffers[mesh_idx].m_size_in_bytes / sizeof(int3);
-    geo.triangle_mesh.pdf = m_meshs[mesh_idx].pdf;
-    rec.data.light_idx = m_meshs[mesh_idx].light_idx;
-    rec.data.material_idx = m_meshs[mesh_idx].material_idx;
+    geo.triangle_mesh.pdf = m_scene_meshs->at(mesh_idx).pdf;
+    rec.data.light_idx = m_scene_meshs->at(mesh_idx).light_idx;
+    rec.data.material_idx = m_scene_meshs->at(mesh_idx).material_idx;
 }
 
 void OptixAccel::packEmittedMesh(std::vector<Light>& lights) const {
@@ -188,7 +181,7 @@ void OptixAccel::packEmittedMesh(std::vector<Light>& lights) const {
             (float2*)m_texcoord_buffers[mesh_idx].devicePtr();
         lights[light_idx].area.triangle_mesh.face_num =
             m_index_buffers[mesh_idx].m_size_in_bytes / sizeof(int3);
-        lights[light_idx].area.triangle_mesh.pdf = m_meshs[mesh_idx].pdf;
+        lights[light_idx].area.triangle_mesh.pdf = m_scene_meshs->at(mesh_idx).pdf;
     }
 }
 

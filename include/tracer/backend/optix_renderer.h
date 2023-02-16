@@ -2,7 +2,7 @@
 #include "optix/optix_params.h"
 #include "optix/host/cuda_buffer.h"
 #include "optix/host/device_context.h"
-#include "optix/host/launch_param.h"
+#include "optix/host/optix_scene.h"
 #include "opengl/display.h"
 #include "editor/renderer.h"
 #include "tracer/backend/context.h"
@@ -29,18 +29,15 @@ public:
     void renderAsync(std::string filename, bool gui = false);
 
 protected:
-    drawlab::Scene* m_scene;
     opengl::Display* m_display;
     int m_width, m_height;
 
-    DeviceContext* m_device_context;
-    LaunchParam* m_launch_param;
-
+    OptixScene* m_optix_scene;
     Context* m_context;
 
 private:
-    void initLaunchParams();
-    void initContext();
+    OptixScene* initOptixScene(drawlab::Scene* scene);
+    Context* initContext(drawlab::Scene* scene);
 };
 
 };  // namespace optix

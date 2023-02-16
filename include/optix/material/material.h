@@ -15,7 +15,13 @@ enum {
 };
 
 struct Material {
-    enum Type { DIFFUSE = 0, MICROFACET, MIRROR, DIELECTRIC, MATERIAL_NUM };
+    enum Type {
+        DIFFUSE = 0,
+        MICROFACET = 1,
+        MIRROR = 2,
+        DIELECTRIC = 3,
+        MATERIAL_NUM = 4
+    };
 
     Type type;
 
