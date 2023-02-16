@@ -121,4 +121,8 @@ static __forceinline__ __device__ float3 refract(const float3& wi, float eta) {
     return make_float3(-eta * wi.x, -eta * wi.y, cosThetaT);
 }
 
+static __forceinline__ __device__ float3 reflect(const float3& wi, const float3 n) {
+    return 2 * dot(wi, n) * n - wi;
+}
+
 }  // namespace optix

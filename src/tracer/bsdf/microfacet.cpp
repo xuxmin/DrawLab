@@ -126,6 +126,11 @@ public:
         std::vector<const optix::CUDATexture*>& textures) const {
         mat.is_diffuse = false;
         mat.type = optix::Material::MICROFACET;
+        mat.microfacet.alpha = m_alpha;
+        mat.microfacet.extIOR = m_extIOR;
+        mat.microfacet.intIOR = m_intIOR;
+        mat.microfacet.kd = make_float4(m_kd[0], m_kd[1], m_kd[2], 1.f);
+        mat.microfacet.ks = m_ks;
     }
 
     optix::Material::Type getOptixMaterialType() const {

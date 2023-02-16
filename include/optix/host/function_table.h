@@ -9,7 +9,8 @@ namespace optix {
 static std::map<int, std::string> MaterialCUFiles = {
     {Material::Type::DIFFUSE, "optix/cuda/material/diffuse.cu"},
     {Material::Type::MIRROR, "optix/cuda/material/mirror.cu"},
-    {Material::Type::DIELECTRIC, "optix/cuda/material/dielectric.cu"}
+    {Material::Type::DIELECTRIC, "optix/cuda/material/dielectric.cu"},
+    {Material::Type::MICROFACET, "optix/cuda/material/microfacet.cu"}
 };
 
 static std::map<int, std::vector<std::string>> MaterialCallableFuncs = {
@@ -24,6 +25,10 @@ static std::map<int, std::vector<std::string>> MaterialCallableFuncs = {
     {
         Material::Type::DIELECTRIC, 
         {"__direct_callable__dielectric_eval", "__direct_callable__dielectric_pdf", "__direct_callable__dielectric_sample"}
+    },
+    {
+        Material::Type::MICROFACET,
+        {"__direct_callable__microfacet_eval", "__direct_callable__microfacet_pdf", "__direct_callable__microfacet_sample"}
     }
 };
 

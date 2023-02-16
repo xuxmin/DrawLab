@@ -50,6 +50,8 @@
 #define M_1_PIf     0.318309886183790671538f
 #endif
 
+static const float M_INV_TWOPI = 0.15915494309189533577f;
+static const float M_INV_PI = 0.31830988618379067154f;
 
 #if !defined(__CUDACC__)
 
@@ -552,12 +554,6 @@ SUTIL_INLINE SUTIL_HOSTDEVICE float3 normalize(const float3& v)
 SUTIL_INLINE SUTIL_HOSTDEVICE float3 floor(const float3& v)
 {
   return make_float3(::floorf(v.x), ::floorf(v.y), ::floorf(v.z));
-}
-
-/** reflect */
-SUTIL_INLINE SUTIL_HOSTDEVICE float3 reflect(const float3& i, const float3& n)
-{
-  return i - 2.0f * n * dot(n,i);
 }
 
 /** Faceforward

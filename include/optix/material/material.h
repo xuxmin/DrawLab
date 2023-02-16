@@ -3,6 +3,7 @@
 #include "optix/material/dielectric.h"
 #include "optix/material/diffuse.h"
 #include "optix/material/mirror.h"
+#include "optix/material/microfacet.h"
 #include <cuda_runtime.h>
 
 namespace optix {
@@ -29,6 +30,7 @@ struct Material {
         Diffuse diffuse;
         Dielectric dielectric;
         Mirror mirror;
+        Microfacet microfacet;
     };
     bool is_diffuse = {true};
 };

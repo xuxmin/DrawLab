@@ -3,7 +3,6 @@ set(SOURCES
     host/sutil.cpp
     host/cuda_texture.cpp
     host/device_context.cpp
-    host/material.cpp
     host/optix_accel.cpp
     host/camera.cpp
     host/trackball.cpp
