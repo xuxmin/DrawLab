@@ -8,22 +8,28 @@ namespace optix {
 struct Onb {
 
     // Build local coordinate system based on normal
-    __forceinline__ __device__ Onb(const float3& normal) {
+    __forceinline__ __device__ Onb(const float3& normal, const float3& tangent) {
         m_normal = normal;
 
-        if (fabs(m_normal.x) > fabs(m_normal.z)) {
-            m_binormal.x = -m_normal.y;
-            m_binormal.y = m_normal.x;
-            m_binormal.z = 0;
+        if (tangent.x == 0 && tangent.y == 0 && tangent.z == 0) {
+            if (fabs(m_normal.x) > fabs(m_normal.z)) {
+                m_binormal.x = -m_normal.y;
+                m_binormal.y = m_normal.x;
+                m_binormal.z = 0;
+            }
+            else {
+                m_binormal.x = 0;
+                m_binormal.y = -m_normal.z;
+                m_binormal.z = m_normal.y;
+            }
+
+            m_binormal = normalize(m_binormal);
+            m_tangent = cross(m_binormal, m_normal);
         }
         else {
-            m_binormal.x = 0;
-            m_binormal.y = -m_normal.z;
-            m_binormal.z = m_normal.y;
+            m_tangent = tangent;
+            m_binormal = normalize(cross(m_normal, m_tangent));
         }
-
-        m_binormal = normalize(m_binormal);
-        m_tangent = cross(m_binormal, m_normal);
     }
 
     // Convert vector from local coordinate system to the xx

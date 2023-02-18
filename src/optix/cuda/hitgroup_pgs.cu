@@ -26,7 +26,7 @@ extern "C" __global__ void __closesthit__radiance() {
     const float3 ray_ori = optixGetWorldRayOrigin();
     RadiancePRD* prd = getPRD<RadiancePRD>();
     unsigned int& seed = prd->seed;
-    Intersection its = getHitData();
+    Intersection its = getHitData(mat_data);
 
     float3 radiance = make_float3(0.f);
 
@@ -50,7 +50,7 @@ extern "C" __global__ void __closesthit__radiance() {
     }
 
 
-    Onb onb(its.sn);
+    Onb onb(its.sn, its.st);
     const float3 wi = onb.transform(-ray_dir);
 
 #ifdef NEXT_EVENT_ESTIMATION
