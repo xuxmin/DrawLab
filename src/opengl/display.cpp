@@ -155,10 +155,11 @@ Display::Display(BufferImageFormat format) : m_imageFormat(format) {
 }
 
 Display::~Display() {
-    if (m_pbo != 0u) {
-        GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, 0));
-        GL_CHECK(glDeleteBuffers(1, &m_pbo));
-    }
+    // TODO ????
+    // if (m_pbo != 0u) {
+    //     GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, 0));
+    //     GL_CHECK(glDeleteBuffers(1, &m_pbo));
+    // }
 }
 
 void Display::display(const int screen_res_x, const int screen_res_y,
