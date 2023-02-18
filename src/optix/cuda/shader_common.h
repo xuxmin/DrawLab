@@ -59,7 +59,7 @@ static __forceinline__ __device__ Intersection getHitData(const Material& mat_da
 
     // if normal texture is available
     if (mat_data.normal_tex) {
-        if (mat_data.normal_in_world) {
+        if (!mat_data.is_tangent_space) {
             sN = make_float3(tex2D<float4>(mat_data.normal_tex, texcoord.x, texcoord.y));
             sN = sN * 2.f - 1.f;
         }
@@ -94,7 +94,7 @@ static __forceinline__ __device__ Intersection getHitData(const Material& mat_da
     // ------------------------------------------------------------------
     float3 sT = make_float3(0.f);
     if (mat_data.tangent_tex) {
-        if (mat_data.tangent_in_world) {
+        if (!mat_data.is_tangent_space) {
             sT = make_float3(tex2D<float4>(mat_data.tangent_tex, texcoord.x, texcoord.y));
             sT = sT * 2.f - 1.f;
         }

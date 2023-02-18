@@ -10,7 +10,8 @@ static std::map<int, std::string> MaterialCUFiles = {
     {Material::Type::DIFFUSE, "optix/cuda/material/diffuse.cu"},
     {Material::Type::MIRROR, "optix/cuda/material/mirror.cu"},
     {Material::Type::DIELECTRIC, "optix/cuda/material/dielectric.cu"},
-    {Material::Type::MICROFACET, "optix/cuda/material/microfacet.cu"}
+    {Material::Type::MICROFACET, "optix/cuda/material/microfacet.cu"},
+    {Material::Type::ANISOGGX, "optix/cuda/material/aniso_ggx.cu"}
 };
 
 static std::map<int, std::vector<std::string>> MaterialCallableFuncs = {
@@ -29,6 +30,10 @@ static std::map<int, std::vector<std::string>> MaterialCallableFuncs = {
     {
         Material::Type::MICROFACET,
         {"__direct_callable__microfacet_eval", "__direct_callable__microfacet_pdf", "__direct_callable__microfacet_sample"}
+    },
+    {
+        Material::Type::ANISOGGX,
+        {"__direct_callable__anisoggx_eval", "__direct_callable__anisoggx_pdf", "__direct_callable__anisoggx_sample"}
     }
 };
 

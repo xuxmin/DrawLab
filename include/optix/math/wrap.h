@@ -50,6 +50,31 @@ struct Wrap {
                 (alpha * alpha * cosTheta * cosTheta * cosTheta);
         return p;
     }
+
+    static __forceinline__ __device__ float
+    squareToGGXPdf(const float3& m, float2 axay) {
+        if (m.z <= 0)
+            return 0;
+        
+        // m is half vector
+        float3 vhalf = m;
+        vhalf.x /= axay.x;
+        vhalf.y /= axay.y;
+
+        float len2 = dot(vhalf, vhalf);
+        float D = 1.f / (M_PIf * axay.x * axay.y * len2 * len2);
+        return D;
+    }
+
+
+    static __forceinline__ __device__ float3
+    squareToGGX(const float2& sample, float2 axay) {
+		float z1 = sample.x;
+		float z2 = sample.y;
+		float x = axay.x * sqrtf(z1) / sqrtf(1 - z1) * cos(2 * M_PIf * z2);
+		float y = axay.y * sqrtf(z1) / sqrtf(1 - z1) * sin(2 * M_PIf * z2);
+		return normalize(make_float3(-x, -y, 1));
+    }
 };
 
 }  // namespace optix
