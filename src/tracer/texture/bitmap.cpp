@@ -60,19 +60,39 @@ public:
         // Create a texture
         int width = m_bitmap->getWidth();
         int height = m_bitmap->getHeight();
-        std::vector<unsigned char> temp(width * height * 4);
-        for (int i = 0; i < width * height; i++) {
-            temp[4 * i] = m_bitmap->getPtr()[3 * i];
-            temp[4 * i + 1] = m_bitmap->getPtr()[3 * i + 1];
-            temp[4 * i + 2] = m_bitmap->getPtr()[3 * i + 2];
-            temp[4 * i + 3] = m_bitmap->getPtr()[3 * i + 2];
-        }
 
-        optix::CUDATexture* texture = new optix::CUDATexture(
-            width, height, 0, optix::CUDATexelFormat::CUDA_TEXEL_FORMAT_RGBA8,
-            optix::CUDATextureFilterMode::CUDA_TEXTURE_LINEAR,
-            optix::CUDATextureAddressMode::CUDA_TEXTURE_WRAP,
-            optix::CUDATextureColorSpace::CUDA_COLOR_SPACE_LINEAR, temp.data());
+        optix::CUDATexture* texture;
+        if (m_bitmap->getPixelFormat() == Bitmap::PixelFormat::UCHAR3) {
+            std::vector<unsigned char> temp(width * height * 4);
+            for (int i = 0; i < width * height; i++) {
+                temp[4 * i] = m_bitmap->getPtr()[3 * i];
+                temp[4 * i + 1] = m_bitmap->getPtr()[3 * i + 1];
+                temp[4 * i + 2] = m_bitmap->getPtr()[3 * i + 2];
+                temp[4 * i + 3] = m_bitmap->getPtr()[3 * i + 2];
+            }
+
+            texture = new optix::CUDATexture(
+                width, height, 0, optix::CUDATexelFormat::CUDA_TEXEL_FORMAT_RGBA8,
+                optix::CUDATextureFilterMode::CUDA_TEXTURE_LINEAR,
+                optix::CUDATextureAddressMode::CUDA_TEXTURE_WRAP,
+                optix::CUDATextureColorSpace::CUDA_COLOR_SPACE_LINEAR, temp.data());
+        }
+        else {
+            m_bitmap->flipud();
+            std::vector<float> temp(width * height * 4);
+            for (int i = 0; i < width * height; i++) {
+                temp[4 * i] = m_bitmap->getPtr()[3 * i];
+                temp[4 * i + 1] = m_bitmap->getPtr()[3 * i + 1];
+                temp[4 * i + 2] = m_bitmap->getPtr()[3 * i + 2];
+                temp[4 * i + 3] = m_bitmap->getPtr()[3 * i + 2];
+            }
+
+            texture = new optix::CUDATexture(
+                width, height, 0, optix::CUDATexelFormat::CUDA_TEXEL_FORMAT_RGBA32F,
+                optix::CUDATextureFilterMode::CUDA_TEXTURE_LINEAR,
+                optix::CUDATextureAddressMode::CUDA_TEXTURE_WRAP,
+                optix::CUDATextureColorSpace::CUDA_COLOR_SPACE_LINEAR, temp.data());
+        }
 
         return texture;
     }

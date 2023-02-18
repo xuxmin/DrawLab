@@ -10,6 +10,11 @@ namespace drawlab {
  */
 class Bitmap {
 public:
+    enum PixelFormat {
+        UCHAR3,
+        FLOAT3
+    };
+
     /// Create an empty image with size (height, width, 3)
     Bitmap(int height, int width);
 
@@ -42,10 +47,13 @@ public:
     // Test any invalid pixel
     void colorNan(Color3f invalid_color);
 
+    PixelFormat getPixelFormat() { return m_format; }
+
 private:
     int m_width;
     int m_height;
     std::vector<float> m_data;
+    PixelFormat m_format;
 
     void loadEXR(const std::string& filename);
     void loadLDR(const std::string& filename);

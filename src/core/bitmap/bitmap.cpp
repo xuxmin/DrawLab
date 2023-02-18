@@ -20,12 +20,14 @@ Bitmap::~Bitmap() { m_data.clear(); }
 
 Bitmap::Bitmap(int height, int width) : m_height(height), m_width(width) {
     m_data.resize(m_width * m_height * 3);
+    m_format = PixelFormat::UCHAR3;
 }
 
 Bitmap::Bitmap(const Bitmap& bitmap) {
     m_height = bitmap.getHeight();
     m_width = bitmap.getWidth();
     m_data.assign(bitmap.m_data.begin(), bitmap.m_data.end());
+    m_format = bitmap.m_format;
 }
 
 Bitmap::Bitmap(const std::string& filename) {
@@ -33,9 +35,11 @@ Bitmap::Bitmap(const std::string& filename) {
 
     if (path.extension() == "exr") {
         loadEXR(path.str());
+        m_format = PixelFormat::FLOAT3;
     }
     else {
         loadLDR(path.str());
+        m_format = PixelFormat::UCHAR3;
     }
 }
 
