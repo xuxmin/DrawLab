@@ -40,3 +40,7 @@ endif()
 if(WIN32)
     target_link_libraries(${TARGET_NAME} LINK_PRIVATE winmm.lib)
 endif()
+
+if (MSVC OR CMAKE_C_SIMULATE_ID STREQUAL "MSVC")
+    add_definitions(-DNOMINMAX)
+endif()
