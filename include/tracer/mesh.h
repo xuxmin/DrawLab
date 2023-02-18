@@ -193,6 +193,8 @@ public:
     /// @brief Return the all vertex normal
     const std::vector<float>& getVertexNormal() const { return m_N; }
 
+    const std::vector<float>& getVertexTangent() const { return m_T; }
+
     const std::vector<float>& getVertexTexCoord() const { return m_UV; }
 
     /// @brief Return whether the mesh has texcoord
@@ -232,11 +234,15 @@ public:
 protected:
     Mesh();
 
+private:
+    void calTangent(int iface, Vector3f& T, Vector3f& B) const;
+
 protected:
     BoundingBox3f m_bbox;
     std::string m_name;
     std::vector<float> m_V;         // Vertex positions
     std::vector<float> m_N;         // Vertex normals
+    std::vector<float> m_T;         // Vertex tangents
     std::vector<float> m_UV;        // Vertex texture coordinates
     std::vector<unsigned int> m_F;  // Faces
     BSDF* m_bsdf = nullptr;         ///< BSDF of the surface

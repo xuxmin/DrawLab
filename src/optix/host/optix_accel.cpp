@@ -34,6 +34,7 @@ OptixTraversableHandle OptixAccel::build(const std::vector<OptixSceneMesh>& mesh
     m_vertex_buffers.resize(meshs.size());
     m_index_buffers.resize(meshs.size());
     m_normal_buffers.resize(meshs.size());
+    m_tangent_buffers.resize(meshs.size());
     m_texcoord_buffers.resize(meshs.size());
 
     for (int i = 0; i < meshs.size(); i++) {
@@ -48,6 +49,9 @@ OptixTraversableHandle OptixAccel::build(const std::vector<OptixSceneMesh>& mesh
         }
         if (meshs[i].texcoords.size() > 0) {
             m_texcoord_buffers[i].allocAndUpload(meshs[i].texcoords);
+        }
+        if (meshs[i].tangents.size() > 0) {
+            m_tangent_buffers[i].allocAndUpload(meshs[i].tangents);
         }
 
         d_vertices[i] = m_vertex_buffers[i].devicePtr();
@@ -155,6 +159,7 @@ void OptixAccel::packHitgroupRecord(optix::HitgroupRecord& rec,
         (float3*)m_vertex_buffers[mesh_idx].devicePtr();
     geo.triangle_mesh.indices = (int3*)m_index_buffers[mesh_idx].devicePtr();
     geo.triangle_mesh.normals = (float3*)m_normal_buffers[mesh_idx].devicePtr();
+    geo.triangle_mesh.tangents = (float3*)m_tangent_buffers[mesh_idx].devicePtr();
     geo.triangle_mesh.texcoords =
         (float2*)m_texcoord_buffers[mesh_idx].devicePtr();
     geo.triangle_mesh.face_num =
@@ -177,6 +182,8 @@ void OptixAccel::packEmittedMesh(std::vector<Light>& lights) const {
             (int3*)m_index_buffers[mesh_idx].devicePtr();
         lights[light_idx].area.triangle_mesh.normals =
             (float3*)m_normal_buffers[mesh_idx].devicePtr();
+        lights[light_idx].area.triangle_mesh.tangents =
+            (float3*)m_tangent_buffers[mesh_idx].devicePtr();
         lights[light_idx].area.triangle_mesh.texcoords =
             (float2*)m_texcoord_buffers[mesh_idx].devicePtr();
         lights[light_idx].area.triangle_mesh.face_num =

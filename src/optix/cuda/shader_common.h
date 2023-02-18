@@ -48,6 +48,15 @@ static __forceinline__ __device__ Intersection getHitData() {
         sN = (1.f - u - v) * n0 + u * n1 + v * n2;
     }
 
+    float3 sT = make_float3(0.f);
+    if (mesh.tangents) {
+        const float3 t0 = mesh.tangents[index.x];
+        const float3 t1 = mesh.tangents[index.y];
+        const float3 t2 = mesh.tangents[index.z];
+        sT = (1.f - u - v) * t0 + u * t1 + v * t2;
+        sT = normalize(sT);
+    }
+
     // face-forward and normalize normals
     // gN = faceforward(gN, -ray_dir, gN);
     // if (dot(gN, sN) < 0.f)
@@ -71,6 +80,7 @@ static __forceinline__ __device__ Intersection getHitData() {
     its.mesh = &mesh;
     its.sn = sN;
     its.gn = gN;
+    its.st = sT;
     its.uv = texcoord;
     its.p = hitpoint;
     its.light_idx = rt_data->light_idx;

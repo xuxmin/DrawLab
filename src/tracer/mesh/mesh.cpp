@@ -26,6 +26,22 @@ void Mesh::activate() {
         }
         m_dpdf->normalize();
     }
+
+    // If the mesh has texcoord, calculate the tangent of the mesh.
+    if (hasTexCoord()) {
+        this->m_T.resize(m_V.size());
+        for (int iface = 0; iface < getTriangleCount(); iface++) {
+            Vector3f T, B;
+            calTangent(iface, T, B);
+
+            for (int index = 0; index < 3; index++) {
+                int p = m_F[3 * iface + index];
+                this->m_T[3 * p] = T.x();
+                this->m_T[3 * p + 1] = T.y();
+                this->m_T[3 * p + 2] = T.z();
+            }
+        }
+    }
 }
 
 void Mesh::addChild(Object* obj) {
@@ -124,6 +140,42 @@ Normal3f Mesh::getVertexNormal(size_t iface, size_t index) const {
     unsigned int p = m_F[3 * iface + index];
     return Normal3f(m_N[3 * p], m_N[3 * p + 1], m_N[3 * p + 2]);
 }
+
+void Mesh::calTangent(int iface, Vector3f& T, Vector3f& B) const {
+    Point3f _vert[3];          // triangle vertex coordinates
+    Point2f _uv[3];            // triangle uv coordinates
+
+    for (int i = 0; i < 3; i++) {
+        _vert[i] = getVertexPosition(iface, i);
+        _uv[i] = getVertexTexCoord(iface, i);
+    }
+
+    Vector3f edge1 = _vert[1] - _vert[0];
+    Vector3f edge2 = _vert[2] - _vert[0];
+    Vector2f deltaUV1 = _uv[1] - _uv[0];
+    Vector2f deltaUV2 = _uv[2] - _uv[0];
+
+    Matrix2x2f UV;
+    UV.setRow(0, deltaUV1);
+    UV.setRow(1, deltaUV2);
+
+    Matrix2x3f Edge;
+    Edge.setRow(0, edge1);
+    Edge.setRow(1, edge2);
+
+    Matrix2x2f inv_UV;
+    float det = 1 / (UV[0][0] * UV[1][1] - UV[0][1] * UV[1][0]);
+    inv_UV[0][0] = UV[1][1];
+    inv_UV[0][1] = -UV[0][1];
+    inv_UV[1][0] = -UV[1][0];
+    inv_UV[1][1] = UV[0][0];
+    inv_UV = inv_UV / det;
+
+    Matrix2x3f TB = inv_UV * Edge;
+    T = TB.row(0).normalized();
+    B = TB.row(1).normalized();
+}
+
 
 bool Mesh::rayIntersect(uint32_t index, const Ray3f& ray, float& u, float& v,
                         float& t) const {

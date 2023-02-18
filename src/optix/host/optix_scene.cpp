@@ -58,10 +58,11 @@ void OptixScene::updateIntegrator(Integrator integrator) {
 void OptixScene::addMesh(const std::vector<float>& positions,
                          const std::vector<unsigned int>& indices,
                          const std::vector<float>& normals,
+                         const std::vector<float>& tangents,
                          const std::vector<float>& texcoords, int light_idx,
                          int material_idx, float pdf) {
-    m_meshs.push_back(OptixSceneMesh(positions, indices, normals, texcoords,
-                                     light_idx, material_idx, pdf));
+    m_meshs.push_back(OptixSceneMesh(positions, indices, normals, tangents,
+                                     texcoords, light_idx, material_idx, pdf));
 }
 
 void OptixScene::activate() {

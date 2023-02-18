@@ -43,6 +43,7 @@ public:
     void addMesh(const std::vector<float>& positions,
                  const std::vector<unsigned int>& indices,
                  const std::vector<float>& normals,
+                 const std::vector<float>& tangents,
                  const std::vector<float>& texcoords, int light_idx,
                  int material_idx, float pdf);
 

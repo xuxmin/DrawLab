@@ -46,8 +46,9 @@ OptixScene* OptixRenderer::initOptixScene(drawlab::Scene* scene) {
     for (int i = 0; i < meshs.size(); i++) {
         m_optix_scene->addMesh(
             meshs[i]->getVertexPosition(), meshs[i]->getVertexIndex(),
-            meshs[i]->getVertexNormal(), meshs[i]->getVertexTexCoord(),
-            light_idx[i], material_idx[i], meshs[i]->pdfPosition());
+            meshs[i]->getVertexNormal(), meshs[i]->getVertexTangent(),
+            meshs[i]->getVertexTexCoord(), light_idx[i], material_idx[i],
+            meshs[i]->pdfPosition());
     }
 
     // Config camera

@@ -21,6 +21,7 @@ struct Intersection {
     const TriangleMesh* mesh;
     float3 sn;  // shading normal
     float3 gn;  // geometry normal
+    float3 st;  // shading tangent
     float2 uv;
     float3 p;
     int light_idx;

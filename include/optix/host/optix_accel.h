@@ -11,6 +11,7 @@ struct OptixSceneMesh {
     const std::vector<float>& positions;
     const std::vector<unsigned int>& indices;
     const std::vector<float>& normals;
+    const std::vector<float>& tangents;
     const std::vector<float>& texcoords;
 
     const int light_idx;
@@ -18,13 +19,14 @@ struct OptixSceneMesh {
     const float pdf;
 
     OptixSceneMesh(const std::vector<float>& positions,
-                 const std::vector<unsigned int>& indices,
-                 const std::vector<float>& normals,
-                 const std::vector<float>& texcoords, const int light_idx,
-                 const int material_idx, const float pdf)
+                   const std::vector<unsigned int>& indices,
+                   const std::vector<float>& normals,
+                   const std::vector<float>& tangents,
+                   const std::vector<float>& texcoords, const int light_idx,
+                   const int material_idx, const float pdf)
         : positions(positions), indices(indices), normals(normals),
-          texcoords(texcoords), pdf(pdf), light_idx(light_idx),
-          material_idx(material_idx) {}
+          tangents(tangents), texcoords(texcoords), pdf(pdf),
+          light_idx(light_idx), material_idx(material_idx) {}
 };
 
 class OptixAccel {
@@ -35,6 +37,7 @@ private:
     std::vector<CUDABuffer> m_vertex_buffers;
     std::vector<CUDABuffer> m_index_buffers;
     std::vector<CUDABuffer> m_normal_buffers;
+    std::vector<CUDABuffer> m_tangent_buffers;
     std::vector<CUDABuffer> m_texcoord_buffers;
     const std::vector<OptixSceneMesh>* m_scene_meshs;
 

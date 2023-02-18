@@ -9,6 +9,7 @@ struct TriangleMesh {
     float3* positions;
     int3* indices;
     float3* normals;
+    float3* tangents;   // vertex tangents
     float2* texcoords;
 
     float* cdf;

@@ -271,4 +271,95 @@ struct Matrix4f {
     }
 };
 
+struct Matrix2x3f {
+    float m[2][3];
+
+    Matrix2x3f() {
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < 3; j++) {
+                m[i][j] = 0;
+            }
+        }
+    }
+
+    void setRow(size_t row, const TVector<3, float>& a) {
+        assert(row < 2);
+        for (size_t i = 0; i < 2; i++)
+            m[row][i] = a[i];
+    }
+
+    /// @brief Get a col
+    TVector<2, float> col(size_t col) const {
+        assert(col < 3);
+        TVector<2, float> a;
+        for (size_t i = 0; i < 2; i++)
+            a[i] = m[i][col];
+        return a;
+    }
+
+    TVector<3, float> row(size_t row) const {
+        assert(row < 2);
+        TVector<3, float> a;
+        for (size_t i = 0; i < 2; i++)
+            a[i] = m[row][i];
+        return a;
+    }
+};
+
+struct Matrix2x2f {
+    float m[2][2];
+
+    Matrix2x2f() {
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < 2; j++) {
+                m[i][j] = 0;
+            }
+        }
+    }
+
+    void setRow(size_t row, const TVector<2, float>& a) {
+        assert(row < 2);
+        for (size_t i = 0; i < 2; i++)
+            m[row][i] = a[i];
+    }
+
+    const float* operator[](size_t row) const {
+        assert(row < 2);
+        return m[row];
+    }
+
+    float* operator[](size_t row) {
+        assert(row < 2);
+        return m[row];
+    }
+
+    Matrix2x2f operator/(float x) {
+        Matrix2x2f out;
+        for (size_t i = 0; i < 2; i++) {
+            for (size_t j = 0; j < 2; j++) {
+                out.m[i][j] = m[i][j] / x;
+            }
+        }
+        return out;
+    }
+
+    Matrix2x3f operator*(const Matrix2x3f& b) {
+        Matrix2x3f out;
+        for (size_t j = 0; j < 2; j++) {
+            for (size_t i = 0; i < 3; i++) {
+                out.m[j][i] = row(j).dot(b.col(i));
+            }
+        }
+        return out;
+    }
+
+    TVector<2, float> row(size_t row) const {
+        assert(row < 2);
+        TVector<2, float> a;
+        for (size_t i = 0; i < 2; i++)
+            a[i] = m[row][i];
+        return a;
+    }
+};
+
 }  // namespace drawlab
