@@ -7,6 +7,8 @@
 #include "per_ray_data.h"
 #include "shader_common.h"
 
+#define NEXT_EVENT_ESTIMATION
+
 namespace optix {
 
 extern "C" __constant__ Params params;
@@ -34,15 +36,24 @@ extern "C" __global__ void __closesthit__radiance() {
 
         float3 light_val = light.eval(its, -ray_dir);
 
+        float mis = 1.f;
+
+#ifdef NEXT_EVENT_ESTIMATION
         LightSampleRecord dRec(ray_ori, its.p, its.sn, its.mesh);
         float light_pdf =
             params.light_buffer.pdfLightDirection(its.light_idx, dRec);
         float bsdf_pdf = sRec.pdf;
-        float mis = sRec.is_diffuse ? powerHeuristic(bsdf_pdf, light_pdf) : 1.f;
+        mis = sRec.is_diffuse ? powerHeuristic(bsdf_pdf, light_pdf) : 1.f;
+#endif
 
         radiance += mis * light_val;
     }
 
+
+    Onb onb(its.sn);
+    const float3 wi = onb.transform(-ray_dir);
+
+#ifdef NEXT_EVENT_ESTIMATION
     // --------------------- Emitter sampling ---------------------
     LightSampleRecord dRec;
     float3 light_val =
@@ -55,8 +66,6 @@ extern "C" __global__ void __closesthit__radiance() {
                        dRec.dist - 0.01f  // tmax
         );
 
-    Onb onb(its.sn);
-    const float3 wi = onb.transform(-ray_dir);
     const float3 wo = onb.transform(dRec.d);
     BSDFQueryRecord bRec(its, wi, wo, ESolidAngle);
     if (!occluded && dRec.pdf > 0) {
@@ -76,6 +85,7 @@ extern "C" __global__ void __closesthit__radiance() {
 
         radiance += weight * bsdf_val * light_val;
     }
+#endif
 
     // ----------------------- BSDF sampling ----------------------
     BSDFQueryRecord bsdf_bRec(its, wi);
