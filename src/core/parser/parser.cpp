@@ -110,15 +110,22 @@ Object* loadFromXML(const std::string& filename) {
 
     /* Helper function to check if attributes are fully specified */
     auto check_attributes = [&](const pugi::xml_node& node,
-                                std::set<std::string> attrs) {
+                                std::set<std::string> attrs,
+                                std::set<std::string> opt_attrs = {}) {
         for (auto attr : node.attributes()) {
-            auto it = attrs.find(attr.name());
-            if (it == attrs.end())
-                throw Exception("Error while parsing \"%s\": unexpected "
-                                "attribute \"%s\" in \"%s\" at %s",
-                                filename, attr.name(), node.name(),
-                                offset(node.offset_debug()));
-            attrs.erase(it);
+            auto it0 = attrs.find(attr.name());
+            auto it1 = opt_attrs.find(attr.name());
+            if (it0 == attrs.end()) {
+                if (it1 == opt_attrs.end()) {
+                    throw Exception("Error while parsing \"%s\": unexpected "
+                                    "attribute \"%s\" in \"%s\" at %s",
+                                    filename, attr.name(), node.name(),
+                                    offset(node.offset_debug()));
+                }
+            }
+            else {
+                attrs.erase(it0);
+            }
         }
         if (!attrs.empty())
             throw Exception("Error while parsing \"%s\": missing attribute "
@@ -193,11 +200,12 @@ Object* loadFromXML(const std::string& filename) {
         Object* result = nullptr;
         try {
             if (currentIsObject) {
-                check_attributes(node, {"type"});
+                check_attributes(node, {"type"}, {"name"});
 
                 /* This is an object, first instantiate it */
                 result = ObjectFactory::createInstance(
-                    node.attribute("type").value(), propList);
+                    node.attribute("type").value(), propList,
+                    node.attribute("name").value());
 
                 if (result->getClassType() != (int)tag) {
                     throw Exception(

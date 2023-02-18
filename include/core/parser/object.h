@@ -87,6 +87,17 @@ public:
             default: return "<unknown>";
         }
     }
+
+    void setObjectName(std::string name) {
+        m_object_name = name;
+    }
+
+    const std::string& getObjectName() const {
+        return m_object_name;
+    }
+
+protected:
+    std::string m_object_name;
 };
 
 /**
@@ -128,12 +139,14 @@ public:
      *     of the class.
      */
     static Object* createInstance(const std::string& name,
-                                  const PropertyList& propList) {
+                                  const PropertyList& propList, const std::string& object_name="") {
         if (!m_constructors ||
             m_constructors->find(name) == m_constructors->end())
             throw Exception(
                 "A constructor for class \"%s\" could not be found!", name);
-        return (*m_constructors)[name](propList);
+        Object* object = (*m_constructors)[name](propList);
+        object->setObjectName(object_name);
+        return object;
     }
 
 private:

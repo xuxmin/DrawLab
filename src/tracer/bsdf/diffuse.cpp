@@ -67,11 +67,11 @@ public:
     }
 
     void addChild(Object* child) {
-        if (child->getClassType() == ETexture) {
+        if (child->getClassType() == ETexture && child->getObjectName() == "albedo") {
             m_albedo = static_cast<Texture*>(child);
         }
         else {
-            BSDF::addChild(child);
+            spdlog::warn("The child({}) of diffuse is not used!", child->getObjectName());
         }
     }
 
