@@ -22,6 +22,7 @@ struct Params {
 
     // sample
     int spp;
+    float epsilon = 1e-3f;
 
     // camera
     Camera camera;

@@ -73,7 +73,7 @@ extern "C" __global__ void __closesthit__radiance() {
 
     // Trace occlusion
     const bool occluded =
-        traceOcclusion(params.handle, its.p + 1e-3f * its.gn, dRec.d,
+        traceOcclusion(params.handle, its.p + params.epsilon * its.gn, dRec.d,
                        0.01f,             // tmin
                        dRec.dist - 0.01f  // tmax
         );

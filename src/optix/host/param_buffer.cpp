@@ -6,6 +6,7 @@ namespace optix {
 ParamBuffer::ParamBuffer() {
     m_dirty = true;
     m_params.subframe_index = 0;
+    m_params.epsilon = 1e-3f;
     m_params_buffer.alloc(sizeof(Params));
 }
 
