@@ -125,6 +125,7 @@ extern "C" __global__ void __closesthit__radiance() {
 
     prd->radiance = radiance;
     prd->depth++;
+    prd->its = its;
 
     if (fmaxf(prd->sRec.fr) <= 0.f) {
         prd->done = true;

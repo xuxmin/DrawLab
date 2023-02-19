@@ -22,6 +22,8 @@ public:
 
     void updateSampler(const int spp);
 
+    void updateIntegrator(const Integrator& integrator);
+
     void updateSceneHandle(OptixTraversableHandle handle);
 
     void updateBgColor(const float3& bg_color);

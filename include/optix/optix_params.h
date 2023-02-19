@@ -6,6 +6,7 @@
 #include "optix/material/material.h"
 #include "optix/camera/camera.h"
 #include "optix/light/light.h"
+#include "optix/integrator/integrator.h"
 
 
 namespace optix {
@@ -24,6 +25,8 @@ struct Params {
     LightBuffer light_buffer;
     // materials
     MaterialBuffer material_buffer;
+    // Integrator
+    Integrator integrator;
 
     // 4 byte alignment
     int width;

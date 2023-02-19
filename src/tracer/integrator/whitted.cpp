@@ -58,6 +58,11 @@ public:
 
     std::string toString() const { return "WhittedIntegrator[]"; }
 
+    optix::Integrator getOptixIntegrator() const {
+        optix::Integrator integrator;
+        return integrator;
+    }
+
 protected:
     std::string m_myProperty;
 };

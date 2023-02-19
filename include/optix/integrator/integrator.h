@@ -5,11 +5,15 @@
 namespace optix {
 
 struct Integrator {
-    enum Type { PATH = 0, INTEGRATOR_NUM };
+    enum Type { 
+        PATH = 0,
+        NORMAL = 1,
+        INTEGRATOR_NUM = 2
+    };
     Type type;
 
     Integrator() {
-        type = Type::PATH;
+        type = PATH;
     }
 };
 

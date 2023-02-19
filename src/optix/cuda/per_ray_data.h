@@ -16,6 +16,8 @@ struct RadiancePRD {
     int depth;
     BSDFSampleRecord sRec;
 
+    Intersection its;
+
     /**
      * The initial seed of each path.
      *

@@ -107,6 +107,12 @@ public:
         return pdf_a / (pdf_a + pdf_b);
     }
 
+    optix::Integrator getOptixIntegrator() const {
+        optix::Integrator integrator;
+        integrator.type = optix::Integrator::PATH;
+        return integrator;
+    }
+
 protected:
     std::string m_myProperty;
 };

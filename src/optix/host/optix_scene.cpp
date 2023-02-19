@@ -117,6 +117,7 @@ void OptixScene::activate() {
     m_optix_accel->packEmittedMesh(m_lights);
     m_param_buffer->updateLightBuffer(m_lights);
     m_param_buffer->updateMaterialBuffer(m_materials);
+    m_param_buffer->updateIntegrator(m_integrator);
     m_param_buffer->updateSampler(m_spp);
     m_param_buffer->updateParamBuffer();
 }

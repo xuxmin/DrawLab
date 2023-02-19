@@ -22,6 +22,12 @@ public:
     /// Return a human-readable description for debugging purposes
     std::string toString() const { return "NormalIntegrator[]"; }
 
+    optix::Integrator getOptixIntegrator() const {
+        optix::Integrator integrator;
+        integrator.type = optix::Integrator::NORMAL;
+        return integrator;
+    }
+
 protected:
     std::string m_myProperty;
 };

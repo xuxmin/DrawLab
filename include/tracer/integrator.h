@@ -2,6 +2,7 @@
 
 #include "core/base/common.h"
 #include "core/parser/object.h"
+#include "optix/integrator/integrator.h"
 
 namespace drawlab {
 
@@ -42,6 +43,8 @@ public:
      * provided by this instance
      * */
     EClassType getClassType() const { return EIntegrator; }
+
+    virtual optix::Integrator getOptixIntegrator() const = 0;
 };
 
 }  // namespace drawlab

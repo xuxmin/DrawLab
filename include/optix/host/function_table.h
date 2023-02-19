@@ -41,6 +41,10 @@ static std::map<int, std::vector<const char*>> IntegratorTables = {
     {
         Integrator::Type::PATH, 
         {"optix/cuda/integrator/path.cu", "__raygen__path"}
+    },
+    {
+        Integrator::Type::NORMAL,
+        {"optix/cuda/integrator/normal.cu", "__raygen__normal"}
     }
 };
 

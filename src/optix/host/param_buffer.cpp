@@ -59,6 +59,11 @@ void ParamBuffer::updateSampler(const int spp) {
     m_params.spp = spp;
 }
 
+void ParamBuffer::updateIntegrator(const Integrator& integrator) {
+    m_dirty = true;
+    m_params.integrator = integrator;
+}
+
 void ParamBuffer::updateSceneHandle(OptixTraversableHandle handle) {
     m_dirty = true;
     m_params.handle = handle;

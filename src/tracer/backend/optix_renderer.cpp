@@ -70,8 +70,7 @@ OptixScene* OptixRenderer::initOptixScene(drawlab::Scene* scene) {
     m_optix_scene->resize(m_width, m_height);
 
     // Config integrator
-    Integrator integrator;
-    m_optix_scene->updateIntegrator(integrator);
+    m_optix_scene->updateIntegrator(scene->getIntegrator()->getOptixIntegrator());
 
     // Config sampler
     m_optix_scene->updateSampler(scene->getSampler()->getSampleCount());
@@ -135,7 +134,7 @@ void OptixRenderer::renderAsync(std::string filename, bool gui) {
     if (lastdot != std::string::npos)
         filename.erase(lastdot, std::string::npos);
 
-    bitmap.colorNan(drawlab::Color3f(10.f, 0.f, 0.f));
+    // bitmap.colorNan(drawlab::Color3f(10.f, 0.f, 0.f));
     bitmap.savePNG(filename);
     bitmap.saveEXR(filename);
     spdlog::info("[OPTIX RENDERER] Image rendered, and saved to {} ... done.", filename);
