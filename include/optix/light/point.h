@@ -12,7 +12,7 @@ struct Point {
     float3 position;
 
     SUTIL_INLINE SUTIL_HOSTDEVICE float3
-    sampleDirection(const Intersection& its, unsigned int seed,
+    sampleDirection(const Intersection& its, unsigned int& seed,
                     LightSampleRecord& dRec) const {
         dRec.o = its.p;
         dRec.d = normalize(position - its.p);

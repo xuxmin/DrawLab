@@ -22,7 +22,7 @@ struct Light {
     };
 
     SUTIL_INLINE SUTIL_HOSTDEVICE float3
-    sampleDirection(const Intersection& its, unsigned int seed,
+    sampleDirection(const Intersection& its, unsigned int& seed,
                     LightSampleRecord& dRec) const {
         if (type == Type::POINT) {
             return point.sampleDirection(its, seed, dRec);

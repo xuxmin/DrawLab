@@ -10,7 +10,7 @@ struct Area {
     float3 intensity;
 
     SUTIL_INLINE SUTIL_HOSTDEVICE float3
-    sampleDirection(const Intersection& its, unsigned int seed,
+    sampleDirection(const Intersection& its, unsigned int& seed,
                     LightSampleRecord& dRec) const {
         float3 position, normal;
         triangle_mesh.samplePosition(seed, position, normal);
