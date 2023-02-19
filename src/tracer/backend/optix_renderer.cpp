@@ -41,6 +41,11 @@ OptixScene* OptixRenderer::initOptixScene(drawlab::Scene* scene) {
     }
     m_optix_scene->recordTextures(texs);
 
+    // Update materials, hide lights
+    for (auto bsdf_idx : m_scene->getLightBsdfIdx()) {
+        m_optix_scene->updateMaterial(bsdf_idx, m_context->hide_light);
+    }
+
     // Add shape to scene
     const auto & meshs = scene->getMeshes();
     const auto & light_idx = scene->getMeshLightIdx();

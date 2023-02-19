@@ -27,22 +27,20 @@ traceRadiance(OptixTraversableHandle handle, float3 ray_origin,
 
 extern "C" __global__ void __raygen__path() {
     const uint3 idx = optixGetLaunchIndex();
-    const int w = params.width;
-    const int h = params.height;
+    const float2 screen = make_float2(params.width, params.height);
     const int subframe_index = params.subframe_index;
 
-    unsigned int seed = tea<4>(idx.y * w + idx.x, subframe_index);
+    unsigned int seed = tea<4>(idx.y * screen.x + idx.x, subframe_index);
+
+    int sqrt_num_samples = sqrtf(params.spp) + 1;
+	unsigned int new_spp = sqrt_num_samples * sqrt_num_samples;
 
     float3 result = make_float3(0.f);
-    int i = params.spp;
+    int i = new_spp;
     do {
-        // if (idx.x != 500 || idx.y != 500 || i != params.spp) {
-        //     break;
-        // }
-        seed = tea<4>(idx.y * w + idx.x, i);
 
         float3 ray_origin, ray_direction;
-        params.camera.sampleRay(w, h, idx, seed, ray_origin, ray_direction);
+        params.camera.sampleRay(screen, idx, seed, i - 1, new_spp, ray_origin, ray_direction);
 
         float eta = 1.f;
         float3 throughput = make_float3(1.f);
@@ -55,7 +53,7 @@ extern "C" __global__ void __raygen__path() {
 
         for (int depth = 0;; ++depth) {
             traceRadiance(params.handle, ray_origin, ray_direction,
-                          0.01f,  // tmin
+                          params.epsilon,  // tmin
                           1e16f,  // tmax
                           &prd);
 
@@ -68,7 +66,7 @@ extern "C" __global__ void __raygen__path() {
                 break;
             }
 
-            if (depth > 3) {
+            if (depth > 5) {
                 float p = fminf(fmaxf(throughput) * eta * eta, 0.99f);
                 if (rnd(seed) > p) {
                     break;
@@ -82,7 +80,7 @@ extern "C" __global__ void __raygen__path() {
     } while (--i);
 
     const unsigned int image_index = idx.x + idx.y * params.width;
-    float3 accum_color = result / static_cast<float>(params.spp);
+    float3 accum_color = result / static_cast<float>(new_spp);
 
     if (subframe_index > 1) {
         const float a = 1.0f / static_cast<float>(subframe_index + 1);

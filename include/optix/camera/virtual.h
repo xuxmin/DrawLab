@@ -17,19 +17,24 @@ struct Virtual {
     float fov;
 
     SUTIL_INLINE SUTIL_HOSTDEVICE void
-    sampleRay(const int w, const int h, const uint3 idx, unsigned int seed,
-              float3& ray_origin, float3& ray_direction) const {
-        // The center of each pixel is at fraction (0.5,0.5)
-        const float2 subpixel_jitter = make_float2(rnd(seed), rnd(seed));
+    sampleRay(const float2 screen, const uint3 launch_idx, unsigned int& seed,
+              const int sample_idx, const int spp, float3& ray_origin,
+              float3& ray_direction) const {
+        float2 inv_screen = 1.0f / screen * 2.f;
+        float2 pixel = make_float2((float)launch_idx.x, (float)launch_idx.y);
+        pixel = pixel * inv_screen - 1.f;
 
-        const float2 d =
-            2.0f * make_float2((static_cast<float>(idx.x) + subpixel_jitter.x) /
-                                   static_cast<float>(w),
-                               (static_cast<float>(idx.y) + subpixel_jitter.y) /
-                                   static_cast<float>(h)) -
-            1.0f;
-        ray_direction = normalize(d.x * U + d.y * (-V) + W);
+        int sqrt_num_samples = (int)sqrtf((float)spp);
+        float2 jitter_scale = inv_screen / (float)sqrt_num_samples;
+
+        unsigned int x = sample_idx % sqrt_num_samples;
+        unsigned int y = sample_idx / sqrt_num_samples;
+        float2 jitter = make_float2(x + rnd(seed), y + rnd(seed));
+
+        const float2 subpixel_jitter = jitter * jitter_scale;
+        float2 d = pixel + subpixel_jitter;
         ray_origin = eye;
+        ray_direction = normalize(d.x * U + d.y * (-V) + W);
     }
 };
 
