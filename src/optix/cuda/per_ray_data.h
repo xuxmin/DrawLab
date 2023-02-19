@@ -13,6 +13,7 @@ namespace optix {
 struct RadiancePRD {
     float3 radiance;
     bool done;
+    int depth;
     BSDFSampleRecord sRec;
 
     /**

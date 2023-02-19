@@ -52,6 +52,8 @@ extern "C" __global__ void __raygen__path() {
         prd.sRec = BSDFSampleRecord();
 
         for (int depth = 0;; ++depth) {
+            prd.depth = depth;
+
             traceRadiance(params.handle, ray_origin, ray_direction,
                           params.epsilon,  // tmin
                           1e16f,  // tmax
