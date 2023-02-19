@@ -49,12 +49,14 @@ OPTIX_add_sample_executable(drawlab
     src/tracer/scene/scene.cpp
     src/tracer/mesh/mesh.cpp
     src/tracer/mesh/obj.cpp
+    src/tracer/mesh/rectangle.cpp
     src/tracer/accel/octree.cpp
     src/tracer/emitter/area.cpp
     src/tracer/emitter/point.cpp
     src/tracer/bsdf/diffuse.cpp
     src/tracer/bsdf/dielectric.cpp
     src/tracer/bsdf/microfacet.cpp
+    src/tracer/bsdf/aniso_ggx.cpp
     src/tracer/bsdf/mirror.cpp
     src/tracer/integrator/normal.cpp
     src/tracer/integrator/path.cpp
