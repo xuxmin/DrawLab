@@ -33,10 +33,19 @@ void ParamBuffer::updateLightBuffer(const std::vector<Light>& lights) {
 
 void ParamBuffer::updateMaterialBuffer(const std::vector<Material>& materials) {
     m_dirty = true;
-    m_material_buffer.allocAndUpload(materials);
-    m_params.material_buffer.material_num = materials.size();
-    m_params.material_buffer.materials =
-        (Material*)m_material_buffer.m_device_ptr;
+    if (m_params.material_buffer.material_num != materials.size()) {
+        m_material_buffer.free();
+        m_material_buffer.allocAndUpload(materials);
+        m_params.material_buffer.material_num = materials.size();
+        m_params.material_buffer.materials =
+            (Material*)m_material_buffer.m_device_ptr;
+    }
+    else {
+        m_material_buffer.upload(materials.data(), materials.size());
+        m_params.material_buffer.material_num = materials.size();
+        m_params.material_buffer.materials =
+            (Material*)m_material_buffer.m_device_ptr;
+    }
 }
 
 void ParamBuffer::updateCamera(const Camera& camera) {

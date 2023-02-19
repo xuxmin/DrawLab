@@ -14,28 +14,33 @@ OptixScene::OptixScene() {
     m_height = 0;
 }
 
-void OptixScene::addLight(Light light) {
+void OptixScene::addLight(const Light& light) {
     if (m_activated) {
         spdlog::error("[OPTIX SCENE] Can't add light after optix scene activate.");
     }
     m_lights.push_back(light); 
 }
 
-void OptixScene::addMaterial(Material material) {
+void OptixScene::addMaterial(const Material& material) {
     if (m_activated) {
         spdlog::error("[OPTIX SCENE] Can't add material after optix scene activate.");
     }
     m_materials.push_back(material);
 }
 
-void OptixScene::recordTextures(std::vector<const CUDATexture*> textures) {
+void OptixScene::updateMaterial(int mat_id, bool is_hide) {
+    m_materials[mat_id].is_hide = is_hide;
+    m_param_buffer->updateMaterialBuffer(m_materials);
+}
+
+void OptixScene::recordTextures(const std::vector<const CUDATexture*>& textures) {
     if (m_textures.size() > 0) {
         spdlog::error("[OPTIX SCENE] OptixScene::recordTextures() can be called only once");
     }
     m_textures = textures;
 }
 
-void OptixScene::updateCamera(Camera camera) {
+void OptixScene::updateCamera(const Camera& camera) {
     m_camera = camera;
     m_param_buffer->updateCamera(camera);
 }
@@ -51,7 +56,7 @@ void OptixScene::updateSampler(int spp) {
     m_param_buffer->updateSampler(spp);
 }
 
-void OptixScene::updateIntegrator(Integrator integrator) {
+void OptixScene::updateIntegrator(const Integrator& integrator) {
     m_integrator = integrator;
 }
 

@@ -20,16 +20,19 @@ public:
     ~OptixScene();
 
     // Add light to scene, the order is important.
-    void addLight(Light light);
+    void addLight(const Light& light);
 
     // Add material to scene, the order is important.
-    void addMaterial(Material material);
+    void addMaterial(const Material& material);
+
+    // Update material parameters
+    void updateMaterial(int mat_id, bool is_hide);
 
     // Record textures resource which are link to materials
-    void recordTextures(std::vector<const CUDATexture*> textures);
+    void recordTextures(const std::vector<const CUDATexture*>& textures);
 
     // Setup camera
-    void updateCamera(Camera camera);
+    void updateCamera(const Camera& camera);
 
     // Resize frame buffer
     void resize(int width, int height);
@@ -37,7 +40,7 @@ public:
     //
     void updateSampler(int spp);
 
-    void updateIntegrator(Integrator integrator);
+    void updateIntegrator(const Integrator& integrator);
 
     // Each
     void addMesh(const std::vector<float>& positions,

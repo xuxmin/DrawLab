@@ -40,6 +40,7 @@ struct Material {
     cudaTextureObject_t tangent_tex = 0;
     bool is_tangent_space = {false};     // the normal/tangent texture is in tangent space?
     bool is_diffuse = {true};
+    bool is_hide = {false};
 };
 
 struct MaterialBuffer {

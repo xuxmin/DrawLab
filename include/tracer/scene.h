@@ -76,6 +76,8 @@ public:
 
     const std::vector<int>& getMeshBsdfIdx() const { return m_mesh_bsdf_idx; }
 
+    const std::vector<int>& getLightBsdfIdx() const { return m_light_bsdf_idx; }
+
     const std::vector<const BSDF*>& getBSDFs() const { return m_bsdfs; }
     /**
      * \brief Intersect a ray against all triangles stored in the scene
@@ -124,6 +126,7 @@ private:
     std::vector<Mesh*> m_meshes;
     std::vector<int> m_mesh_light_idx;
     std::vector<int> m_mesh_bsdf_idx;
+    std::vector<int> m_light_bsdf_idx;
     std::vector<Emitter*> m_emitters;
     std::vector<const BSDF*> m_bsdfs;
     Integrator* m_integrator = nullptr;

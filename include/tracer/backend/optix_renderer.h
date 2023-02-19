@@ -32,12 +32,15 @@ protected:
     opengl::Display* m_display;
     int m_width, m_height;
 
+    drawlab::Scene* m_scene;
     OptixScene* m_optix_scene;
     Context* m_context;
 
 private:
     OptixScene* initOptixScene(drawlab::Scene* scene);
     Context* initContext(drawlab::Scene* scene);
+    // Update optix scene base on the context
+    void updateOptixScene();
 };
 
 };  // namespace optix

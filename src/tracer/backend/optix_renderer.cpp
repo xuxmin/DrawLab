@@ -9,15 +9,17 @@
 // this include may only appear in a single source file:
 #include <optix_function_table_definition.h>
 #include <spdlog/spdlog.h>
+#include <imgui/imgui.h>
 
 namespace optix {
 
 OptixRenderer::OptixRenderer(drawlab::Scene* scene, int device_id)
     : m_display(nullptr) {
-
+    
+    m_scene = scene;
+    m_context = initContext(scene);
     m_optix_scene = initOptixScene(scene);
     m_optix_scene->activate();
-    m_context = initContext(scene);
 }
 
 OptixScene* OptixRenderer::initOptixScene(drawlab::Scene* scene) {
@@ -67,6 +69,20 @@ OptixScene* OptixRenderer::initOptixScene(drawlab::Scene* scene) {
     m_optix_scene->updateSampler(scene->getSampler()->getSampleCount());
 
     return m_optix_scene;
+}
+
+void OptixRenderer::updateOptixScene() {
+    // Update camera
+    if (m_context->camera_changed) {
+        m_context->camera_changed = false;
+        m_optix_scene->updateCamera(m_context->getOptixCamera());
+        m_optix_scene->getParamBuffer()->resetFrameIndex();
+    }
+
+    // Update materials, hide lights
+    for (auto bsdf_idx : m_scene->getLightBsdfIdx()) {
+        m_optix_scene->updateMaterial(bsdf_idx, m_context->hide_light);
+    }
 }
 
 OptixRenderer::~OptixRenderer() {
@@ -121,11 +137,7 @@ void OptixRenderer::render() {
     CUDA_SYNC_CHECK();
     auto t0 = std::chrono::steady_clock::now();
 
-    if (m_context->camera_changed) {
-        m_context->camera_changed = false;
-        m_optix_scene->updateCamera(m_context->getOptixCamera());
-        m_optix_scene->getParamBuffer()->resetFrameIndex();
-    }
+    updateOptixScene();
 
     CUDA_SYNC_CHECK();
     auto t1 = std::chrono::steady_clock::now();
@@ -152,6 +164,13 @@ void OptixRenderer::render() {
 
     t1 = std::chrono::steady_clock::now();
     m_context->display_time += t1 - t0;
+
+    // ImGUI
+    ImGui::SetNextWindowBgAlpha(0.0f);
+    ImGui::SetNextWindowPos(ImVec2(10, 10));
+    ImGui::Begin("TextOverlayFG", nullptr,
+                 ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+                     ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar);
     drawlab::displayStats(m_context->state_update_time, m_context->render_time,
                           m_context->display_time);
 
@@ -164,6 +183,8 @@ void OptixRenderer::render() {
             m_context->camera.lookat().x, m_context->camera.lookat().y, m_context->camera.lookat().z,
             m_context->camera.up().x, m_context->camera.up().y, m_context->camera.up().z);
     drawlab::displayText(display_text, 10.f, 10.f);
+    ImGui::Checkbox("Hide Lights", &m_context->hide_light);
+    ImGui::End();
 }
 
 void OptixRenderer::resize(size_t w, size_t h) {

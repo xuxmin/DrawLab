@@ -5,15 +5,7 @@
 namespace drawlab {
 
 void displayText(const char* text, float x, float y) {
-    ImGui::SetNextWindowBgAlpha(0.0f);
-    ImGui::SetNextWindowPos(ImVec2(x, y));
-    ImGui::Begin("TextOverlayFG", nullptr,
-                 ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-                     ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar |
-                     ImGuiWindowFlags_NoSavedSettings |
-                     ImGuiWindowFlags_NoInputs);
     ImGui::TextColored(ImColor(0.7f, 0.7f, 0.7f, 1.0f), "%s", text);
-    ImGui::End();
 }
 
 void displayStats(std::chrono::duration<double>& state_update_time,

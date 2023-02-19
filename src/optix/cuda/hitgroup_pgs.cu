@@ -28,6 +28,18 @@ extern "C" __global__ void __closesthit__radiance() {
     unsigned int& seed = prd->seed;
     Intersection its = getHitData(mat_data);
 
+    // -----------------------------------------------------
+    // Hide object?
+    // -----------------------------------------------------
+    if (mat_data.is_hide) {
+        prd->sRec.fr = make_float3(1.f);
+        prd->sRec.eta = 1.f;
+        prd->sRec.p = its.p;
+        prd->sRec.wo = ray_dir;
+        prd->radiance = make_float3(0.f);
+        return;
+    }
+
     float3 radiance = make_float3(0.f);
 
     if (its.light_idx >= 0) {

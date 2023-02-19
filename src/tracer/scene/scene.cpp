@@ -48,15 +48,19 @@ void Scene::addChild(Object* obj) {
             }
 
             // Add BSDF
-            int idx = 0;
-            for (idx = 0; idx < m_bsdfs.size(); idx++) {
-                if (mesh->getBSDF() == m_bsdfs[idx]) {
-                    m_mesh_bsdf_idx.push_back(idx);
+            int bsdf_idx = 0;
+            for (bsdf_idx = 0; bsdf_idx < m_bsdfs.size(); bsdf_idx++) {
+                if (mesh->getBSDF() == m_bsdfs[bsdf_idx]) {
+                    m_mesh_bsdf_idx.push_back(bsdf_idx);
                 }
             }
-            if (idx == m_bsdfs.size()) {
-                m_mesh_bsdf_idx.push_back(idx);
+            if (bsdf_idx == m_bsdfs.size()) {
+                m_mesh_bsdf_idx.push_back(bsdf_idx);
                 m_bsdfs.push_back(mesh->getBSDF());
+            }
+
+            if (mesh->isEmitter()) {
+                m_light_bsdf_idx.push_back(bsdf_idx);
             }
             break;
         }
