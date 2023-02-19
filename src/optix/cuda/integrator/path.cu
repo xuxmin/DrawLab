@@ -49,11 +49,10 @@ extern "C" __global__ void __raygen__path() {
         prd.radiance = make_float3(0.f);
         prd.done = false;
         prd.seed = seed;
+        prd.depth = 0;
         prd.sRec = BSDFSampleRecord();
 
-        for (int depth = 0;; ++depth) {
-            prd.depth = depth;
-
+        for (;;) {
             traceRadiance(params.handle, ray_origin, ray_direction,
                           params.epsilon,  // tmin
                           1e16f,  // tmax
@@ -65,10 +64,13 @@ extern "C" __global__ void __raygen__path() {
             eta = eta * prd.sRec.eta;
 
             if (prd.done) {
+                if (prd.depth == 0) {   // miss
+                    result += params.bg_color;
+                }
                 break;
             }
 
-            if (depth > 5) {
+            if (prd.depth > 5) {
                 float p = fminf(fmaxf(throughput) * eta * eta, 0.99f);
                 if (rnd(seed) > p) {
                     break;

@@ -60,7 +60,13 @@ void ParamBuffer::updateSampler(const int spp) {
 }
 
 void ParamBuffer::updateSceneHandle(OptixTraversableHandle handle) {
+    m_dirty = true;
     m_params.handle = handle;
+}
+
+void ParamBuffer::updateBgColor(const float3& bg_color) {
+    m_dirty = true;
+    m_params.bg_color = bg_color;
 }
 
 void ParamBuffer::resetFrameIndex() {

@@ -10,6 +10,7 @@ namespace optix {
 struct Context {
     bool camera_changed = false;
     bool hide_light = true;
+    float3 bg_color;
     optix::PerspectiveCamera camera;
     optix::Trackball trackball;
 

@@ -79,6 +79,8 @@ public:
     const std::vector<int>& getLightBsdfIdx() const { return m_light_bsdf_idx; }
 
     const std::vector<const BSDF*>& getBSDFs() const { return m_bsdfs; }
+
+    const Color3f& getBgColor() const { return m_bg_color; }
     /**
      * \brief Intersect a ray against all triangles stored in the scene
      * and return detailed intersection information
@@ -133,6 +135,7 @@ private:
     Sampler* m_sampler = nullptr;
     Camera* m_camera = nullptr;
     Accel* m_accel = nullptr;
+    Color3f m_bg_color;
 };
 
 }  // namespace drawlab

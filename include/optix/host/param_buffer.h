@@ -24,6 +24,8 @@ public:
 
     void updateSceneHandle(OptixTraversableHandle handle);
 
+    void updateBgColor(const float3& bg_color);
+
     void updateParamBuffer();
 
     void resetFrameIndex();

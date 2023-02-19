@@ -14,26 +14,24 @@ namespace optix {
 enum { RAY_TYPE_RADIANCE = 0, RAY_TYPE_OCCLUSION, RAY_TYPE_COUNT };
 
 struct Params {
+    // 8 byte alignment
+    OptixTraversableHandle handle;
     // frame
     float3* color_buffer;
-    int width;
-    int height;
-    int subframe_index;
-
-    // sample
-    int spp;
-    float epsilon = 1e-3f;
-
     // camera
     Camera camera;
-
     // lights
     LightBuffer light_buffer;
-
     // materials
     MaterialBuffer material_buffer;
 
-    OptixTraversableHandle handle;
+    // 4 byte alignment
+    int width;
+    int height;
+    int subframe_index;
+    int spp;
+    float epsilon = 1e-3f;
+    float3 bg_color;
 };
 
 struct EmptyData {};

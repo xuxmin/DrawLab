@@ -46,6 +46,9 @@ OptixScene* OptixRenderer::initOptixScene(drawlab::Scene* scene) {
         m_optix_scene->updateMaterial(bsdf_idx, m_context->hide_light);
     }
 
+    // Update bg color
+    m_optix_scene->getParamBuffer()->updateBgColor(m_context->bg_color);
+
     // Add shape to scene
     const auto & meshs = scene->getMeshes();
     const auto & light_idx = scene->getMeshLightIdx();
@@ -88,6 +91,9 @@ void OptixRenderer::updateOptixScene() {
     for (auto bsdf_idx : m_scene->getLightBsdfIdx()) {
         m_optix_scene->updateMaterial(bsdf_idx, m_context->hide_light);
     }
+    
+    // update bg color
+    m_optix_scene->getParamBuffer()->updateBgColor(m_context->bg_color);
 }
 
 OptixRenderer::~OptixRenderer() {
@@ -106,6 +112,8 @@ Context* OptixRenderer::initContext(drawlab::Scene* scene) {
     float aspect = (float)m_width / m_height;
 
     context->initCameraState(camera->getOptixCamera(), aspect);
+    auto bg_color = scene->getBgColor();
+    context->bg_color = make_float3(bg_color[0], bg_color[1], bg_color[2]);
     return context;
 }
 
@@ -175,7 +183,8 @@ void OptixRenderer::render() {
     ImGui::SetNextWindowPos(ImVec2(10, 10));
     ImGui::Begin("TextOverlayFG", nullptr,
                  ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-                     ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar);
+                     ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar |
+                     ImGuiWindowFlags_AlwaysAutoResize);
     drawlab::displayStats(m_context->state_update_time, m_context->render_time,
                           m_context->display_time);
 
@@ -189,6 +198,7 @@ void OptixRenderer::render() {
             m_context->camera.up().x, m_context->camera.up().y, m_context->camera.up().z);
     drawlab::displayText(display_text, 10.f, 10.f);
     ImGui::Checkbox("Hide Lights", &m_context->hide_light);
+    ImGui::ColorEdit3("Background Color", (float*)&m_context->bg_color);
     ImGui::End();
 }
 
