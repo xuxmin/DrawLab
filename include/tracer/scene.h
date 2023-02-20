@@ -81,6 +81,8 @@ public:
     const std::vector<const BSDF*>& getBSDFs() const { return m_bsdfs; }
 
     const Color3f& getBgColor() const { return m_bg_color; }
+
+    bool hasEnvironmentEmitter() const { return m_has_env; }
     /**
      * \brief Intersect a ray against all triangles stored in the scene
      * and return detailed intersection information
@@ -136,6 +138,7 @@ private:
     Camera* m_camera = nullptr;
     Accel* m_accel = nullptr;
     Color3f m_bg_color;
+    bool m_has_env = false;
 };
 
 }  // namespace drawlab

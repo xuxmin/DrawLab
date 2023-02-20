@@ -37,6 +37,10 @@ Bitmap::Bitmap(const std::string& filename) {
         loadEXR(path.str());
         m_format = PixelFormat::FLOAT3;
     }
+    else if (stbi_is_hdr(path.str().c_str())) {
+        loadHDR(path.str());
+        m_format = PixelFormat::FLOAT3;
+    }
     else {
         loadLDR(path.str());
         m_format = PixelFormat::UCHAR3;
@@ -99,6 +103,30 @@ void Bitmap::loadEXR(const std::string& filename) {
     file.readPixels(dw.min.y, dw.max.y);
 }
 
+void Bitmap::loadHDR(const std::string& filename) {
+    stbi_hdr_to_ldr_gamma(2.2f);
+    stbi_hdr_to_ldr_scale(1.f);
+    stbi_set_flip_vertically_on_load(false);
+
+    int w, h, c;
+    float* tmp_data = stbi_loadf(filename.c_str(), &w, &h, &c, 0);
+
+    m_data.resize(w * h * 3);
+    for (int i = 0; i < w * h * 3; i++) {
+        if (c == 1) {
+            m_data[i] = tmp_data[i / 3];
+        }
+        else {
+            m_data[i] = tmp_data[i];
+        }
+    }
+
+    delete tmp_data;
+
+    m_width = w;
+    m_height = h;
+}
+
 void Bitmap::loadLDR(const std::string& filename) {
     
     stbi_set_flip_vertically_on_load(true);
@@ -120,6 +148,7 @@ void Bitmap::loadLDR(const std::string& filename) {
             m_data[i] = tmp_data[i];
         }
     }
+    delete tmp_data;
 
     m_width = w;
     m_height = h;

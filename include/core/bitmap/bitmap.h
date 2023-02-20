@@ -56,6 +56,7 @@ private:
     PixelFormat m_format;
 
     void loadEXR(const std::string& filename);
+    void loadHDR(const std::string& filename);
     void loadLDR(const std::string& filename);
 };
 

@@ -70,6 +70,9 @@ void Scene::addChild(Object* obj) {
         case EEmitter: {
             Emitter* emitter = static_cast<Emitter*>(obj);
             m_emitters.push_back(emitter);
+            if (emitter->isEnvironmentEmitter()) {
+                m_has_env = true;
+            }
             break;
         }
         case ESampler: {
