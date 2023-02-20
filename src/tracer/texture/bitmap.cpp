@@ -19,7 +19,7 @@ public:
         if (!file.exists()) {
             spdlog::warn("Texture file \"{}\" could not be found!", m_filename);
         }
-        m_bitmap = new Bitmap(m_filename);
+        m_bitmap = std::make_shared<Bitmap>(m_filename);
         spdlog::info("Load donw. (took {})", timer.elapsedString());
     }
 
@@ -46,13 +46,18 @@ public:
     }
 
     std::string toString() const {
-        return tfm::format("BitmapTexture[filename=%s]", m_filename);
+        return tfm::format("BitmapTexture[\n"
+                           "    filename=%s\n"
+                           "    size=[%d, %d]\n"
+                           "]",
+                           m_filename, m_bitmap->getWidth(),
+                           m_bitmap->getHeight());
     }
 
-    ~BitmapTexture() { delete m_bitmap; }
+    ~BitmapTexture() {}
 
     std::shared_ptr<Bitmap> getBitmap(const Vector2i&) const {
-        return std::shared_ptr<Bitmap>(m_bitmap);
+        return m_bitmap;
     }
 
     const optix::CUDATexture* createCUDATexture() const {
@@ -99,7 +104,7 @@ public:
 
 protected:
     std::string m_filename;
-    Bitmap* m_bitmap;
+    std::shared_ptr<Bitmap> m_bitmap;
 };
 
 REGISTER_CLASS(BitmapTexture, "bitmap");
