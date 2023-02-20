@@ -284,7 +284,7 @@ struct Matrix2x3f {
 
     void setRow(size_t row, const TVector<3, float>& a) {
         assert(row < 2);
-        for (size_t i = 0; i < 2; i++)
+        for (size_t i = 0; i < 3; i++)
             m[row][i] = a[i];
     }
 
@@ -300,7 +300,7 @@ struct Matrix2x3f {
     TVector<3, float> row(size_t row) const {
         assert(row < 2);
         TVector<3, float> a;
-        for (size_t i = 0; i < 2; i++)
+        for (size_t i = 0; i < 3; i++)
             a[i] = m[row][i];
         return a;
     }
