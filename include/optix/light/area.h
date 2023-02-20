@@ -9,6 +9,7 @@ struct Area {
     TriangleMesh triangle_mesh;
     float3 intensity;
 
+#ifdef __CUDACC__
     SUTIL_INLINE SUTIL_HOSTDEVICE float3
     sampleDirection(const Intersection& its, unsigned int& seed,
                     LightSampleRecord& dRec) const {
@@ -44,6 +45,7 @@ struct Area {
         float cosTheta = dot(its.sn, wi);
         return cosTheta > 0.f ? intensity : make_float3(0.f);
     }
+#endif
 };
 
 }  // namespace optix

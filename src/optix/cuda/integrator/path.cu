@@ -64,9 +64,6 @@ extern "C" __global__ void __raygen__path() {
             eta = eta * prd.sRec.eta;
 
             if (prd.done) {
-                if (prd.depth == 0) {   // miss
-                    result += params.bg_color;
-                }
                 break;
             }
 

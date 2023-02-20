@@ -69,10 +69,13 @@ void Scene::addChild(Object* obj) {
         }
         case EEmitter: {
             Emitter* emitter = static_cast<Emitter*>(obj);
-            m_emitters.push_back(emitter);
             if (emitter->isEnvironmentEmitter()) {
-                m_has_env = true;
+                if (m_envmap_idx >= 0) {
+                    throw Exception("There is more than one envmap in the scene!");
+                }
+                m_envmap_idx = m_emitters.size();
             }
+            m_emitters.push_back(emitter);
             break;
         }
         case ESampler: {

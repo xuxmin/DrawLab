@@ -27,6 +27,8 @@ public:
         m_mesh = mesh;
     }
 
+    virtual bool isEnvironmentEmitter() const { return false; }
+
     /**
      * \brief Given a reference point in the scene, sample a direction from the
      * reference point towards the Emitter (ideally proportional to the

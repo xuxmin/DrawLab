@@ -35,6 +35,9 @@ struct Params {
     int spp;
     float epsilon = 1e-3f;
     float3 bg_color;
+
+    // envmap info
+    int envmap_idx;  // -1 if there is no envmap
 };
 
 struct EmptyData {};

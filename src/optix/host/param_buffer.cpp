@@ -74,6 +74,11 @@ void ParamBuffer::updateBgColor(const float3& bg_color) {
     m_params.bg_color = bg_color;
 }
 
+void ParamBuffer::updateEnvMap(const int& env_idx) {
+    m_dirty = true;
+    m_params.envmap_idx = env_idx;
+}
+
 void ParamBuffer::resetFrameIndex() {
     m_dirty = true;
     m_params.subframe_index = 0;

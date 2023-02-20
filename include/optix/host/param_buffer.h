@@ -28,6 +28,8 @@ public:
 
     void updateBgColor(const float3& bg_color);
 
+    void updateEnvMap(const int& env_idx);
+
     void updateParamBuffer();
 
     void resetFrameIndex();

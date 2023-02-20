@@ -49,6 +49,9 @@ OptixScene* OptixRenderer::initOptixScene(drawlab::Scene* scene) {
     // Update bg color
     m_optix_scene->getParamBuffer()->updateBgColor(m_context->bg_color);
 
+    // Update envmap
+    m_optix_scene->getParamBuffer()->updateEnvMap(m_scene->getEnvironmentEmitterIdx());
+
     // Add shape to scene
     const auto & meshs = scene->getMeshes();
     const auto & light_idx = scene->getMeshLightIdx();

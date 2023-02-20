@@ -2,6 +2,7 @@
 
 #include "optix/light/area.h"
 #include "optix/light/point.h"
+#include "optix/light/envmap.h"
 #include "optix/math/random.h"
 #include "optix/math/vec_math.h"
 #include "optix/shape/shape.h"
@@ -12,15 +13,21 @@ namespace optix {
 struct Light {
     Light() {}
 
-    enum class Type : int { POINT = 0, AREA = 1 };
+    enum class Type : int { 
+        POINT = 0,
+        AREA = 1,
+        ENVMAP = 2
+    };
 
     Type type;
 
     union {
         Point point;
         Area area;
+        Envmap envmap;
     };
 
+#ifdef __CUDACC__
     SUTIL_INLINE SUTIL_HOSTDEVICE float3
     sampleDirection(const Intersection& its, unsigned int& seed,
                     LightSampleRecord& dRec) const {
@@ -29,6 +36,9 @@ struct Light {
         }
         else if (type == Type::AREA) {
             return area.sampleDirection(its, seed, dRec);
+        }
+        else if (type == Type::ENVMAP) {
+            return envmap.sampleDirection(its, seed, dRec);
         }
         return make_float3(0.f);
     }
@@ -42,6 +52,9 @@ struct Light {
         }
         else if (type == Type::AREA) {
             return area.pdfDirection(dRec);
+        }
+        else if (type == Type::ENVMAP) {
+            return envmap.pdfDirection(dRec);
         }
         return 0;
     }
@@ -62,14 +75,19 @@ struct Light {
         else if (type == Type::AREA) {
             return area.eval(its, wi);
         }
+        else if (type == Type::ENVMAP) {
+            return envmap.eval(its, wi);
+        }
         return make_float3(0.f);
     }
+#endif
 };
 
 struct LightBuffer {
     Light* lights;
     int light_num;
 
+#ifdef __CUDACC__
     SUTIL_INLINE SUTIL_HOSTDEVICE float3
     sampleLightDirection(const Intersection& its, unsigned int& seed,
                          LightSampleRecord& dRec) const {
@@ -95,6 +113,7 @@ struct LightBuffer {
     pdfLightDirection(int idx, const LightSampleRecord& dRec) const {
         return lights[idx].pdfDirection(dRec) / light_num;
     }
+#endif
 };
 
 }  // namespace optix
