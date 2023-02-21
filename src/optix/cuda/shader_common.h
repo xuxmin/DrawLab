@@ -2,6 +2,7 @@
 
 #include "optix/optix_params.h"
 #include "optix/math/onb.h"
+#include "intersection_refinement.h"
 #include <cuda_runtime.h>
 #include <optix.h>
 
