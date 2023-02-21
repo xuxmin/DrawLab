@@ -69,7 +69,7 @@ extern "C" __global__ void __raygen__path() {
 
             if (prd.depth > 5) {
                 float p = fminf(fmaxf(throughput) * eta * eta, 0.99f);
-                if (rnd(seed) > p) {
+                if (rnd(prd.seed) > p) {
                     break;
                 }
                 throughput /= p;

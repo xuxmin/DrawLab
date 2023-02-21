@@ -65,7 +65,7 @@ extern "C" __global__ void __closesthit__radiance() {
     }
 
     Onb onb(its.sn, its.st);
-    const float3 wi = onb.transform(-ray_dir);
+    const float3 wi = normalize(onb.transform(-ray_dir));
 
 #ifdef NEXT_EVENT_ESTIMATION
     // --------------------- Emitter sampling ---------------------
@@ -115,7 +115,7 @@ extern "C" __global__ void __closesthit__radiance() {
     // BSDF sampled ray direction, also be used as the next path
     // direction
     prd->sRec.p = its.p;
-    prd->sRec.wo = onb.inverse_transform(bsdf_bRec.wo);
+    prd->sRec.wo = normalize(onb.inverse_transform(bsdf_bRec.wo));
     prd->sRec.pdf =
         optixDirectCall<float, const Material&, const BSDFQueryRecord&>(
             3 * rt_data->material_idx + MATERIAL_CALLABLE_PDF, mat_data,

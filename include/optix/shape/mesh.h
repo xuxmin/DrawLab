@@ -38,7 +38,7 @@ struct TriangleMesh {
     }
 
     SUTIL_INLINE SUTIL_HOSTDEVICE void
-    samplePosition(unsigned int seed, float3& position, float3& normal) const {
+    samplePosition(unsigned int& seed, float3& position, float3& normal) const {
         // int f = sampleFace(rnd(seed));
         int f = min(int(rnd(seed) * face_num), (int)face_num - 1);
         const int3 index = indices[f];

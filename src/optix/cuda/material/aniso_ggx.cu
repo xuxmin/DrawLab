@@ -52,7 +52,7 @@ static __forceinline__ __device__ float3 eval(
     float F;
     {
 		const float F0 = 0.04;// metalness;
-		float ldoth = dot(bRec.wo, wh);
+		float ldoth = dot(bRec.wi, wh);
 		float temp = fminf(fmaxf(0.0, 1.0 - ldoth), 1.0);
 		F = F0 + (1.0 - F0) * temp * temp * temp * temp * temp;
     }

@@ -64,15 +64,22 @@ static __forceinline__ __device__ Intersection getHitData(const Material& mat_da
             sN = sN * 2.f - 1.f;
         }
         else {
-            if (mesh.tangents) {
+            if (mesh.tangents && mesh.normals) {
                 float3 local_n = make_float3(tex2D<float4>(mat_data.normal_tex, texcoord.x, texcoord.y));
                 local_n = local_n * 2.f - 1.f;
 
+                // shading normal
+                const float3 n0 = mesh.normals[index.x];
+                const float3 n1 = mesh.normals[index.y];
+                const float3 n2 = mesh.normals[index.z];
+                const float3 tmp_N = normalize((1.f - u - v) * n0 + u * n1 + v * n2);
+                // shading tangent
                 const float3 t0 = mesh.tangents[index.x];
                 const float3 t1 = mesh.tangents[index.y];
                 const float3 t2 = mesh.tangents[index.z];
-                const float3 sT = (1.f - u - v) * t0 + u * t1 + v * t2;
-                Onb onb(gN, sT);
+                const float3 tmp_T = normalize((1.f - u - v) * t0 + u * t1 + v * t2);
+
+                Onb onb(tmp_N, tmp_T);
                 sN = onb.inverse_transform(local_n);
             }
             else {
@@ -103,11 +110,18 @@ static __forceinline__ __device__ Intersection getHitData(const Material& mat_da
                 float3 local_t = make_float3(tex2D<float4>(mat_data.tangent_tex, texcoord.x, texcoord.y));
                 local_t = local_t * 2.f - 1.f;
 
+                // shading normal
+                const float3 n0 = mesh.normals[index.x];
+                const float3 n1 = mesh.normals[index.y];
+                const float3 n2 = mesh.normals[index.z];
+                const float3 tmp_N = normalize((1.f - u - v) * n0 + u * n1 + v * n2);
+                // shading tangent
                 const float3 t0 = mesh.tangents[index.x];
                 const float3 t1 = mesh.tangents[index.y];
                 const float3 t2 = mesh.tangents[index.z];
-                const float3 gT = (1.f - u - v) * t0 + u * t1 + v * t2;
-                Onb onb(gN, gT);
+                const float3 tmp_T = normalize((1.f - u - v) * t0 + u * t1 + v * t2);
+
+                Onb onb(tmp_N, tmp_T);
                 sT = onb.inverse_transform(local_t);
             }
             else {
@@ -115,6 +129,16 @@ static __forceinline__ __device__ Intersection getHitData(const Material& mat_da
             }
         }
         sT = normalize(sT);
+    }
+    else if (mesh.tangents) {
+        // shading tangent
+        const float3 t0 = mesh.tangents[index.x];
+        const float3 t1 = mesh.tangents[index.y];
+        const float3 t2 = mesh.tangents[index.z];
+        if (!isnan(t0.x) && !isnan(t0.y) && !isnan(t0.z)) {
+            sT = (1.f - u - v) * t0 + u * t1 + v * t2;
+            sT = normalize(sT);
+        }
     }
 
     const float3 hitpoint =

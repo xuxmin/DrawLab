@@ -71,8 +71,8 @@ struct Wrap {
     squareToGGX(const float2& sample, float2 axay) {
 		float z1 = sample.x;
 		float z2 = sample.y;
-		float x = axay.x * sqrtf(z1) / sqrtf(1 - z1) * cos(2 * M_PIf * z2);
-		float y = axay.y * sqrtf(z1) / sqrtf(1 - z1) * sin(2 * M_PIf * z2);
+		float x = axay.x * sqrtf(z1) / sqrtf(1 - z1) * cosf(2 * M_PIf * z2);
+		float y = axay.y * sqrtf(z1) / sqrtf(1 - z1) * sinf(2 * M_PIf * z2);
 		return normalize(make_float3(-x, -y, 1));
     }
 };
