@@ -75,9 +75,9 @@ extern "C" __global__ void __closesthit__radiance() {
 
     // Trace occlusion
     const bool occluded =
-        traceOcclusion(params.handle, its.p + params.epsilon * its.gn, dRec.d,
-                       0.01f,             // tmin
-                       dRec.dist - 0.01f  // tmax
+        traceOcclusion(params.handle, its.p, dRec.d,
+                       params.epsilon,             // tmin
+                       dRec.dist - params.epsilon  // tmax
         );
 
     const float3 wo = onb.transform(dRec.d);
@@ -114,7 +114,6 @@ extern "C" __global__ void __closesthit__radiance() {
 
     // BSDF sampled ray direction, also be used as the next path
     // direction
-    prd->sRec.p = its.p;
     prd->sRec.wo = normalize(onb.inverse_transform(bsdf_bRec.wo));
     prd->sRec.pdf =
         optixDirectCall<float, const Material&, const BSDFQueryRecord&>(
@@ -129,6 +128,14 @@ extern "C" __global__ void __closesthit__radiance() {
 
     if (fmaxf(prd->sRec.fr) <= 0.f) {
         prd->done = true;
+    }
+
+    // refine hitpoint
+    if (dot(prd->sRec.wo, its.gn) >= 0.f) {     // reflection
+        prd->sRec.p = its.p + its.gn * params.epsilon;
+    }
+    else {                                      // refraction
+        prd->sRec.p = its.p - its.gn * params.epsilon;
     }
 }
 
