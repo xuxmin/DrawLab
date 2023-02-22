@@ -11,6 +11,7 @@ struct Context {
     bool camera_changed = false;
     bool hide_light = true;
     float3 bg_color;
+    float epsilon = 1e-3;
     optix::PerspectiveCamera camera;
     optix::Trackball trackball;
 

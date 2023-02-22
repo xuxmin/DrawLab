@@ -96,6 +96,9 @@ void OptixRenderer::updateOptixScene() {
     
     // update bg color
     m_optix_scene->getParamBuffer()->updateBgColor(m_context->bg_color);
+
+    // update epsilon
+    m_optix_scene->getParamBuffer()->updateSceneEpsilon(m_context->epsilon);
 }
 
 OptixRenderer::~OptixRenderer() {
@@ -201,6 +204,7 @@ void OptixRenderer::render() {
     drawlab::displayText(display_text, 10.f, 10.f);
     ImGui::Checkbox("Hide Lights", &m_context->hide_light);
     ImGui::ColorEdit3("Background Color", (float*)&m_context->bg_color);
+    ImGui::DragFloat("Scene Epsilon", &m_context->epsilon, 1e-4, 1e-4, 1e-1, "%.4f");
     ImGui::End();
 }
 

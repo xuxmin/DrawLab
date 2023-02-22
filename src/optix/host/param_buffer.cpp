@@ -79,6 +79,11 @@ void ParamBuffer::updateEnvMap(const int& env_idx) {
     m_params.envmap_idx = env_idx;
 }
 
+void ParamBuffer::updateSceneEpsilon(const float eps) {
+    m_dirty = true;
+    m_params.epsilon = eps;
+}
+
 void ParamBuffer::resetFrameIndex() {
     m_dirty = true;
     m_params.subframe_index = 0;
