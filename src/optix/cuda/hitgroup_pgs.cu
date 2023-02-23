@@ -73,31 +73,34 @@ extern "C" __global__ void __closesthit__radiance() {
     float3 light_val =
         params.light_buffer.sampleLightDirection(its, seed, dRec);
 
-    // Trace occlusion
-    const bool occluded =
-        traceOcclusion(params.handle, its.p, dRec.d,
-                       params.epsilon,             // tmin
-                       dRec.dist - params.epsilon  // tmax
-        );
+    if (fmaxf(light_val) > 0.f) {
+        // Trace occlusion
+        const bool occluded =
+            traceOcclusion(params.handle, its.p, dRec.d,
+                        params.epsilon,             // tmin
+                        dRec.dist - params.epsilon  // tmax
+            );
 
-    const float3 wo = onb.transform(dRec.d);
-    BSDFQueryRecord bRec(its, wi, wo, ESolidAngle);
-    if (!occluded && dRec.pdf > 0) {
-        float3 bsdf_val =
-            optixDirectCall<float3, const Material&, const BSDFQueryRecord&>(
-                3 * rt_data->material_idx + MATERIAL_CALLABLE_EVAL, mat_data,
-                bRec);
+        const float3 wo = onb.transform(dRec.d);
+        BSDFQueryRecord bRec(its, wi, wo, ESolidAngle);
+        if (dRec.pdf > 0) {
+            float3 bsdf_val =
+                optixDirectCall<float3, const Material&, const BSDFQueryRecord&>(
+                    3 * rt_data->material_idx + MATERIAL_CALLABLE_EVAL, mat_data,
+                    bRec);
 
-        // Determine density of sampling that same direction using BSDF
-        // sampling
-        float bsdf_pdf =
-            optixDirectCall<float, const Material&, const BSDFQueryRecord&>(
-                3 * rt_data->material_idx + MATERIAL_CALLABLE_PDF, mat_data,
-                bRec);
-        float light_pdf = dRec.pdf;
-        float weight = dRec.delta ? 1 : powerHeuristic(light_pdf, bsdf_pdf);
+            // Determine density of sampling that same direction using BSDF
+            // sampling
+            float bsdf_pdf =
+                optixDirectCall<float, const Material&, const BSDFQueryRecord&>(
+                    3 * rt_data->material_idx + MATERIAL_CALLABLE_PDF, mat_data,
+                    bRec);
+            float light_pdf = dRec.pdf;
+            float weight = dRec.delta ? 1 : powerHeuristic(light_pdf, bsdf_pdf);
 
-        radiance += weight * bsdf_val * light_val;
+            // cos_theta is in sampleLightDirection
+            radiance += weight * bsdf_val * light_val;
+        }
     }
 #endif
 
