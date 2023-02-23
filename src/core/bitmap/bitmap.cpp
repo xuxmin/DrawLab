@@ -104,9 +104,9 @@ void Bitmap::loadEXR(const std::string& filename) {
 }
 
 void Bitmap::loadHDR(const std::string& filename) {
-    stbi_hdr_to_ldr_gamma(2.2f);
+    stbi_hdr_to_ldr_gamma(1.f);
     stbi_hdr_to_ldr_scale(1.f);
-    stbi_set_flip_vertically_on_load(false);
+    stbi_set_flip_vertically_on_load(true);
 
     int w, h, c;
     float* tmp_data = stbi_loadf(filename.c_str(), &w, &h, &c, 0);

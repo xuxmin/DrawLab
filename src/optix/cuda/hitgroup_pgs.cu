@@ -83,7 +83,7 @@ extern "C" __global__ void __closesthit__radiance() {
 
         const float3 wo = onb.transform(dRec.d);
         BSDFQueryRecord bRec(its, wi, wo, ESolidAngle);
-        if (dRec.pdf > 0) {
+        if (!occluded && dRec.pdf > 0) {
             float3 bsdf_val =
                 optixDirectCall<float3, const Material&, const BSDFQueryRecord&>(
                     3 * rt_data->material_idx + MATERIAL_CALLABLE_EVAL, mat_data,

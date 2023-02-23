@@ -73,7 +73,8 @@ struct Envmap {
         const float v = theta * M_INV_PI;
         const float3 val = make_float3(tex2D<float4>(env_tex, u, v));
 
-        return val / dRec.pdf;
+        float cosTheta = fmaxf(dot(its.sn, dRec.d), 0.f);
+        return cosTheta > 0.f ? cosTheta * val / dRec.pdf : make_float3(0.f);
     }
 
     float pdfDirection(const LightSampleRecord& dRec) const {

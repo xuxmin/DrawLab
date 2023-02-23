@@ -21,8 +21,7 @@ extern "C" __global__ void __miss__radiance() {
 
         const Light& light = params.light_buffer.lights[env_idx];
         const BSDFSampleRecord& sRec = prd->sRec;
-        float3 light_val = light.eval(Intersection(), -ray_dir);
-
+        float3 light_val = light.eval(Intersection(), ray_dir);
         // Set background
         if (prd->depth == 0) {
             if (light.envmap.visual) {
