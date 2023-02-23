@@ -29,8 +29,14 @@ struct Area {
         float pw = dp != 0 ? pA * dRec.dist * dRec.dist / dp : 0;
         dRec.pdf = pw;
 
-        return pw != 0 ? intensity * fmaxf(dot(its.sn, dRec.d), 0.f) / pw :
-                         make_float3(0.f);
+        float cosTheta = fmaxf(dot(its.sn, dRec.d), 0.f);
+
+        if (cosTheta > 0.f && pw > 0.f) {
+            return intensity * cosTheta / pw;
+        }
+        else {
+            return make_float3(0.f);
+        }
     }
 
     float pdfDirection(const LightSampleRecord& dRec) const {
