@@ -65,6 +65,7 @@ OPTIX_add_sample_executable(drawlab
     src/tracer/sampler/independent.cpp
     src/tracer/camera/perspective.cpp
     src/tracer/camera/virtual.cpp
+    src/tracer/camera/opencv.cpp
     src/tracer/rfilter/rfilter.cpp
     src/tracer/texture/texture.cpp
     src/tracer/texture/bitmap.cpp
