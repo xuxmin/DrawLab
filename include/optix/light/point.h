@@ -22,7 +22,8 @@ struct Point {
         dRec.dist = length(position - its.p);
         dRec.pdf = 1;
         float inv_dist = (float)1.0 / dRec.dist;
-        return intensity * inv_dist * inv_dist;
+        float cosTheta = fmaxf(dot(its.sn, dRec.d), 0.f);
+        return cosTheta > 0.f ? cosTheta * intensity * inv_dist * inv_dist : make_float3(0.f);
     }
 
     float pdfDirection(const LightSampleRecord& dRec) const { return 0; }
