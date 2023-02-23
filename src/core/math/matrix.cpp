@@ -85,7 +85,7 @@ Matrix4f Matrix4f::inv() const {
     }
 
     det = (float)1.0 / det;
-    Matrix4f ret = {inv[0],  inv[1],  inv[1],  inv[3], inv[4],  inv[5],
+    Matrix4f ret = {inv[0],  inv[1],  inv[2],  inv[3], inv[4],  inv[5],
                     inv[6],  inv[7],  inv[8],  inv[9], inv[10], inv[11],
                     inv[12], inv[13], inv[14], inv[15]};
 
