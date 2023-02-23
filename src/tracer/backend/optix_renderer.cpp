@@ -119,6 +119,7 @@ Context* OptixRenderer::initContext(drawlab::Scene* scene) {
     context->initCameraState(camera->getOptixCamera(), aspect);
     auto bg_color = scene->getBgColor();
     context->bg_color = make_float3(bg_color[0], bg_color[1], bg_color[2]);
+    context->epsilon = scene->getEpsilon();
     return context;
 }
 

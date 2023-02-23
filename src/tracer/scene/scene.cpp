@@ -5,6 +5,7 @@ namespace drawlab {
 
 Scene::Scene(const PropertyList& props) {
     m_bg_color = props.getColor("bg_color", Color3f(0.f));
+    m_epsilon = props.getFloat("epsilon", 1e-3);
     m_accel = new OCTree();
 }
 

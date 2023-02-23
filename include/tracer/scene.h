@@ -82,6 +82,8 @@ public:
 
     const Color3f& getBgColor() const { return m_bg_color; }
 
+    const float& getEpsilon() const { return m_epsilon; }
+
     int getEnvironmentEmitterIdx() const { return m_envmap_idx; }
     /**
      * \brief Intersect a ray against all triangles stored in the scene
@@ -139,6 +141,7 @@ private:
     Accel* m_accel = nullptr;
     Color3f m_bg_color;
     int m_envmap_idx = -1;
+    float m_epsilon = 1e-3;
 };
 
 }  // namespace drawlab
