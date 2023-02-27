@@ -1,15 +1,46 @@
 
 
-## 遇到的问题
+## Install
 
-一开始 configuration 的时候, 报错 CUDA_CUDA_LIBRARY 找不到. 查了一些资料, 加了下面这一条:
+### Dependencies
 
-```bash
-set(CMAKE_LIBRARY_PATH "/usr/local/cuda/lib64/stubs" CACHE PATH "Path to CUDA_CUDA_LIBRARY location.")
+- Optix SDK 7.3.0
+- CUDA Toolkit 11.1
+- Nvidia card with dirver
+
+### Compile
+
+```
+$ git clone https://github.com/xuxmin/DrawLab.git --recursive
+$ cd Drawlab
+$ mkdir build
+$ cd build
+$ cmake ..
+$ make
 ```
 
-编译是成功了, 但是运行到 `optixDeviceContextCreate` 的时候就失败了.
+If the configuration fails, you need to modify these options manually in CMakeCache.txt:
+- `OptiX_INSTALL_DIR`: the Optix SDK directory 
+- `CUDA_TOOLKIT_INCLUDE`: the cuda toolkit include directory, for example: `/usr/local/cuda-11.1/include`
+- `CUDA_TOOLKIT_ROOT_DIR`: the cuda toolkit directory, for example: ``/usr/local/cuda-11.1``
 
-最终看到这里 https://forums.developer.nvidia.com/t/segmentation-fault-in-optix7-1-examples/145412/2 一个人说的:
+configure again:
+```
+$ cmake ..
+$ make
+```
 
-/usr/lib/x86_64-linux-gnu/libcuda.so.1 to /usr/lib/x86_64-linux-gnu/libcuda.so 缺少一个软连接，我看了一下还真的缺了。把这个软链接加上去就成功了。
+### Usage
+
+```
+usage: .\drawlab.exe --scene=string [options] ... 
+options:
+  -s, --scene      Scene xml file (string)
+  -t, --thread     Thread num used in cpu backend (int [=4])
+  -b, --backend    Backend:[cpu, optix] (string [=cpu])
+      --gui        Show GUI
+  -?, --help       print this message
+```
+
+  
+

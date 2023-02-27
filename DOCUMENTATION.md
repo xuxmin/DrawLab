@@ -1,4 +1,6 @@
 
+# Scene XML file format
+
 DrawLab supports two file formats(XML and JSON) to represent scene. The design is borrowed from [**Mitsuba**](https://mitsuba.readthedocs.io/en/stable/src/key_topics/scene_format.html).
 
 A basic scene description file is as follows:
@@ -6,7 +8,7 @@ A basic scene description file is as follows:
 ```xml
 <scene>
 	<bsdf type="" id=""/>
-    <texture type="" id=""/>
+	<texture type="" id=""/>
 	<integrator type=""/>
 	<sampler type=""/>
 	<camera type=""/>
@@ -421,9 +423,9 @@ For examples:
 	<bsdf type="diffuse" id="test_mat">
 		<color name="albedo" value="0.5, 0.5, 0.5"/>
 	</bsdf>
-    <mesh type="obj">
-        <ref id="test_mat">
-    </mesh>
+	<mesh type="obj">
+		<ref id="test_mat">
+	</mesh>
 </scene>
 ```
 
