@@ -11,6 +11,8 @@
 #include "pugixml.hpp"
 #include <fstream>
 #include <set>
+#include <string>
+#include <map>
 
 namespace drawlab {
 
@@ -77,6 +79,8 @@ Object* loadFromXML(const std::string& filename) {
         EScale,
         ELookAt,
 
+
+        ERef,       // reference a object
         EInvalid
     };
 
@@ -107,6 +111,7 @@ Object* loadFromXML(const std::string& filename) {
     tags["rotate"] = ERotate;
     tags["scale"] = EScale;
     tags["lookat"] = ELookAt;
+    tags["ref"] = ERef;
 
     /* Helper function to check if attributes are fully specified */
     auto check_attributes = [&](const pugi::xml_node& node,
@@ -136,6 +141,8 @@ Object* loadFromXML(const std::string& filename) {
 
     Transform transform;
 
+    std::map<std::string, Object*> object_pool;
+
     /* Helper function to parse a Nori XML node (recursive) */
     std::function<Object*(pugi::xml_node&, PropertyList&, int)> parseTag =
         [&](pugi::xml_node& node, PropertyList& list,
@@ -162,7 +169,7 @@ Object* loadFromXML(const std::string& filename) {
          * makes sense */
         bool hasParent = parentTag != EInvalid;
         bool parentIsObject = hasParent && parentTag < Object::EClassTypeCount;
-        bool currentIsObject = tag < Object::EClassTypeCount;
+        bool currentIsObject = tag < Object::EClassTypeCount || tag == ERef;
         bool parentIsTransform = parentTag == ETransform;
         bool currentIsTransformOp = tag == ETranslate || tag == ERotate ||
                                     tag == EScale || tag == ELookAt ||
@@ -170,7 +177,7 @@ Object* loadFromXML(const std::string& filename) {
 
         if (!hasParent && !currentIsObject)
             throw Exception("Error while parsing \"%s\": root element \"%s\" "
-                            "must be a Nori object (at %s)",
+                            "must be a object (at %s)",
                             filename, node.name(), offset(node.offset_debug()));
 
         if (parentIsTransform != currentIsTransformOp)
@@ -181,13 +188,27 @@ Object* loadFromXML(const std::string& filename) {
         if (hasParent && !parentIsObject &&
             !(parentIsTransform && currentIsTransformOp))
             throw Exception("Error while parsing \"%s\": node \"%s\" requires "
-                            "a Nori object as parent (at %s)",
+                            "a object as parent (at %s)",
                             filename, node.name(), offset(node.offset_debug()));
 
         if (tag == EScene)
             node.append_attribute("type") = "scene";
         else if (tag == ETransform)
             transform.setIdentity();
+
+        if (tag == ERef) {
+            check_attributes(node, {"id"});
+            std::string object_id = node.attribute("id").value();
+            if (object_pool.find(object_id) != object_pool.end()) {
+                return object_pool[object_id];
+            }
+            else {
+                throw Exception("Error while parsing \"%s\": Can't find the "
+                                "referred node %s  (at %s)",
+                                filename, object_id,
+                                offset(node.offset_debug()));
+            }
+        }
 
         PropertyList propList;
         std::vector<Object*> children;
@@ -200,7 +221,7 @@ Object* loadFromXML(const std::string& filename) {
         Object* result = nullptr;
         try {
             if (currentIsObject) {
-                check_attributes(node, {"type"}, {"name"});
+                check_attributes(node, {"type"}, {"name", "id"});
 
                 /* This is an object, first instantiate it */
                 result = ObjectFactory::createInstance(
@@ -224,6 +245,18 @@ Object* loadFromXML(const std::string& filename) {
 
                 /* Activate / configure the object */
                 result->activate();
+
+                std::string object_id = node.attribute("id").value();
+                if (object_id != "") {
+                    if (object_pool.find(object_id) != object_pool.end()) {
+                        throw Exception("Error while parsing \"%s\": the node id "
+                                        "has been used. (at %s)",
+                                        filename, offset(node.offset_debug()));
+                    }
+                    else {
+                        object_pool[object_id] = result;
+                    }
+                }
             } else {
                 /* This is a property */
                 switch (tag) {
