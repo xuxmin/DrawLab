@@ -96,7 +96,9 @@ void Scene::addChild(Object* obj) {
                 throw Exception("There can only be one integrator per scene!");
             m_integrator = static_cast<Integrator*>(obj);
             break;
-
+        case EBSDF:
+            m_bsdfs.push_back(static_cast<BSDF*>(obj));
+            break;
         default:
             throw Exception("Scene::addChild(<%s>) is not supported!",
                             classTypeName(obj->getClassType()));
