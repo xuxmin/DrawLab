@@ -281,7 +281,7 @@ Examples:
 
 An ideally diffuse material, also referred to as *Lambertian*.
 
-<img src="http://124.223.26.211:8080/images/2023/02/27/90bb5a767f76.png" style="zoom:33%;" align="left"/>
+<img src="http://124.223.26.211:8080/images/2023/02/27/90bb5a767f76.png" width=200/>
 
 
 | Parameter | Type             | Description                                                 |
@@ -310,7 +310,7 @@ or textured albedo:
 
 The material models the reflection and refraction between two dielectric materials having mismatched indices of refraction (for instance, water ↔ air)
 
-<img src="http://124.223.26.211:8080/images/2023/02/27/d0d2b96bf7f6.png" style="zoom:33%;" align="left"/>
+<img src="http://124.223.26.211:8080/images/2023/02/27/d0d2b96bf7f6.png" width=200/>
 
 | Parameter | Type  | Description                                                  |
 | --------- | ----- | ------------------------------------------------------------ |
@@ -325,7 +325,7 @@ The material models the reflection and refraction between two dielectric materia
 
 An ideal mirror.
 
-<img src="http://124.223.26.211:8080/images/2023/02/27/211681eb196c.png" style="zoom:33%;" align="left"/>
+<img src="http://124.223.26.211:8080/images/2023/02/27/211681eb196c.png" width=200/>
 
 ```xml
 <bsdf type="mirror"/>
@@ -337,7 +337,7 @@ Diffuse brdf + rough conductor brdf.
 
 The microfacet normal distribution is **beckmann** distribution.
 
-<img src="http://124.223.26.211:8080/images/2023/02/27/ebba7b1c17a5.png" style="zoom: 50%;" align="left"/>
+<img src="http://124.223.26.211:8080/images/2023/02/27/ebba7b1c17a5.png" width=400/>
 
 | Parameter | Type  | Description                                                  |
 | --------- | ----- | ------------------------------------------------------------ |
@@ -360,7 +360,7 @@ Example:
 
 Diffuse brdf + anisotropic ggx brdf
 
-<img src="http://124.223.26.211:8080/images/2023/02/27/ebba7b1c17a5.png" style="zoom: 50%;" align="left"/>
+<img src="http://124.223.26.211:8080/images/2023/02/27/ebba7b1c17a5.png" width=400/>
 
 The microfacet normal distribution is GGX distribution.
 
