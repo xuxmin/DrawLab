@@ -1,5 +1,19 @@
 
-# Scene XML file format
+# Documentation
+
+## Usage
+
+```
+usage: .\drawlab.exe --scene=string [options] ... 
+options:
+  -s, --scene      Scene xml file (string)
+  -t, --thread     Thread num used in cpu backend (int [=4])
+  -b, --backend    Backend:[cpu, optix] (string [=cpu])
+      --gui        Show GUI
+  -?, --help       print this message
+```
+
+## Scene XML file format
 
 DrawLab supports two file formats(XML and JSON) to represent scene. The design is borrowed from [**Mitsuba**](https://mitsuba.readthedocs.io/en/stable/src/key_topics/scene_format.html).
 
@@ -19,7 +33,7 @@ A basic scene description file is as follows:
 
 A valid scene description file should has an integrator, a sampler, a camera, some meshes and some emitters.
 
-## Properties
+### Properties
 
 Some simple properties:
 
@@ -33,7 +47,7 @@ Some simple properties:
 <point name="position" value="0, 0, 0"/>
 ```
 
-### Transform
+#### Transform
 
 Transform property requires more than a single tag, from identity matrix to build a transform matrix base on the commands. For examples:
 
@@ -74,9 +88,9 @@ The supported transformation:
   	0.0, 0.0, 0.0, 1.0"/>
   ```
 
-## Integrators
+### Integrators
 
-### Path Tracer(`path`)
+#### Path Tracer(`path`)
 
 A basic path tracer with multiple importance sampling.
 
@@ -84,7 +98,7 @@ A basic path tracer with multiple importance sampling.
 <integrator type="path"/>
 ```
 
-### Normal(`normals`)
+#### Normal(`normals`)
 
 Rendering the normal of the hitpoint.
 
@@ -92,9 +106,9 @@ Rendering the normal of the hitpoint.
 <integrator type="normals"/>
 ```
 
-## Samplers
+### Samplers
 
-### Independent sampler(`independent`)
+#### Independent sampler(`independent`)
 
 | Parameter     | Type    | Description                              |
 | ------------- | ------- | ---------------------------------------- |
@@ -106,9 +120,9 @@ Rendering the normal of the hitpoint.
 </sampler>
 ```
 
-## Cameras
+### Cameras
 
-### Perspective camera(`virtual`)
+#### Perspective camera(`virtual`)
 
 A simple idealized perspective camera model.
 
@@ -132,7 +146,7 @@ A simple idealized perspective camera model.
 </camera>
 ```
 
-### OpenCV camera(`opencv`)
+#### OpenCV camera(`opencv`)
 
 An opencv camera model with extrinsic and intrinsic.
 
@@ -157,7 +171,7 @@ An opencv camera model with extrinsic and intrinsic.
 </camera>
 ```
 
-## Meshes
+### Meshes
 
 Each mesh can bind an transform, or a material.
 
@@ -168,7 +182,7 @@ Optional parameters:
 | `toWorld` | transform | Transform the mesh to world space. |
 |           | bsdf      | The material(bsdf) bound to mesh.  |
 
-### Wavefront OBJ mesh(`obj`)
+#### Wavefront OBJ mesh(`obj`)
 
 Load an triangle mesh with specific material and do transformation optional.
 
@@ -191,7 +205,7 @@ Example:
 </mesh>
 ```
 
-### Rectangle(`rectangle`)
+#### Rectangle(`rectangle`)
 
 A simple rectangular shape primitive.
 
@@ -211,9 +225,9 @@ A simple rectangular shape primitive.
 </mesh>
 ```
 
-## Emitters
+### Emitters
 
-### Area Light(`area`)
+#### Area Light(`area`)
 
 Turn a geometric object into a area light source.
 
@@ -229,7 +243,7 @@ Turn a geometric object into a area light source.
 </shape>
 ```
 
-### Point Light (`point`)
+#### Point Light (`point`)
 
 A simple point light source, which uniformly radiates illumination into all directions.
 
@@ -245,7 +259,7 @@ A simple point light source, which uniformly radiates illumination into all dire
 </emitter>
 ```
 
-### Environment Light(`envmap`)
+#### Environment Light(`envmap`)
 
 An HDRI (high dynamic range imaging) environment map.
 
@@ -259,11 +273,11 @@ An HDRI (high dynamic range imaging) environment map.
 </emitter>
 ```
 
-## Textures
+### Textures
 
 Texture objects can be attached to certain material to introduce spatial variation.
 
-### Bitmap texture(`bitmap`)
+#### Bitmap texture(`bitmap`)
 
 | Parameter  | Type   | Description                         |
 | ---------- | ------ | ----------------------------------- |
@@ -277,9 +291,9 @@ Examples:
 </texture>
 ```
 
-## BSDFs
+### BSDFs
 
-### Diffuse(`diffuse`)
+#### Diffuse(`diffuse`)
 
 An ideally diffuse material, also referred to as *Lambertian*.
 
@@ -308,7 +322,7 @@ or textured albedo:
 </bsdf>
 ```
 
-### Dielectric(`dielectric`)
+#### Dielectric(`dielectric`)
 
 The material models the reflection and refraction between two dielectric materials having mismatched indices of refraction (for instance, water ↔ air)
 
@@ -323,7 +337,7 @@ The material models the reflection and refraction between two dielectric materia
 <bsdf type="dielectric"/>
 ```
 
-### Mirror(`mirror`)
+#### Mirror(`mirror`)
 
 An ideal mirror.
 
@@ -333,7 +347,7 @@ An ideal mirror.
 <bsdf type="mirror"/>
 ```
 
-### Microfacet(`microfacet`)
+#### Microfacet(`microfacet`)
 
 Diffuse brdf + rough conductor brdf.
 
@@ -358,7 +372,7 @@ Example:
 </bsdf>
 ```
 
-### Anisotropic GGX(`aniso_ggx`)
+#### Anisotropic GGX(`aniso_ggx`)
 
 Diffuse brdf + anisotropic ggx brdf
 
@@ -412,7 +426,7 @@ Examples:
 </bsdf>
 ```
 
-## Declare and References
+### Declare and References
 
 If one material or texture will be used many times, you can declare the material/texture forward, and reference it in many places.
 

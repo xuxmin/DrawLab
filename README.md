@@ -1,46 +1,41 @@
+# Drawlab
+
+Drawlab is a physically based path tracer that runs on a NVIDIA graphics card with OptiX 7.
+
+## Features
+
+- Unidirectional path tracer
+    - Support two backends: CPU, OptiX
+    - Two rendering modes: online GUI interaction, offline rendering
+    - XML scene description file like mitsuba
+    - Multi-importance sampling
+- Material
+    - Diffuse
+    - Mirror
+    - Dielectric
+    - Microfacet
+    - Anisotropic GGX
+- Camera
+    - Perspective camera
+    - Pinhole camera(opencv camera)
+- Light
+    - Area light(bind to a triangle mesh)
+    - Point light
+    - Environment light(HDR/EXR image)
+- Geometry
+    - Mesh(.obj)
+    - Rectangle
+
+
+## Gallery
 
 
 ## Install
 
-### Dependencies
+Please refer to the [INSTALL](INSTALL.md) for the build instructions for Windows and Linux.
 
-- Optix SDK 7.3.0
-- CUDA Toolkit 11.1
-- Nvidia card with dirver
+## Documentation
 
-### Compile
-
-```
-$ git clone https://github.com/xuxmin/DrawLab.git --recursive
-$ cd Drawlab
-$ mkdir build
-$ cd build
-$ cmake ..
-$ make
-```
-
-If the configuration fails, you need to modify these options manually in CMakeCache.txt:
-- `OptiX_INSTALL_DIR`: the Optix SDK directory 
-- `CUDA_TOOLKIT_INCLUDE`: the cuda toolkit include directory, for example: `/usr/local/cuda-11.1/include`
-- `CUDA_TOOLKIT_ROOT_DIR`: the cuda toolkit directory, for example: ``/usr/local/cuda-11.1``
-
-configure again:
-```
-$ cmake ..
-$ make
-```
-
-### Usage
-
-```
-usage: .\drawlab.exe --scene=string [options] ... 
-options:
-  -s, --scene      Scene xml file (string)
-  -t, --thread     Thread num used in cpu backend (int [=4])
-  -b, --backend    Backend:[cpu, optix] (string [=cpu])
-      --gui        Show GUI
-  -?, --help       print this message
-```
-
+For documentation, please refer to [Documentation](DOCUMENTATION.md)
   
 
