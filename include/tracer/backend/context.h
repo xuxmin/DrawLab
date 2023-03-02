@@ -9,7 +9,7 @@ namespace optix {
 
 struct Context {
     bool camera_changed = false;
-    bool hide_light = true;
+    bool hide_light = false;
     float3 bg_color;
     float epsilon = 1e-3;
     optix::PerspectiveCamera camera;
