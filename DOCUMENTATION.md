@@ -214,14 +214,14 @@ A simple rectangular shape primitive.
 | `pos`     | vector | The corner point of the rectangle     |
 | `v0`      | vector | An edge vector of the rectangle.      |
 | `v1`      | vector | Another edge vector of the rectangle. |
-| `normal`  | vector | The normal of the rectangle.          |
+
+The light normal is `normalize(cross(v0, v1))`
 
 ```xml
 <mesh type="rectangle">
 	<vector name="pos" value="-1, -100, 99"/>
 	<vector name="v0" value="2, 0, 0"/>
 	<vector name="v1" value="0, 0, 2"/>
-	<vector name="normal" value="0, 1, 0"/>
 </mesh>
 ```
 

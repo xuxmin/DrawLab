@@ -12,7 +12,7 @@ public:
         Vector3f pos = propList.getVector("pos");
         Vector3f v0 = propList.getVector("v0");
         Vector3f v1 = propList.getVector("v1");
-        Vector3f normal = propList.getVector("normal");
+        Normal3f normal = v0.cross(v1).normalized();
 
         std::vector<Vector3f> p = {pos, pos + v0, pos + v1, pos + v0 + v1};
         m_V.resize(4 * 3);
