@@ -30,11 +30,8 @@ Drawlab is a physically based path tracer that runs on a NVIDIA graphics card wi
 ## Gallery
 
 <img src="./docs/assets/table.png" width=1200>
-
 <img src="./docs/assets/cbox.png" width=1200>
-
 <img src="./docs/assets/veach.png" width=1200>
-
 <img src="./docs/assets/exp.png" width=1200>
 
 
