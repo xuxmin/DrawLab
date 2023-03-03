@@ -1,6 +1,6 @@
 # Drawlab
 
-Drawlab is a physically based path tracer that runs on a NVIDIA graphics card with OptiX 7.
+Drawlab is a physically based path tracer that runs on NVIDIA graphics card with OptiX 7.
 
 ## Features
 
