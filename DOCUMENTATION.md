@@ -266,10 +266,14 @@ An HDRI (high dynamic range imaging) environment map.
 | Parameter  | Type   | Description                                                  |
 | ---------- | ------ | ------------------------------------------------------------ |
 | `filename` | string | Filename of the radiance-valued input image to be loaded; must be in latitude-longitude format. |
+| `scale`	 | float  | Scale the intensity of envmap |
+| `visual`	 | boolean | Whether to visualize the envmap |
 
 ```xml
 <emitter type="envmap">
-	<string name="filename" value="uffizi.hdr"/>
+	<string name="filename" value="envmap.hdr"/>
+	<boolean name="visual" value="false"/>
+	<float name="scale" value="0.5"/>
 </emitter>
 ```
 

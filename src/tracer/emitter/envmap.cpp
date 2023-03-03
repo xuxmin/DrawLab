@@ -15,6 +15,7 @@ public:
             ObjectFactory::createInstance("bitmap", propList));
         m_size = m_texture->getResolution();
         m_visual = propList.getBoolean("visual", true);
+        m_scale = propList.getFloat("scale", 1.f);
     }
 
     void sampleDirection(const Point2f& sample, const Intersection& its,
@@ -52,6 +53,7 @@ public:
         light.envmap.env_accel = (optix::EnvAccel*)buffer.devicePtr();
 
         light.envmap.visual = m_visual;
+        light.envmap.scale = m_scale;
     }
 
     void activate() {
@@ -142,6 +144,7 @@ private:
     Texture2D* m_texture;
     Vector3i m_size;
     bool m_visual;
+    float m_scale;
     std::vector<optix::EnvAccel> m_env_accel;
 };
 

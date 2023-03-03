@@ -18,6 +18,7 @@ struct Envmap {
     EnvAccel* env_accel;
     int2 env_size;
     bool visual;
+    float scale;
 
 #ifdef __CUDACC__
     // direction to environment map coordinates
@@ -71,7 +72,7 @@ struct Envmap {
 
         // lookup filtered value
         const float v = theta * M_INV_PI;
-        const float3 val = make_float3(tex2D<float4>(env_tex, u, v));
+        const float3 val = make_float3(tex2D<float4>(env_tex, u, v)) * scale;
 
         float cosTheta = fmaxf(dot(its.sn, dRec.d), 0.f);
         return cosTheta > 0.f ? cosTheta * val / dRec.pdf : make_float3(0.f);
@@ -88,7 +89,7 @@ struct Envmap {
     SUTIL_INLINE SUTIL_HOSTDEVICE float3 eval(const Intersection& its,
                                               float3 wi) const {
         const float2 uv = environment_coords(wi);
-        const float3 val = make_float3(tex2D<float4>(env_tex, uv.x, uv.y));
+        const float3 val = make_float3(tex2D<float4>(env_tex, uv.x, uv.y)) * scale;
         return val;
     }
 #endif
